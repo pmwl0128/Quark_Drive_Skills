@@ -1,4 +1,6 @@
-<h1 align="center">Turn Zero Skills</h1>
+<h1 align="center">Quark Drive Skills</h1>
+
+<p align="center">Quark Drive · 夸克充能 · クォークチャージ</p>
 
 <p align="center">
   <b>Help your AI agent use local facts, current metagame data, and exact calculations to look up the dex, calculate matchups, review teams, and build them</b>
@@ -23,7 +25,7 @@
 
 ---
 
-Turn Zero Skills packages four Agent Skills for Pokémon Champions. The optional browser interface is called **Turn Zero Web**; both are delivered from this repository. Together they let an AI agent:
+Quark Drive Skills packages four Agent Skills for Pokémon Champions. The optional browser interface is called **Quark Drive Web**; both are delivered from this repository. Together they let an AI agent:
 
 - look up canonical battle-dex facts;
 - inspect current and historical metagame distributions;
@@ -45,14 +47,14 @@ Queries read the data shipped with the package. The goal is not to manufacture a
 
 Scripts own facts, arithmetic, and deterministic checks. The model interprets your goal, designs candidates, weighs trade-offs, and explains the recommendation. That division of responsibility is the core design of the project.
 
-### Turn Zero Web: optional browser interface
+### Quark Drive Web: optional browser interface
 
 All four skills are fully usable through an agent CLI. To make the data, configurations, and generation process easier to inspect, the project also provides an optional companion browser front end. It lets you browse the dex and metagame snapshots visually and assists with matchup, damage, Speed, tuning, and team-diagnosis work:
 
 - **Online:** open [champion.mpan.top](https://champion.mpan.top) with no installation required. Because the online edition has limited resources, some features are simplified compared with the local edition.
-- **Local:** download [`Turn_Zero_Web.zip`](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/Turn_Zero_Web.zip) from the [`data-latest` release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest). The prebuilt bundle requires Python 3.10+ and its runtime dependencies; it needs no Node.js, account, or model API key for ordinary browsing and calculations.
+- **Local:** download [`Quark_Drive_Web.zip`](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/Quark_Drive_Web.zip) from the [`data-latest` release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest). The prebuilt bundle requires Python 3.10+ and its runtime dependencies; it needs no Node.js, account, or model API key for ordinary browsing and calculations.
 
-The interface is not a prerequisite for the skills and does not replace the complete local collaboration workflow with an AI assistant. See [Turn Zero Web](#turn-zero-web) for feature differences, dependencies, and usage instructions.
+The interface is not a prerequisite for the skills and does not replace the complete local collaboration workflow with an AI assistant. See [Quark Drive Web](#quark-drive-web) for feature differences, dependencies, and usage instructions.
 
 > [!NOTE]
 > **The supported data domain is Pokémon Champions only.**
@@ -113,7 +115,7 @@ Which Pokémon rose or fell this update, and which item distributions changed?
 Which partners commonly appear around Tailwind setters in Doubles?
 ```
 
-The latest three single-language workbooks (`workbook_{zh,ja,en}.xlsx`, containing the complete Singles and Doubles tables plus a factual update report) are published under fixed names on the [data-latest release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest), replaced on every release. They can be read without running any script; check the snapshot date in the sheet header.
+The latest three single-language workbooks (`workbook_{zh,ja,en}.xlsx`, containing the complete Singles and Doubles tables plus a factual update report) are published under fixed names on the [data-latest release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest), replaced on every release. They can be read without running any script; check the snapshot date in the sheet header.
 
 ## `ncp-damage-calculator`
 
@@ -252,7 +254,7 @@ free-form user request
 
 For example, “build a Doubles team around Mega Metagross and make it survive Earthquake from a common Life Orb Garchomp” needs name and legality facts, current usage, real-team structures, candidate evaluation, and an exact survival threshold. “Can Bullet Punch from the current metagame's standard Mega Metagross set OHKO a common Alolan Ninetales set?” combines the dex, meta, and calculator skills but does not enter the team workflow.
 
-## Turn Zero Web
+## Quark Drive Web
 
 The companion front end turns the facts and calculations supplied by the four skills into a workspace
 that is easier to browse, compare, and verify. It is useful for quickly surveying the metagame,
@@ -296,8 +298,8 @@ your own team, and carry generated/diagnosed teams into the calculator for verif
 
 ### Download the prebuilt local edition
 
-Download `Turn_Zero_Web.zip` from the
-[`data-latest` release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest).
+Download `Quark_Drive_Web.zip` from the
+[`data-latest` release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest).
 The bundle binds one SPA, projection, bridge, four skills, runtime configuration, and manifest. It
 requires Python 3.10+ and the locked `requirements-runtime.txt`, but not Node.js.
 
@@ -307,7 +309,7 @@ If an agent with shell access is already in this project (because you installed 
 agent-assisted installation method, or you placed this repo's `AGENTS.md` / `CLAUDE.md` in the project
 directory), just ask it directly:
 
-> Download the prebuilt local visual interface from the `data-latest` release of `pmwl0128/Turn_Zero_Skills`, install its `requirements-runtime.txt`, and start it. Then give me the local URL.
+> Download the prebuilt local visual interface from the `data-latest` release of `pmwl0128/Quark_Drive_Skills`, install its `requirements-runtime.txt`, and start it. Then give me the local URL.
 
 The agent fetches the zip, extracts it, installs the runtime deps, launches the platform start script,
 and returns the one-time `http://127.0.0.1:<port>/#bootstrap=...` URL. The full step list it follows is
@@ -344,8 +346,8 @@ performs one Vite build; the matching `start-ui` script launches it. Do not comb
 bridge, or skill trees from different snapshots—the identity checks reject that assembly.
 
 ```powershell
-git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
-Set-Location .\Turn_Zero_Skills
+git clone https://github.com/pmwl0128/Quark_Drive_Skills.git
+Set-Location .\Quark_Drive_Skills
 python -m pip install -r frontend/requirements-ui.txt
 .\frontend\build-ui.ps1
 .\frontend\start-ui.ps1
@@ -372,7 +374,7 @@ All four skills are installed together. No command registration is required afte
 
 Give the following request to an agent with shell access:
 
-> Globally install all four skills from https://github.com/pmwl0128/Turn_Zero_Skills. Also install the `quickjs-ng>=0.15` dependency; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
+> Globally install all four skills from https://github.com/pmwl0128/Quark_Drive_Skills. Also install the `quickjs-ng>=0.15` dependency; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
 
 This is the recommended default: the agent can identify the host, choose the correct directory, handle the runtime dependency, and verify the copied skills without asking the user to reason about paths or link behavior.
 
@@ -381,8 +383,8 @@ This is the recommended default: the agent can identify the host, choose the cor
 Enter these commands inside Claude Code. If you installed the old plugin, uninstall it first with `/plugin uninstall pokemon-champions@pmwl`:
 
 ```text
-/plugin marketplace add pmwl0128/Turn_Zero_Skills
-/plugin install turn-zero-skills@turn-zero
+/plugin marketplace add pmwl0128/Quark_Drive_Skills
+/plugin install quark-drive-skills@quark-drive
 ```
 
 ### Method C: One Command
@@ -390,13 +392,13 @@ Enter these commands inside Claude Code. If you installed the old plugin, uninst
 Install [Node.js](https://nodejs.org/) first, then run this in your project directory:
 
 ```bash
-npx skills add pmwl0128/Turn_Zero_Skills
+npx skills add pmwl0128/Quark_Drive_Skills
 ```
 
 For a global installation available to every project:
 
 ```bash
-npx skills add pmwl0128/Turn_Zero_Skills -g
+npx skills add pmwl0128/Quark_Drive_Skills -g
 ```
 
 The installer is provided by [vercel-labs/skills](https://github.com/vercel-labs/skills) and prompts for the target agent and scope. The current link-based installation path may fail on Windows; choose its copy-install option instead, or create the links manually.
@@ -404,10 +406,10 @@ The installer is provided by [vercel-labs/skills](https://github.com/vercel-labs
 ### Method D: Manual Copy
 
 ```bash
-git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+git clone https://github.com/pmwl0128/Quark_Drive_Skills.git
 mkdir -p ~/.claude/skills ~/.agents/skills
-cp -r Turn_Zero_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
-cp -r Turn_Zero_Skills/.agents/skills/* ~/.agents/skills/   # Codex
+cp -r Quark_Drive_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
+cp -r Quark_Drive_Skills/.agents/skills/* ~/.agents/skills/   # Codex
 ```
 
 The `.agents/skills/` and `.claude/skills/` trees are byte-identical mirrors. Use the one discovered by your agent.
@@ -464,7 +466,7 @@ Any directory name is fine. Open it directly in an IDE-based agent, or change in
 
 After starting the appropriate AI agent, tell your agent:
 
-> Install all four skills from https://github.com/pmwl0128/Turn_Zero_Skills into the current project, and copy the bundled `CLAUDE.md` and `AGENTS.md` into the project directory. Also install `quickjs-ng>=0.15`; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
+> Install all four skills from https://github.com/pmwl0128/Quark_Drive_Skills into the current project, and copy the bundled `CLAUDE.md` and `AGENTS.md` into the project directory. Also install `quickjs-ng>=0.15`; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
 
 You can also use any other [installation method](#installation) above.
 
@@ -519,11 +521,11 @@ Using the bundled `CLAUDE.md` or `AGENTS.md` as project instructions also improv
 
 ## Metagame Workbooks
 
-Each release regenerates three workbooks from the complete Singles and Doubles snapshots and update reports, published under fixed names on the [data-latest release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest) (rolling: only the newest snapshot is kept; the git tree carries no binaries, so clones stay lean):
+Each release regenerates three workbooks from the complete Singles and Doubles snapshots and update reports, published under fixed names on the [data-latest release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest) (rolling: only the newest snapshot is kept; the git tree carries no binaries, so clones stay lean):
 
-- [workbook_en.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_en.xlsx) (English)
-- [workbook_zh.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_zh.xlsx) (Chinese)
-- [workbook_ja.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_ja.xlsx) (Japanese)
+- [workbook_en.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_en.xlsx) (English)
+- [workbook_zh.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_zh.xlsx) (Chinese)
+- [workbook_ja.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_ja.xlsx) (Japanese)
 
 Each workbook uses one primary language; the Chinese and Japanese versions include canonical English names for cross-reference. Main sheets include:
 
@@ -536,9 +538,9 @@ The workbooks are facts-only reports and contain no AI interpretation of the met
 
 Rank-trend line charts `trend_{single,double}_{zh,ja,en}.png` (Singles / Doubles × three languages) ship on the same release. They cover the last up to 10 refreshes on a rolling basis: any Pokémon that entered the Top 30 in any period is tracked across the whole window, plus big movers that reached the top 60. The axis keeps ranks 1–30 uniform and compresses everything deeper; rising / falling / stable lines are color-coded with Pokémon names labeled at both ends.
 
-![Singles rank trend](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_single_en.png)
+![Singles rank trend](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/trend_single_en.png)
 
-![Doubles rank trend](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_double_en.png)
+![Doubles rank trend](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/trend_double_en.png)
 
 ## Freshness and Honest Limits
 

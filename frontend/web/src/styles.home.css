@@ -72,39 +72,26 @@
 
 /* ---- opening stage ------------------------------------------------------------------ */
 .home-hero {
-  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); align-items: center;
-  gap: 28px 40px; min-height: 470px; padding: 50px 56px 136px;
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: center;
+  gap: 32px 48px; min-height: 440px; padding: 60px 56px 124px;
 }
-.home-demo-pill {
-  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 26px; padding: 5px 6px 5px 14px;
-  border: 1px solid var(--stage-hair); border-radius: 999px; background: var(--stage-raised);
-  color: var(--stage-ink); font-size: 13px; font-weight: 650;
-}
-.home-demo-name { margin-right: 6px; letter-spacing: 0.01em; }
-.home-demo-dot { flex: none; width: 8px; height: 8px; margin-right: 4px; border-radius: 50%; background: #5fe3a0;
-  box-shadow: 0 0 0 4px rgb(95 227 160 / 0.18); }
-.home-demo-gh { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px;
-  background: var(--stage-fill-2); color: var(--stage-ink); font-size: 12px; font-weight: 700; text-decoration: none;
-  transition: background-color 160ms ease; }
-.home-demo-gh:hover { background: var(--stage-fill-3); color: var(--stage-ink); text-decoration: none; }
-.home-demo-gh svg { width: 14px; height: 14px; }
 /* Gitee has no icon in the set: its red disc with the initial stands in. */
 .home-gitee-mark { display: inline-grid; place-items: center; flex: none; width: 14px; height: 14px; border-radius: 50%;
   background: #c71d23; color: #fff; font: 800 9px/1 var(--font-ui); }
-/* Two lines: the name, then what it does, in the stage's own glow colours. */
+/* Brand and product share the headline; the supporting copy has its own quiet line. */
 .home .home-hero h1 {
   display: grid; gap: 12px; color: var(--stage-ink); font-weight: 800; text-wrap: balance;
   /* Break CJK at its punctuation, never inside a word; a run too long for the line still wraps. */
   word-break: keep-all; overflow-wrap: anywhere;
 }
-.home-hero-name { font-size: clamp(34px, 4.1vw, 54px); line-height: 1.1; letter-spacing: -0.035em; }
+.home-hero-name { font-size: clamp(34px, 3.7vw, 50px); line-height: 1.2; letter-spacing: -0.035em; }
 /* The Japanese title's first word alone is eleven kana: a size at which it fits the column whole. */
 .home-hero-name:lang(ja) { font-size: clamp(30px, 3.5vw, 48px); }
 .home-hero-accent {
-  justify-self: start; color: var(--stage-accent); font-size: clamp(19px, 2vw, 27px); font-weight: 750; line-height: 1.35;
-  letter-spacing: -0.02em;
+  max-width: 32em; margin: 20px 0 0; color: var(--stage-accent); font-size: clamp(18px, 1.75vw, 23px); font-weight: 650; line-height: 1.5;
+  letter-spacing: -0.02em; text-wrap: balance; word-break: keep-all; overflow-wrap: anywhere;
 }
-.home-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 38px; }
+.home-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 30px; }
 .home-cta {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px;
   border: 1px solid var(--stage-hair-2); border-radius: 12px; background: var(--stage-raised);
@@ -777,11 +764,9 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
   .home { gap: 26px; }
   .home-stage { border-radius: 18px; }
   .home-hero { gap: 24px; min-height: 0; padding: 26px 20px 104px; }
-  .home-demo-pill { margin-bottom: 18px; font-size: 12px; }
   .home .home-hero h1 { gap: 8px; }
   .home-hero-name { font-size: 34px; }
   .home-hero-accent { font-size: 19px; }
-  .home-demo-pill { flex-wrap: wrap; row-gap: 6px; }
   .home-hero-actions { gap: 10px; margin-top: 26px; }
   .home-cta { flex: 1 1 0; min-height: 46px; padding: 0 14px; font-size: 14px; }
   /* The art becomes a band of the mosaic's top rows; the calculator card stays with the tools below. */

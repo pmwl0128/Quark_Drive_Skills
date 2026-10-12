@@ -1,4 +1,6 @@
-<h1 align="center">Turn Zero Skills</h1>
+<h1 align="center">Quark Drive Skills</h1>
+
+<p align="center">クォークチャージ · Quark Drive · 夸克充能</p>
 
 <p align="center">
   <b>AIエージェントがローカルデータ、現行環境データ、厳密な計算を使って図鑑検索、対面計算、構築添削、構築作成を行えるよう支援します</b>
@@ -23,7 +25,7 @@
 
 ---
 
-Turn Zero Skills は『ポケモンチャンピオンズ』向けの4つのAgent Skillsをまとめたパッケージです。任意で利用できるブラウザ版は **Turn Zero Web** と呼び、同じリポジトリで配布しています。AIアシスタントから次の作業を行えます。
+Quark Drive Skills は『ポケモンチャンピオンズ』向けの4つのAgent Skillsをまとめたパッケージです。任意で利用できるブラウザ版は **Quark Drive Web** と呼び、同じリポジトリで配布しています。AIアシスタントから次の作業を行えます。
 
 - 対戦図鑑の確定情報を調べる
 - 現在および過去シーズンの環境分布を確認する
@@ -45,14 +47,14 @@ Turn Zero Skills は『ポケモンチャンピオンズ』向けの4つのAgent
 
 スクリプトが担当するのは事実、計算、ルールに基づく確認です。目的の解釈、候補の設計、取捨選択、最終的な説明はAIモデルが担います。この役割分担がプロジェクト全体の基本方針です。
 
-### Turn Zero Web：ブラウザで使える補助ツール
+### Quark Drive Web：ブラウザで使える補助ツール
 
 4つのスキルはAIアシスタントのCLIからすべて利用できます。データ、構成情報、生成過程をより直感的に確認できるよう、任意のコンパニオンブラウザ画面も用意されています。図鑑や環境スナップショットを視覚的に閲覧し、対面、ダメージ、素早さ、調整、構築診断を補助します。
 
 - **オンライン版：**[champion.mpan.top](https://champion.mpan.top) をインストール不要で利用できます。リソース制約のため、オンライン版の一部機能はローカル版より簡略化されています。
-- **ローカル版：**[`data-latest` Release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest) から [`Turn_Zero_Web.zip`](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/Turn_Zero_Web.zip) を取得します。ビルド済みパッケージにはPython 3.10+と同梱の実行時依存パッケージが必要です。通常の閲覧と計算にはNode.js、アカウント、モデルAPIキーは不要です。
+- **ローカル版：**[`data-latest` Release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest) から [`Quark_Drive_Web.zip`](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/Quark_Drive_Web.zip) を取得します。ビルド済みパッケージにはPython 3.10+と同梱の実行時依存パッケージが必要です。通常の閲覧と計算にはNode.js、アカウント、モデルAPIキーは不要です。
 
-この画面はスキルの前提条件ではなく、AIアシスタントとの完全なローカル協調フローを置き換えるものでもありません。機能差、依存関係、使用方法は[Turn Zero Web](#turn-zero-web)を参照してください。
+この画面はスキルの前提条件ではなく、AIアシスタントとの完全なローカル協調フローを置き換えるものでもありません。機能差、依存関係、使用方法は[Quark Drive Web](#quark-drive-web)を参照してください。
 
 > [!NOTE]
 > **対応データは『ポケモンチャンピオンズ』に限られます。**
@@ -113,7 +115,7 @@ Turn Zero Skills は『ポケモンチャンピオンズ』向けの4つのAgent
 ダブルの追い風要員は誰と組まれることが多いですか？
 ```
 
-最新の3種類の単言語ワークブック（`workbook_{zh,ja,en}.xlsx`。シングル／ダブルの全表と事実ベースの更新レポートを収録）は、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)に公開され、リリースごとに置き換えられます。スクリプトを実行せずに閲覧できます。スナップショット日付はシート冒頭で確認してください。
+最新の3種類の単言語ワークブック（`workbook_{zh,ja,en}.xlsx`。シングル／ダブルの全表と事実ベースの更新レポートを収録）は、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest)に公開され、リリースごとに置き換えられます。スクリプトを実行せずに閲覧できます。スナップショット日付はシート冒頭で確認してください。
 
 ## `ncp-damage-calculator`
 
@@ -252,7 +254,7 @@ AをBへ変更した場合の防御、S操作、環境上の穴を比較して�
 
 たとえば「メガメタグロスを軸にダブル構築を作り、一般的ないのちのたま持ちガブリアスのじしんを耐えるようにしたい」という依頼では、名称とルール適合性、現行採用率、実在構築の構造、候補比較、耐久ライン計算を組み合わせます。「現環境で主流のメガメタグロスのバレットパンチは、一般的なアローラキュウコンを確定1発にできる？」なら図鑑・環境・計算の各スキルを連携させますが、構築フローには入りません。
 
-## Turn Zero Web
+## Quark Drive Web
 
 付属フロントエンドは、4つのスキルが提供する事実と計算を、閲覧・比較・再確認しやすいワークスペースにまとめます。環境の素早い確認、ポケモンの調査、ダメージと素早さの一括比較、標準型またはカスタム型の対面確認、構築分析結果を別ページへ渡して検証する用途に向いています。中／英／日名は表示時にのみローカライズされます。ページ上部には現在のseason、rule、スナップショット日が表示されるため、環境情報はそのバージョンを基準に判断してください。
 
@@ -284,8 +286,8 @@ AをBへ変更した場合の防御、S操作、環境上の穴を比較して�
 
 ### ビルド済みローカル版を取得する
 
-[`data-latest` Release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)
-から`Turn_Zero_Web.zip`を取得します。同一リリースのSPA、projection、bridge、4つのskill、
+[`data-latest` Release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest)
+から`Quark_Drive_Web.zip`を取得します。同一リリースのSPA、projection、bridge、4つのskill、
 runtime設定、manifestが一体化されています。必要なのはPython 3.10+と固定版
 `requirements-runtime.txt`で、Node.jsは不要です。
 
@@ -294,7 +296,7 @@ runtime設定、manifestが一体化されています。必要なのはPython 3
 プロジェクトにシェルを使えるエージェントが既にいる場合（スキルの導入をエージェントに依頼した、あるいは
 このリポジトリの `AGENTS.md` / `CLAUDE.md` をプロジェクトに置いた状態）、そのまま依頼してください。
 
-> `pmwl0128/Turn_Zero_Skills` の `data-latest` リリースからビルド済みローカル版をダウンロードし、`requirements-runtime.txt` をインストールして起動してください。ローカル URL を返してください。
+> `pmwl0128/Quark_Drive_Skills` の `data-latest` リリースからビルド済みローカル版をダウンロードし、`requirements-runtime.txt` をインストールして起動してください。ローカル URL を返してください。
 
 エージェントがzip取得・展開・依存インストール・起動を代行し、一回限りの
 `http://127.0.0.1:<port>/#bootstrap=...` URLを返します。詳しい手順は `AGENTS.md` / `CLAUDE.md`
@@ -330,8 +332,8 @@ Python 3.10+と、リリース検証で使うNode.js（現在は22）を用意�
 異なるスナップショットの`dist`、projection、bridge、skillを混ぜないでください。identity検査が拒否します。
 
 ```powershell
-git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
-Set-Location .\Turn_Zero_Skills
+git clone https://github.com/pmwl0128/Quark_Drive_Skills.git
+Set-Location .\Quark_Drive_Skills
 python -m pip install -r frontend/requirements-ui.txt
 .\frontend\build-ui.ps1
 .\frontend\start-ui.ps1
@@ -356,7 +358,7 @@ Linux/macOSでは実行権限を付けた`frontend/build-ui.sh`と`frontend/star
 
 シェルを使えるエージェントへ次のように依頼します。
 
-> https://github.com/pmwl0128/Turn_Zero_Skills の4つのスキルをグローバルにインストールしてください。依存パッケージ`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
+> https://github.com/pmwl0128/Quark_Drive_Skills の4つのスキルをグローバルにインストールしてください。依存パッケージ`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
 
 これを既定の推奨方法とします。エージェントが実行環境を判定し、正しい配置先とランタイム依存を選び、コピー後の動作確認まで行えるため、ユーザーがパスやリンク方式を判断する必要がありません。
 
@@ -365,8 +367,8 @@ Linux/macOSでは実行権限を付けた`frontend/build-ui.sh`と`frontend/star
 Claude Code内で次を入力します。旧プラグインを導入済みなら、先に `/plugin uninstall pokemon-champions@pmwl` でアンインストールしてください。
 
 ```text
-/plugin marketplace add pmwl0128/Turn_Zero_Skills
-/plugin install turn-zero-skills@turn-zero
+/plugin marketplace add pmwl0128/Quark_Drive_Skills
+/plugin install quark-drive-skills@quark-drive
 ```
 
 ### 方法C：1コマンド
@@ -374,13 +376,13 @@ Claude Code内で次を入力します。旧プラグインを導入済みなら
 先に[Node.js](https://nodejs.org/)を導入し、プロジェクトディレクトリで実行します。
 
 ```bash
-npx skills add pmwl0128/Turn_Zero_Skills
+npx skills add pmwl0128/Quark_Drive_Skills
 ```
 
 全プロジェクトから使えるグローバル導入：
 
 ```bash
-npx skills add pmwl0128/Turn_Zero_Skills -g
+npx skills add pmwl0128/Quark_Drive_Skills -g
 ```
 
 インストーラーは[vercel-labs/skills](https://github.com/vercel-labs/skills)製で、対象エージェントとスコープを選択できます。現行版ではWindows上でリンク方式の導入に失敗する場合があります。その場合はコピー方式を選ぶか、手動でリンクしてください。
@@ -388,10 +390,10 @@ npx skills add pmwl0128/Turn_Zero_Skills -g
 ### 方法D：手動コピー
 
 ```bash
-git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+git clone https://github.com/pmwl0128/Quark_Drive_Skills.git
 mkdir -p ~/.claude/skills ~/.agents/skills
-cp -r Turn_Zero_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
-cp -r Turn_Zero_Skills/.agents/skills/* ~/.agents/skills/   # Codex
+cp -r Quark_Drive_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
+cp -r Quark_Drive_Skills/.agents/skills/* ~/.agents/skills/   # Codex
 ```
 
 `.agents/skills/`と`.claude/skills/`はバイト単位で同一のミラーです。使用するエージェントが認識する方を選んでください。
@@ -448,7 +450,7 @@ cd my-champions
 
 対応するAIエージェントを起動したら、エージェントへそのまま次のように依頼してください。
 
-> https://github.com/pmwl0128/Turn_Zero_Skills の4つのスキルを現在のプロジェクトへインストールし、リポジトリに同梱されている`CLAUDE.md`と`AGENTS.md`もプロジェクトディレクトリへ配置してください。`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
+> https://github.com/pmwl0128/Quark_Drive_Skills の4つのスキルを現在のプロジェクトへインストールし、リポジトリに同梱されている`CLAUDE.md`と`AGENTS.md`もプロジェクトディレクトリへ配置してください。`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
 
 上記の別の[インストール方法](#インストール)も利用できます。
 
@@ -503,11 +505,11 @@ matchup-notes.mdの負け筋を踏まえて変更し、固定した軸は残し�
 
 ## 環境ワークブック
 
-正式リリースごとに、シングル／ダブルの全スナップショットと更新レポートから3つのワークブックを再生成し、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)に公開します（ローリング方式で最新スナップショットのみ保持。gitツリーにはバイナリを含めないため、cloneは軽量なままです）。
+正式リリースごとに、シングル／ダブルの全スナップショットと更新レポートから3つのワークブックを再生成し、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest)に公開します（ローリング方式で最新スナップショットのみ保持。gitツリーにはバイナリを含めないため、cloneは軽量なままです）。
 
-- [workbook_ja.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_ja.xlsx)（日本語）
-- [workbook_zh.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_zh.xlsx)（中国語）
-- [workbook_en.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_en.xlsx)（英語）
+- [workbook_ja.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_ja.xlsx)（日本語）
+- [workbook_zh.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_zh.xlsx)（中国語）
+- [workbook_en.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_en.xlsx)（英語）
 
 各ファイルの主言語は1つです。中国語版と日本語版には照合用の正規英名列も含まれます。主なシートは次のとおりです。
 
@@ -520,9 +522,9 @@ matchup-notes.mdの負け筋を踏まえて変更し、固定した軸は残し�
 
 順位トレンドの折れ線グラフ `trend_{single,double}_{zh,ja,en}.png`（シングル／ダブル × 3言語）も同じリリースで公開します。直近最大10期（1期＝1回のデータ更新）をローリングで表示し、いずれかの期で上位30位に入ったポケモンは全期間追跡し、60位以内に入った大きな変動も収録します。縦軸は1〜30位を等間隔、30位以降を圧縮表示し、上昇／下降／安定を色分けして線の両端にポケモン名を表示します。
 
-![シングル順位トレンド](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_single_ja.png)
+![シングル順位トレンド](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/trend_single_ja.png)
 
-![ダブル順位トレンド](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_double_ja.png)
+![ダブル順位トレンド](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/trend_double_ja.png)
 
 ## データ鮮度と機能上の限界
 

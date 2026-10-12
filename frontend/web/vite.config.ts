@@ -11,6 +11,17 @@ import { defineConfig, type Connect, type Plugin } from "vite";
 // serve them (build/Rollup reads them regardless). Repo root = two dirs up from this config.
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
+/** Conventional bookmark-icon fallback; the HTML still names content-hashed icon assets. */
+function bookmarkIcon(): Plugin {
+  return {
+    name: "quark-drive-bookmark-icon",
+    generateBundle() {
+      this.emitFile({ type: "asset", fileName: "favicon.ico",
+        source: readFileSync(join(REPO_ROOT, "frontend/assets/brand/favicon.ico")) });
+    },
+  };
+}
+
 // Fingerprint the vendored calc engine THIS build embeds into the worker chunk, and inline it as a
 // build-time constant (__ENGINE_DIGEST__). At boot the online runtime compares it against the
 // projection's manifest.calcEngineDigest, so a projection rebuilt on a newer engine than the SPA
@@ -108,7 +119,7 @@ export default defineConfig({
   // Projection and runtime config are deployment artifacts mounted by pcui, not public assets.
   // Disabling Vite's public-dir copy keeps dist byte-identical across local and online runtimes.
   publicDir: false,
-  plugins: [localRuntimeConfig(), react()],
+  plugins: [localRuntimeConfig(), bookmarkIcon(), react()],
   define: { __ENGINE_DIGEST__: JSON.stringify(calcEngineDigest()) },
   server: {
     fs: { allow: [REPO_ROOT] },

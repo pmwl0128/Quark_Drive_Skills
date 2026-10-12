@@ -1,4 +1,4 @@
-# Turn Zero Web - 设计摘要
+# Quark Drive Web - 设计摘要
 
 本文只记录 Web 跨前后端的长期设计边界。字段、命令、部署步骤、性能数字和变更过程分别以协议 schema、代码、`dev/**/README.md`、benchmark receipt 与 Git 历史为准。章节编号保留为稳定引用锚点。
 
@@ -45,13 +45,13 @@ capability 注入能力（预留名 `mobile.teamcode`、`mobile.capture`、`mobi
 
 ### §2.2 视觉与动效规范
 
-产品品牌命名遵循根目录 [AGENTS.md](../AGENTS.md#核心约定)。Web 前端在顶栏署名 Turn Zero Web，标志为 `frontend/assets/brand/logo.svg`（站点图标与分享卡水印共用）。
+产品品牌命名遵循根目录 [AGENTS.md](../AGENTS.md#核心约定)。顶栏、页脚与分享卡统一署名 Quark Drive，首页主标题按语言使用夸克充能／Quark Drive／クォークチャージ；中文标题为「夸克充能 · 宝可梦冠军Skills」。标志为 `frontend/assets/brand/logo.png`（站点图标与分享卡水印共用），以驱劲能量的橙黑能量容器与紫蓝核心为参考重新绘制，浏览器与主屏图标使用同源尺寸导出。HTML 中的图标使用 release-scoped URL；常规 `/favicon.ico` 入口跟随 current 并禁止缓存，以便浏览器更新收藏栏图标。
 
 在线与本地运行时共享视觉 token 和组件语言。属性色表达宝可梦属性、倍率和等级等数据语义；配置编辑器与配置悬停卡的头部允许用当前宝可梦的双属性色渐变作为身份背景，并保证明暗主题下文字对比度。配置编号、错误和操作状态使用各自的语义 token，不能混为属性或强弱评分。实心操作按钮（主按钮及悬停后填满的同类按钮）统一读 `--action` token：浅色为品牌蓝，深色为深一档的实心蓝配普通暗投影，不用品牌色光晕。配置来源只公开第一层（真实队配置 / Meta 回填 / 自定义 / 估算），由同一组件映射线上来源值并统一着色与说明，页面不各自解释；样本量、置信度和具体来源属于更深层，逐项评估必要性后才进入公开 DTO。动效只提示层级与状态，避免布局动画和持续动画；`prefers-reduced-motion` 必须关闭非必要动画。焦点、选中和错误不能只靠颜色或动画表达。
 
 顶栏主题入口按日间、夜间、自动排列，外框与环境和语言控件等高。自动是未设置偏好时的默认值，实时跟随
 系统配色；已有明确日／夜偏好保留。系统变更只更新 CSS 主题，不触发计算重算。全站页底随语言切换，保留
-品牌行（标志与 Turn Zero Web）、完整权属与非官方声明和作者／社群联系方式，不重复介绍页面功能；QQ 二维码使用裁去分享卡装饰、保留编码
+品牌行（标志与 Quark Drive Web）、完整权属与非官方声明和作者／社群联系方式，不重复介绍页面功能；QQ 二维码使用裁去分享卡装饰、保留编码
 主体与必要留白的本站静态资源，链接和复制群号是独立备选入口。
 
 ### §2.3 浏览器本地资料层
@@ -486,7 +486,7 @@ NCP 可由进程内 quickjs-ng、常驻 Node 或 Node one-shot 承载。无 Node
 
 ## §12 图片资产
 
-位图 pack 使用内容寻址文件和 manifest；原创图标、placeholder 与品牌 SVG 随 UI bundle。完整 manifest
+位图 pack 使用内容寻址文件和 manifest；原创图标、placeholder 与品牌 PNG 随 UI bundle。完整 manifest
 是哈希、尺寸与 provenance 的审计权威；projection 从中机械生成只含 key/match/path 的 `runtime.json`，
 浏览器 resolver 只读取该紧凑索引，以 dex canonical slug 为主键，不另造图片身份或路径规则。
 

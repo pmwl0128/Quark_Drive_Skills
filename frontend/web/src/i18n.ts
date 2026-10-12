@@ -5,6 +5,7 @@ import { createContext, useContext, useCallback } from "react";
 export type Lang = "zh" | "en" | "ja";
 
 const STRINGS = {
+  "brand.name": { zh: "夸克充能", en: "Quark Drive", ja: "クォークチャージ" },
   "nav.ranking": { zh: "环境", en: "Usage", ja: "環境" },
   "nav.dex": { zh: "图鉴", en: "Dex", ja: "図鑑" },
   "nav.trend": { zh: "趋势图", en: "Trend chart", ja: "推移グラフ" },
@@ -28,9 +29,9 @@ const STRINGS = {
   "footer.qqCopied": { zh: "已复制群号 857634818", en: "Copied QQ group ID 857634818", ja: "グループ番号857634818をコピーしました" },
   "footer.copyFailed": { zh: "复制失败，请手动复制群号。", en: "Could not copy. Please copy the group ID manually.", ja: "コピーできませんでした。グループ番号を手動でコピーしてください。" },
   "footer.disclaimer": {
-    zh: "Pokémon 及所有相关名称、角色、图像和内容的商标及其他知识产权归 Nintendo、Creatures Inc.、GAME FREAK inc.、The Pokémon Company 及相应权利方所有。Turn Zero 是基于可获取的游戏数据构建、可免费使用的非官方爱好者项目，与上述权利方没有关联，亦未获其认可或赞助。所有游戏内容均归其权利方所有。",
-    en: "Pokémon and all related names, characters, imagery, and content are trademarks or other intellectual property of Nintendo, Creatures Inc., GAME FREAK inc., The Pokémon Company, and their respective owners. Turn Zero is an unofficial, fan-made tool, not affiliated with, endorsed, or sponsored by any of them, and is a free-to-use project built on available game data. All game content belongs to its owners.",
-    ja: "Pokémon および関連するすべての名称・キャラクター・画像・コンテンツの商標およびその他の知的財産権は、Nintendo、Creatures Inc.、GAME FREAK inc.、The Pokémon Company および各権利者に帰属します。Turn Zero は入手可能なゲームデータをもとに制作された、無料で利用できる非公式のファンプロジェクトです。これらの権利者とは関係がなく、公認や後援も受けていません。ゲームに関するすべてのコンテンツは各権利者に帰属します。" },
+    zh: "Pokémon 及所有相关名称、角色、图像和内容的商标及其他知识产权归 Nintendo、Creatures Inc.、GAME FREAK inc.、The Pokémon Company 及相应权利方所有。Quark Drive 是基于可获取的游戏数据构建、可免费使用的非官方爱好者项目，与上述权利方没有关联，亦未获其认可或赞助。所有游戏内容均归其权利方所有。",
+    en: "Pokémon and all related names, characters, imagery, and content are trademarks or other intellectual property of Nintendo, Creatures Inc., GAME FREAK inc., The Pokémon Company, and their respective owners. Quark Drive is an unofficial, fan-made tool, not affiliated with, endorsed, or sponsored by any of them, and is a free-to-use project built on available game data. All game content belongs to its owners.",
+    ja: "Pokémon および関連するすべての名称・キャラクター・画像・コンテンツの商標およびその他の知的財産権は、Nintendo、Creatures Inc.、GAME FREAK inc.、The Pokémon Company および各権利者に帰属します。Quark Drive は入手可能なゲームデータをもとに制作された、無料で利用できる非公式のファンプロジェクトです。これらの権利者とは関係がなく、公認や後援も受けていません。ゲームに関するすべてのコンテンツは各権利者に帰属します。" },
   "library.filled": { zh: "已完成：{label}", en: "Done: {label}", ja: "完了：{label}" },
   "library.kept": { zh: "已存入「{box}」：{name}", en: "Kept in “{box}”: {name}", ja: "「{box}」に保存しました：{name}" },
   "library.full": { zh: "箱子都满了", en: "Every box is full", ja: "ボックスがすべていっぱいです" },
@@ -94,10 +95,9 @@ const STRINGS = {
     ja: "このアドレスは存在しないか、現在の構成では機能が有効になっていません。" },
   "route.home": { zh: "返回首页", en: "Back to home", ja: "トップへ戻る" },
   // --- home (pages/HomePage.tsx): rendered by the boot shell, so it stays in this table ---
-  "nav.home": { zh: "Turn Zero 首页", en: "Turn Zero home", ja: "Turn Zero ホーム" },
-  "home.title": { zh: "从第零回合开始", en: "Start at Turn Zero", ja: "0ターン目から" },
-  "home.title.accent": { zh: "实战数据驱动，AI\u00a0协同决策的\u200b宝可梦对战工具引擎", en: "A Pokémon battle toolkit powered by real-team data and AI-assisted decision-making", ja: "実戦データとAIの判断支援を組み合わせた、ポケモン対戦ツールエンジン" },
-  "home.demo.pill": { zh: "Turn Zero Skills", en: "Turn Zero Skills", ja: "Turn Zero Skills" },
+  "nav.home": { zh: "夸克充能首页", en: "Quark Drive home", ja: "クォークチャージ ホーム" },
+  "home.title": { zh: "夸克充能 · 宝可梦冠军Skills", en: "Quark Drive · Pokémon Champions Skills", ja: "クォークチャージ · ポケモンチャンピオンズSkills" },
+  "home.title.accent": { zh: "实战数据驱动，AI\u00a0协同决策的对战引擎", en: "A battle engine powered by real-team data and AI-assisted decision-making", ja: "実戦データとAIの判断支援を組み合わせた、対戦エンジン" },
   "home.cta.install": { zh: "本地安装", en: "Install locally", ja: "ローカルに導入" },
   "home.lab.title": { zh: "对战计算", en: "Battle calculations", ja: "対戦の計算ツール" },
   "home.lab.matrix.title": { zh: "环境对位", en: "Metagame matchups", ja: "環境との相性" },
@@ -123,7 +123,7 @@ const STRINGS = {
   "home.install.tab.agent": { zh: "让 AI 安装", en: "Ask your AI assistant", ja: "AIにインストールを依頼" },
   "home.install.tab.plugin": { zh: "Claude 插件", en: "Claude plugin", ja: "Claudeプラグイン" },
   "home.install.tab.cli": { zh: "命令行", en: "Command line", ja: "コマンドライン" },
-  "home.install.agentPrompt": { zh: "全局安装 https://github.com/pmwl0128/Turn_Zero_Skills 中的四个 Skill，并安装依赖 quickjs-ng>=0.15。如果无法安装该依赖，请确认 Node.js 回退可用。最后确认四个 SKILL.md 均能被 AI 助手发现，并实际运行一次伤害计算 Skill 的 schema 命令。", en: "Install all four skills from https://github.com/pmwl0128/Turn_Zero_Skills globally, along with quickjs-ng>=0.15. If that dependency cannot be installed, verify the Node.js fallback. Then confirm that the AI assistant can discover all four SKILL.md files and run the damage calculator skill’s schema command.", ja: "https://github.com/pmwl0128/Turn_Zero_Skills の4つのスキルと、依存パッケージ quickjs-ng>=0.15 をグローバルにインストールしてください。依存パッケージを導入できない場合は、Node.jsで代わりに実行できることを確認してください。最後に、AIアシスタントが4つの SKILL.md を認識できることを確認し、ダメージ計算スキルの schema コマンドを実行してください。" },
+  "home.install.agentPrompt": { zh: "全局安装 https://github.com/pmwl0128/Quark_Drive_Skills 中的四个 Skill，并安装依赖 quickjs-ng>=0.15。如果无法安装该依赖，请确认 Node.js 回退可用。最后确认四个 SKILL.md 均能被 AI 助手发现，并实际运行一次伤害计算 Skill 的 schema 命令。", en: "Install all four skills from https://github.com/pmwl0128/Quark_Drive_Skills globally, along with quickjs-ng>=0.15. If that dependency cannot be installed, verify the Node.js fallback. Then confirm that the AI assistant can discover all four SKILL.md files and run the damage calculator skill’s schema command.", ja: "https://github.com/pmwl0128/Quark_Drive_Skills の4つのスキルと、依存パッケージ quickjs-ng>=0.15 をグローバルにインストールしてください。依存パッケージを導入できない場合は、Node.jsで代わりに実行できることを確認してください。最後に、AIアシスタントが4つの SKILL.md を認識できることを確認し、ダメージ計算スキルの schema コマンドを実行してください。" },
   "home.install.hint.agent": { zh: "复制给能执行命令的 AI 助手即可。", en: "Paste this into an AI assistant with shell access.", ja: "コマンドを実行できるAIに貼り付けてください。" },
   "home.install.hint.plugin": { zh: "在 Claude Code 中依次输入。", en: "Enter these in Claude Code, in order.", ja: "Claude Codeで順に入力してください。" },
   "home.install.hint.cli": { zh: "需要 Node.js；去掉 -g 可只安装到当前项目。", en: "Requires Node.js. Omit -g to install in this project only.", ja: "Node.jsが必要です。-gを外すと現在のプロジェクトだけに導入します。" },

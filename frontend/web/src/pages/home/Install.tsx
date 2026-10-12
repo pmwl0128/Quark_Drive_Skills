@@ -4,15 +4,15 @@
 import { useEffect, useState } from "react";
 import { IconBrandGithub, IconCheck, IconCopy, IconDownload } from "@tabler/icons-react";
 import { useT, type MsgKey } from "../../i18n.ts";
-import { MIRROR_URL, REPO_URL } from "./Hero.tsx";
+import { MIRROR_URL, REPO_URL } from "./links.ts";
 import { SegmentedControl, segmentedPanelId, segmentedTabId } from "../../components/SegmentedControl.tsx";
 
 type Way = "cli" | "plugin" | "agent";
 const WAYS: Way[] = ["cli", "plugin", "agent"];
 
 const COMMANDS: Record<Exclude<Way, "agent">, string> = {
-  plugin: "/plugin marketplace add pmwl0128/Turn_Zero_Skills\n/plugin install pokemon-champions@pmwl",
-  cli: "npx skills add pmwl0128/Turn_Zero_Skills -g",
+  plugin: "/plugin marketplace add pmwl0128/Quark_Drive_Skills\n/plugin install quark-drive-skills@quark-drive",
+  cli: "npx skills add pmwl0128/Quark_Drive_Skills -g",
 };
 
 const ROWS: Array<[MsgKey, MsgKey]> = [

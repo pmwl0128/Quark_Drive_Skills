@@ -153,7 +153,7 @@ function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: 
         <SearchEntry />
         <Link className="logo" to="/" aria-label={t("nav.home")}>
           <img src={BRAND_LOGO} alt="" aria-hidden />
-          <span className="logo-text">Turn Zero<span className="logo-sub">Web</span></span>
+          <span className="logo-text">Quark Drive<span className="logo-sub">Web</span></span>
         </Link>
         <nav aria-label={t("a11y.primaryNav")}>
           <NavItem to="/ranking" label={t("nav.ranking")} preload={loadRankingPage} />
@@ -239,9 +239,9 @@ export function App() {
   useEffect(() => {
     document.documentElement.lang = { zh: "zh-CN", en: "en", ja: "ja" }[lang];
     document.title = {
-      zh: "Turn Zero Web · 宝可梦冠军对战工具",
-      en: "Turn Zero Web · Pokémon Champions battle tools",
-      ja: "Turn Zero Web · ポケモンチャンピオンズ対戦ツール",
+      zh: "夸克充能 · 宝可梦冠军Skills · Quark Drive Web",
+      en: "Quark Drive Web · Pokémon Champions battle tools",
+      ja: "クォークチャージ Web · ポケモンチャンピオンズ対戦ツール",
     }[lang];
   }, [lang]);
   const setLang = (l: Lang) => {

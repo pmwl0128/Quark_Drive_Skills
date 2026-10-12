@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:pokemon-champions:protocol:0.1.0",
-  "title": "Turn Zero Web Protocol",
+  "title": "Quark Drive Web Protocol",
   "description": "Generated from @pokemon-champions/protocol Zod schemas; do not edit by hand.",
   "x-schema-count": 105,
   "x-export-fingerprint": "44636f55f4e519031d17cd00bca76c8ca226fa9050aca473d20d6c3f69fcb403",

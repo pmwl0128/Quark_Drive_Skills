@@ -1,14 +1,14 @@
 {
-  "name": "turn-zero-skills",
-  "description": "Turn Zero Skills: four Pokémon Champions skills for dex and metagame facts, exact damage and Speed calculations, and audited Singles/Doubles team building.",
+  "name": "quark-drive-skills",
+  "description": "Quark Drive Skills: four Pokémon Champions skills for dex and metagame facts, exact damage and Speed calculations, and audited Singles/Doubles team building.",
   "author": {
     "name": "pmwl",
     "email": "pmwl@outlook.com"
   },
-  "homepage": "https://github.com/pmwl0128/Turn_Zero_Skills",
+  "homepage": "https://github.com/pmwl0128/Quark_Drive_Skills",
   "license": "MIT",
   "keywords": [
-    "turn-zero",
+    "quark-drive",
     "pokemon",
     "pokemon-champions",
     "team-building",

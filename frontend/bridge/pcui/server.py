@@ -77,6 +77,10 @@ class _SpaStaticFiles(StaticFiles):
         asset_path = path.lstrip("./\\")
         if asset_path == "assets" or asset_path.startswith(("assets/", "assets\\")):
             return await super().get_response(path, scope)
+        if asset_path == "favicon.ico":
+            response = await super().get_response(path, scope)
+            response.headers["Cache-Control"] = "no-store"
+            return response
         served_index = False
         try:
             response = await super().get_response(path, scope)

@@ -112,7 +112,7 @@ export function UsageCard(props: UsageCardProps) {
                 sideFoot={
                   <span className="mc-brand">
                       <img src={BRAND_LOGO} alt="" />
-                      <span>Turn Zero{host ? ` · ${host}` : ""}</span>
+                      <span>Quark Drive{host ? ` · ${host}` : ""}</span>
                       {onShare && (
                         <button type="button" className="mc-share-btn" onClick={onShare}>
                           <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5v7.5M3.8 6 7 9.2 10.2 6M2 11.5h10" /></svg>

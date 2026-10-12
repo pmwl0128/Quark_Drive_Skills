@@ -43,7 +43,7 @@ export function categoryIconUrl(category: string): string | undefined {
 import pokemonPlaceholder from "../../../assets/placeholders/pokemon.svg?url";
 import itemPlaceholder from "../../../assets/placeholders/item.svg?url";
 import genericPlaceholder from "../../../assets/placeholders/generic.svg?url";
-import brandLogo from "../../../assets/brand/logo.svg?url";
+import brandLogo from "../../../assets/brand/logo.png?url";
 
 export const PLACEHOLDERS = {
   pokemon: pokemonPlaceholder,

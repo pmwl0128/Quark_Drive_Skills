@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Optional project-level instructions for Claude Code using Turn Zero Skills for Pokémon Champions in this
+Optional project-level instructions for Claude Code using Quark Drive Skills for Pokémon Champions in this
 distribution. The skills auto-trigger without this file; keep these rules when copying or adapting it.
 
 ## Language And Names
@@ -92,7 +92,7 @@ handing the user a command list.
 
 Recommended path — the prebuilt bundle (no Node.js needed):
 
-1. Fetch `Turn_Zero_Web.zip` from the [`data-latest` release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest).
+1. Fetch `Quark_Drive_Web.zip` from the [`data-latest` release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest).
 2. Extract it into the project directory (or a sibling folder the user designates). Verify the extracted folder contains `dist/`, `projection/`, `bridge/`, `skills/`, `requirements-runtime.txt`, and a platform start script.
 3. Install the locked runtime deps with `python -m pip install -r requirements-runtime.txt` (Python 3.10+; no Node.js).
 4. Launch the platform start script — `start-local.ps1` on Windows, `start-local.sh` on Linux/macOS (mark it executable first). Do not pass `--port`; read `~/.pokemon-champions/pc.env` for `PCUI_LOCAL_PORT` if the user has set one.

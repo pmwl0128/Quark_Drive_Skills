@@ -55,7 +55,7 @@ export function SiteFooter() {
         <div className="site-footer-main">
           <div className="footer-brand">
             <img src={BRAND_LOGO} alt="" aria-hidden="true" />
-            <span className="footer-brand-name">Turn Zero<span>Web</span></span>
+            <span className="footer-brand-name">Quark Drive<span>Web</span></span>
             <span className="footer-copyright">© {new Date().getFullYear()} pmwl</span>
           </div>
           <nav className="footer-community" aria-label={t("footer.community")}>
