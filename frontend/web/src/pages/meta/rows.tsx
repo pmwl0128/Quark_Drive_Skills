@@ -9,7 +9,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { Async } from "../../hooks.ts";
 import { EntityHover, type EntityKind } from "../../components/EntityHover.tsx";
 import { RankMiniTrend, UsageMiniTrend } from "../../components/UsageMiniTrend.tsx";
-import { useT } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 import { spreadKey } from "../../lib/spread.ts";
 import type { UsageDelta } from "../../lib/usageDelta.ts";
 
@@ -64,7 +64,7 @@ export function pctText(value: number | null) {
 }
 
 export function DeltaCell({ delta, baseline }: { delta: UsageDelta; baseline?: string }) {
-  const t = useT();
+  const t = useMetaT();
   if (delta.kind === "none") return <span className="mc-dl" />;
   if (delta.kind === "new") {
     return <span className="mc-dl new" title={t("mc.newTitle")}>{t("mc.new")}</span>;

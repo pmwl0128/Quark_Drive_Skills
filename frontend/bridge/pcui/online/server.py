@@ -96,6 +96,7 @@ async def gzip_ndjson(lines):
 
 def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, *,
                       thinking_provider: LlmProvider | None = None,
+                      qa_provider: LlmProvider | None = None,
                       dist_dir: Path | None = None,
                       projection_dir: Path | None = None,
                       deployment_id: str | None = None,
@@ -110,6 +111,7 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
                       unmetered: bool = False,
                       jobs: JobStore | None = None) -> FastAPI:
     app = FastAPI(title="pcui online", docs_url=None, redoc_url=None, openapi_url=None)
+    question_provider = qa_provider if qa_provider is not None else provider
     # Thread lanes. §7.5 says model work and CPU work must not exhaust each other, and the
     # semaphores below implement that — but every blocking call still went through
     # `asyncio.to_thread`, i.e. asyncio's implicit default executor, whose size is
@@ -406,10 +408,11 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
             advertised.append("team.validate")
         if "team.tune" not in advertised:
             advertised.append("team.tune")
-        if provider is not None:
+        if question_provider is not None:
             for capability in ("llm.qa",):
                 if capability not in advertised:
                     advertised.append(capability)
+        if provider is not None:
             if jobs is not None and "llm.builder" not in advertised:
                 advertised.append("llm.builder")
         return {**doc, "capabilities": advertised}
@@ -454,7 +457,7 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
         if len(question) > qa.QA_QUESTION_MAX_CHARS:
             raise HTTPException(400, _err("bad_input",
                                           f"question over {qa.QA_QUESTION_MAX_CHARS} chars"))
-        if provider is None:
+        if question_provider is None:
             raise HTTPException(503, _err("llm_unavailable", "no LLM provider configured"))
 
         # device id was minted + set as a cookie by the gate middleware (on every /api/qa
@@ -512,7 +515,7 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
             fail_cleanup()
             raise HTTPException(429, _err("busy", "too many concurrent questions — retry"))
         try:
-            result = await _in(llm_pool, qa.answer, pool, provider, question, lang)
+            result = await _in(llm_pool, qa.answer, pool, question_provider, question, lang)
         except LlmUnavailable as e:
             fail_cleanup(getattr(e, "tokens", 0))   # earlier rounds' spend settles truthfully
             raise HTTPException(503, _err("llm_unavailable", str(e)))
@@ -922,6 +925,9 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
         quota_day: str | None = None
         budget_day: str | None = None
         tester_reservation: TesterReservation | None = None
+        # The day's model budget is spent: the visitor still gets the deterministic front half
+        # (frame + grounding) as a preview, counted as one ordinary build (roadmap §1.8).
+        preview_only = False
         if bypass_limits:
             used, limit = 0, 0
             try:
@@ -939,13 +945,16 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
             try:
                 budget_day = limits.reserve_budget(pess)
             except BudgetExhausted:
-                limits.refund(ids, quota_day, cost=cost)
-                raise HTTPException(503, _err("budget_exhausted",
-                                              "daily model budget exhausted — try tomorrow"))
+                preview_only = True
+                if cost > 1:
+                    limits.refund(ids, quota_day, cost=cost - 1)
+                    used, cost = used - (cost - 1), 1
 
         def fail_cleanup(tokens: int = 0) -> None:
             if bypass_limits:
                 _settle_authorized(tester_reservation, tokens)
+            elif preview_only:
+                limits.refund(ids, quota_day, cost=cost)
             else:
                 limits.settle_budget(tokens, budget_day, pess)
                 limits.refund(ids, quota_day, cost=cost)
@@ -963,6 +972,23 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
                 def progress(gate: str, status: str, detail: dict | None = None,
                              raw: dict | None = None) -> None:
                     jobs.set_gate(job_id, gate, status, detail, raw)
+                if preview_only:
+                    try:
+                        preview = await _in(builder_pool, builder.preview, pool, form, progress)
+                    except builder.BuilderFailed as e:
+                        fail_cleanup()
+                        jobs.fail(job_id, e.code)
+                    except asyncio.CancelledError:
+                        fail_cleanup()
+                        jobs.fail(job_id, "internal")
+                        raise
+                    except Exception:
+                        traceback.print_exc()
+                        fail_cleanup()
+                        jobs.fail(job_id, "internal")
+                    else:
+                        jobs.finish_preview(job_id, preview)
+                    return
                 try:
                     result = await _in(
                         builder_pool, builder.build, pool, selected_provider, form, progress)
@@ -1014,7 +1040,8 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
         task.add_done_callback(builder_tasks.discard)
         snap = jobs.snapshot(job_id) or {"queuePosition": 0}
         return {"jobId": job_id, "queuePosition": snap["queuePosition"],
-                "quota": {"used": used, "limit": limit}}
+                "quota": {"used": used, "limit": limit},
+                "mode": "preview" if preview_only else "build"}
 
     @app.get("/api/builder/jobs/{job_id}")
     async def builder_job(job_id: str):

@@ -1,6 +1,6 @@
 import { EscapeLayers } from "./components/EscapeLayers.tsx";
 import { Component, Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { BRAND_LOGO } from "./assets/icons.ts";
 import { PageRailProvider, SearchEntry, useSiteSearch } from "./components/SideRail.tsx";
 import { LibraryDockButton } from "./components/LibraryDockButton.tsx";
@@ -9,13 +9,14 @@ import { ThemeToggle } from "./components/ThemeToggle.tsx";
 import { useThemePreference, type ThemePreference } from "./lib/theme.ts";
 import { LibraryWorkspaceProvider, useLibraryWorkspace } from "./lib/library/workspace.tsx";
 import { LangContext, detectLang, saveLang, useLang, useT, type Lang } from "./i18n.ts";
-import { RankingPage } from "./pages/RankingPage.tsx";
+import { HomePage } from "./pages/HomePage.tsx";
 import { RuntimeProvider, useRuntime } from "./runtime/context.tsx";
 import { ToastProvider } from "./components/Toast.tsx";
 
-// Keep the ranking route in the entry chunk and split every secondary surface. Navigation intent
+// Keep the home launchpad in the entry chunk and split every other surface. Navigation intent
 // preloads the relevant module, so desktop hover/keyboard focus hides the network boundary while a
 // direct URL still downloads only the page it needs.
+const loadRankingPage = () => import("./pages/RankingPage.tsx");
 const loadDexPage = () => import("./pages/DexPage.tsx");
 const loadPokemonPage = () => import("./pages/PokemonPage.tsx");
 const loadMetaPage = () => import("./pages/MetaPage.tsx");
@@ -26,6 +27,7 @@ const loadTeamsPage = () => import("./pages/TeamsPage.tsx");
 const loadUepPages = () => import("./pages/uep/index.ts");
 const loadLibraryDock = () => import("./components/library/LibraryDock.tsx");
 
+const RankingPage = lazy(() => loadRankingPage().then((m) => ({ default: m.RankingPage })));
 const DexPage = lazy(() => loadDexPage().then((m) => ({ default: m.DexPage })));
 const PokemonPage = lazy(() => loadPokemonPage().then((m) => ({ default: m.PokemonPage })));
 const MetaPage = lazy(() => loadMetaPage().then((m) => ({ default: m.MetaPage })));
@@ -149,12 +151,12 @@ function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: 
       <header ref={topbar} className="topbar">
         {/* First in the bar, on every page: the site search (components/SideRail.tsx). */}
         <SearchEntry />
-        <span className="logo">
+        <Link className="logo" to="/" aria-label={t("nav.home")}>
           <img src={BRAND_LOGO} alt="" aria-hidden />
-          <span className="logo-text">Champions</span>
-        </span>
+          <span className="logo-text">Turn Zero<span className="logo-sub">Web</span></span>
+        </Link>
         <nav aria-label={t("a11y.primaryNav")}>
-          <NavItem to="/" end label={t("nav.ranking")} />
+          <NavItem to="/ranking" label={t("nav.ranking")} preload={loadRankingPage} />
           <NavItem to="/dex" label={t("nav.dex")} preload={loadDexPage} />
           {can("calc.damage") && (
             <NavItem to="/calc" label={t("nav.calc")} preload={loadCalcPage} />
@@ -190,11 +192,12 @@ function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: 
       <main id="main-content" className="content" tabIndex={-1}>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
-          <Route path="/" element={<RankingPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/ranking" element={<RankingPage />} />
           <Route path="/dex" element={<DexPage />} />
           <Route path="/pokemon/:slug" element={<PokemonPage />} />
           <Route path="/meta/:slug" element={<MetaPage />} />
-          <Route path="/trend" element={<Navigate to="/?view=trend" replace />} />
+          <Route path="/trend" element={<Navigate to="/ranking?view=trend" replace />} />
           <Route path="/matchup" element={<MatchupPage />} />
           <Route path="/calc" element={<CalcPage />} />
           <Route path="/teams" element={<TeamsPage />} />
@@ -236,9 +239,9 @@ export function App() {
   useEffect(() => {
     document.documentElement.lang = { zh: "zh-CN", en: "en", ja: "ja" }[lang];
     document.title = {
-      zh: "宝可梦冠军队伍助手",
-      en: "Pokémon Champions Team Assistant",
-      ja: "Pokémon Champions 構築アシスタント",
+      zh: "Turn Zero Web · 宝可梦冠军对战工具",
+      en: "Turn Zero Web · Pokémon Champions battle tools",
+      ja: "Turn Zero Web · ポケモンチャンピオンズ対戦ツール",
     }[lang];
   }, [lang]);
   const setLang = (l: Lang) => {

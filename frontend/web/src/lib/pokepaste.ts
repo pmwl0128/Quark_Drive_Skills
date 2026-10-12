@@ -71,7 +71,7 @@ function parseSpread(raw: string): Partial<Record<StatKey, number>> {
  * parenthesis are ambiguous on their own — a single `(X)` is a species only when a nickname could
  * not be there, so resolve it the way Showdown does: `(M)`/`(F)` is always gender, anything else in
  * the LAST parenthesis group is the species. */
-function parseHeader(line: string): { species: string; nickname?: string; item?: string } {
+export function parseHeader(line: string): { species: string; nickname?: string; item?: string } {
   const at = line.lastIndexOf("@");
   const item = at === -1 ? undefined : line.slice(at + 1).trim() || undefined;
   let head = (at === -1 ? line : line.slice(0, at)).trim();

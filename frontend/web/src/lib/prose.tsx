@@ -12,7 +12,8 @@ import { EntityHover } from "../components/EntityHover.tsx";
 import { GameImage } from "../components/GameImage.tsx";
 import { TypeBadge } from "../components/TypeBadge.tsx";
 import { useAbilities, useDexIndex, useItems, useMoves, useNatures } from "../hooks.ts";
-import { displayName, optionalKey, useLang, useT, type Lang } from "../i18n.ts";
+import { displayName, useLang, type Lang } from "../i18n.ts";
+import { useSharedT, optionalSharedKey } from "../components/messages.ts";
 import type { DexIndexEntry } from "../runtime/adapter.ts";
 import type { AbilityRef, ItemRef, MoveRef } from "../runtime/projection.ts";
 import type { NatureDto } from "@pokemon-champions/protocol";
@@ -113,7 +114,7 @@ function buildVocab(dex: DexIndexEntry[], moveList: MoveRef[], itemList: ItemRef
  * member's build instead of its dex entry. Returning null keeps the dex hover. */
 export type ProseMonRenderer = (name: string, label: ReactNode, key: number) => ReactNode | null;
 
-function renderToken(vocab: Vocab, token: string, lang: Lang, t: ReturnType<typeof useT>,
+function renderToken(vocab: Vocab, token: string, lang: Lang, t: ReturnType<typeof useSharedT>,
                      key: number, renderMon?: ProseMonRenderer): ReactNode {
   const mon = vocab.mons.get(token);
   if (mon) {
@@ -161,14 +162,14 @@ function renderToken(vocab: Vocab, token: string, lang: Lang, t: ReturnType<type
   const nature = vocab.natures.get(token);
   if (nature) return <span key={key} title={nature.name}>{displayName(nature, lang)}</span>;
   if (vocab.types.has(token)) {
-    const k = optionalKey(`type.${token}`);
+    const k = optionalSharedKey(`type.${token}`);
     return (
       <span key={key} className="prose-type" title={token}>
         <TypeBadge type={token} iconOnly />{k ? t(k) : token}
       </span>
     );
   }
-  const k = optionalKey(`term.${token}`);
+  const k = optionalSharedKey(`term.${token}`);
   return k ? <span key={key} title={token}>{t(k)}</span> : token;
 }
 
@@ -196,7 +197,7 @@ function shouldRenderEntity(vocab: Vocab, token: string, text: string, at: numbe
 /** Render agent prose with inline entities. Returns nodes — use inside a <li>/<p>/<span>. */
 export function useProseRenderer(renderMon?: ProseMonRenderer): (text: string) => ReactNode {
   const { lang } = useLang();
-  const t = useT();
+  const t = useSharedT();
   const dexState = useDexIndex();
   const movesState = useMoves();
   const itemsState = useItems();

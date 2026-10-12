@@ -7,7 +7,8 @@
 import type { DamageResultDto, LearnsetDto } from "@pokemon-champions/protocol";
 import { useId, useState, type ReactNode } from "react";
 import { TypeBadge } from "../../../components/TypeBadge.tsx";
-import { useLang, useT } from "../../../i18n.ts";
+import { useLang } from "../../../i18n.ts";
+import { useCalcT } from "../messages.ts";
 import { useDamageText } from "../../../lib/damageText.tsx";
 import { koLabel, koTone } from "../../../lib/ko.ts";
 import type { MetaUsage } from "../../../lib/metaUsage.ts";
@@ -94,7 +95,7 @@ function HpBar({ name, maxHP, remaining, band }: {
   /** Where the opposing hit can leave this mon across its whole roll range, in HP. */
   band: { lo: number; hi: number } | null;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const share = (hp: number) => (maxHP > 0 ? Math.max(0, Math.min(100, (hp / maxHP) * 100)) : 0);
   const pct = share(remaining);
   const tone = pct > 50 ? "ok" : pct > 20 ? "warn" : pct > 0 ? "low" : "out";
@@ -151,7 +152,7 @@ export function ResultCard({
   notes: string[];
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useCalcT();
   const damageText = useDamageText();
   const [copied, setCopied] = useState(false);
   const copyTipId = useId();

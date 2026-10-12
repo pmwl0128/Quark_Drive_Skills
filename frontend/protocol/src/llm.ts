@@ -32,6 +32,21 @@ export const OnlineQuotaDtoSchema = z.object({
 });
 export type OnlineQuotaDto = z.infer<typeof OnlineQuotaDtoSchema>;
 
+/** Codes the online API puts in an error body's `detail.error.code`. Pages branch on these, never on
+ * message text (design §2.1). The wire keeps an open string: a newer server's code renders the
+ * generic copy on an older SPA. */
+export const ONLINE_ERROR_CODES = [
+  "bad_input", "unresolved_names", "unparseable", "rate_limited", "busy",
+  "budget_exhausted", "tester_budget_exhausted", "llm_unavailable", "invalid_access_key",
+  "not_found",
+] as const;
+export type OnlineErrorCode = (typeof ONLINE_ERROR_CODES)[number];
+
+export const OnlineErrorDetailSchema = z.object({
+  error: z.object({ code: z.string().min(1), message: z.string() }),
+});
+export type OnlineErrorDetail = z.infer<typeof OnlineErrorDetailSchema>;
+
 export const QaRequestDtoSchema = z.object({
   question: z.string().min(1).max(QA_QUESTION_MAX_CHARS),
   /** Answer language hint (the UI's current lang); the server defaults to zh. */
@@ -122,6 +137,9 @@ export const BuilderStartDtoSchema = z.object({
   jobId: z.string().min(1),
   queuePosition: z.number().int().nonnegative(),
   quota: DailyQuotaDtoSchema,
+  /** `preview`: the day's model budget is spent, so the job runs only the deterministic gates and
+   * ends with a `preview` instead of a team (roadmap §1.8). Absent from older servers = build. */
+  mode: z.enum(["build", "preview"]).optional(),
 });
 export type BuilderStartDto = z.infer<typeof BuilderStartDtoSchema>;
 
@@ -219,12 +237,34 @@ export const BuilderResultDtoSchema = z.object({
 });
 export type BuilderResultDto = z.infer<typeof BuilderResultDtoSchema>;
 
+/** The model-free outcome of a preview job: the frame skeletons and the candidate pool a build would
+ * have assembled from. It names no team and passed no slate — never render it as a build result.
+ * Species are English canonical; shares, confidence and provenance stay out of the public layer. */
+export const BuilderPreviewDtoSchema = z.object({
+  skeletons: z.array(z.object({
+    /** Structural tier inside the observed group: the user's anchor, the group's backbone, or a
+     * partner that recurs without binding the slot. */
+    core: z.array(z.object({
+      species: z.string().min(1),
+      tier: z.enum(["anchor", "core", "partner"]),
+    })).min(1),
+    /** Slots the skeleton says nothing about. */
+    openSlots: z.number().int().nonnegative(),
+  })).min(1),
+  /** The species a build would have been allowed to pick from (skeleton cores + ranking fill). */
+  candidates: z.array(z.string().min(1)),
+  megaOptions: z.array(z.string().min(1)),
+});
+export type BuilderPreviewDto = z.infer<typeof BuilderPreviewDtoSchema>;
+
 export const BuilderJobDtoSchema = z.object({
   id: z.string().min(1),
   status: z.enum(["queued", "running", "done", "failed"]),
   gates: z.array(BuilderGateDtoSchema),
   queuePosition: z.number().int().nonnegative(),
   result: BuilderResultDtoSchema.optional(),
+  /** Set instead of `result` when a preview job (BuilderStartDto.mode) finished. */
+  preview: BuilderPreviewDtoSchema.optional(),
   /** Terminal failure code (rate_limited never reaches a job — it is a 429 at POST time):
    * no_frame / generation_failed / audit_failed / llm_unavailable / deadline / internal. */
   errorCode: z.string().optional(),

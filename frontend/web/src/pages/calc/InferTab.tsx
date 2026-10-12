@@ -10,7 +10,8 @@ import type { LearnsetDto, NatureDto } from "@pokemon-champions/protocol";
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx";
 import { useAbilitiesByName, useAsync, useMovesByName } from "../../hooks.ts";
-import { displayName, useLang, useT, type MsgKey } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useCalcT, type CalcMsgKey } from "./messages.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import { loadLearnset, type ItemRef } from "../../runtime/projection.ts";
@@ -40,7 +41,7 @@ import "../../styles.infer.css";
 /** The inference forces switch-in drops off (a recorded hit states its own stages), so the console
  * offers only the field-wide switches its numbers read. */
 const INFER_SHARED: SharedFlagKey[] = ["gravity", "foresight"];
-const STAT_LABEL: Record<string, MsgKey> = {
+const STAT_LABEL: Record<string, CalcMsgKey> = {
   hp: "stat.hp", atk: "stat.atk", def: "stat.def", spa: "stat.spa", spd: "stat.spd", spe: "stat.spe",
 };
 
@@ -55,7 +56,7 @@ export function InferTab({ dex, natures, items, onRailApi, visible }: {
   onRailApi?: (api: CalcRailApi) => void;
 }) {
   const { adapter } = useRuntime();
-  const t = useT();
+  const t = useCalcT();
   const ti = useInferT();
   const { lang } = useLang();
   const moveVocab = useMovesByName();

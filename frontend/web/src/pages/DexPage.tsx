@@ -20,7 +20,8 @@ import {
   type DexFilters,
 } from "../components/DexRail.tsx";
 import { useAbilities, useDexIndex, useItems, useLearners, useMoves } from "../hooks.ts";
-import { displayName, effectText, optionalKey, useLang, useT } from "../i18n.ts";
+import { displayName, effectText, useLang } from "../i18n.ts";
+import { useDexT, optionalDexKey } from "./dex/messages.ts";
 import type { ItemRef, MoveRef } from "../runtime/projection.ts";
 import { ITEM_CATEGORY_ORDER, itemOrder } from "../components/build/inputs.tsx";
 
@@ -36,7 +37,7 @@ function matches(query: string, ...names: Array<string | undefined>): boolean {
 }
 
 function MovesTab({ rows, state }: { rows: MoveRef[]; state: string }) {
-  const t = useT();
+  const t = useDexT();
   const { lang } = useLang();
   const filtered = rows;
   if (state === "loading") return <div className="spinner">{t("state.loading")}</div>;
@@ -81,7 +82,7 @@ function MovesTab({ rows, state }: { rows: MoveRef[]; state: string }) {
 }
 
 function ItemsTab({ rows, state }: { rows: ItemRef[]; state: string }) {
-  const t = useT();
+  const t = useDexT();
   const { lang } = useLang();
   const filtered = rows;
   if (state === "loading") return <div className="spinner">{t("state.loading")}</div>;
@@ -97,7 +98,7 @@ function ItemsTab({ rows, state }: { rows: ItemRef[]; state: string }) {
     <>
       {[...groups.entries()].map(([cat, rows]) => (
         <section key={cat} className="dex-item-group">
-          <h2 className="dex-group-title">{t(optionalKey(`item.cat.${cat}`) ?? "dex.tab.items")}</h2>
+          <h2 className="dex-group-title">{t(optionalDexKey(`item.cat.${cat}`) ?? "dex.tab.items")}</h2>
           <div className="dex-items">
             {rows.map((i) => (
               <div key={i.key} className="panel dex-item-card">
@@ -120,7 +121,7 @@ function ItemsTab({ rows, state }: { rows: ItemRef[]; state: string }) {
 }
 
 function AbilitiesTab({ query }: { query: string }) {
-  const t = useT();
+  const t = useDexT();
   const { lang } = useLang();
   const abilities = useAbilities();
   const filtered = useMemo(() => {
@@ -174,7 +175,7 @@ export function DexPage() {
   // once the rail is open so its per-move learner counts are there to read.
   const learners = useLearners(filters.pokemon.moves.length > 0 || rail.open);
   const { lang } = useLang();
-  const t = useT();
+  const t = useDexT();
 
   // Entity hover cards deep-link here with a tab and canonical query. Keep the route useful
   // even when navigation reuses an already-mounted DexPage instance.

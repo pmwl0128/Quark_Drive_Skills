@@ -19,7 +19,8 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx";
 import { useAsync, useMovesByName } from "../../hooks.ts";
 import { useDamageText } from "../../lib/damageText.tsx";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useCalcT } from "./messages.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import { loadLearnset, type ItemRef } from "../../runtime/projection.ts";
@@ -54,7 +55,7 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
   onRailApi?: (api: CalcRailApi) => void;
 }) {
   const { adapter } = useRuntime();
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const moveVocab = useMovesByName();
   const { teams, setTeams, active, setActive, slot, setSlot, field, setField, swaps, swapSides } = useRoster();
@@ -155,7 +156,7 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
       { id: "secondary", label: t("calc.rail.defense") },
     ],
     pick: pickFromRail,
-  // `useT()` returns a render-local function; language, not that function identity, is the input.
+  // `useCalcT()` returns a render-local function; language, not that function identity, is the input.
   }), [field.format, pickFromRail, lang]);
   useEffect(() => { onRailApi?.(railApi); }, [onRailApi, railApi]);
 

@@ -71,6 +71,8 @@ interface WorkspaceApi {
   setDragging: (kind: LibraryKind | null) => void;
   /** Hand a payload to a receiver and tell the reader how it went. */
   deliver: (receiver: AnyReceiver, payload: LibraryPayload) => ReceiveResult;
+  /** Read the current team only on request, then use the page's registered receiver. */
+  fillActiveTeam: (receiverId: string) => Promise<boolean>;
   /** The box the reader has in view (the dock's, the teams page's): where "keep" puts a Pokémon. */
   currentBox: number;
   setCurrentBox: (box: number) => void;
@@ -148,6 +150,26 @@ export function LibraryWorkspaceProvider({ children }: { children: ReactNode }) 
     return result;
   }, [toast, t]);
 
+  const receiverRef = useRef(receivers);
+  receiverRef.current = receivers;
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  const fillActiveTeam = useCallback(async (receiverId: string) => {
+    const chosen = activeRef.current;
+    if (!chosen) { setOpen(true); return false; }
+    try {
+      const repo = await import("./repo.ts");
+      const state = await repo.loadLibrary();
+      const receiver = receiverRef.current.find((item) => item.id === receiverId && item.kind === "team");
+      // The destination may have disappeared while the library was loading.
+      if (!receiver || activeRef.current?.id !== chosen.id) return false;
+      const record = state.teams.find((team) => team.id === chosen.id);
+      const doc = record ? repo.teamDocOf(record, new Map(state.box.map((mon) => [mon.id, mon]))) : null;
+      if (!doc?.pokemon.length) { setOpen(true); return false; }
+      return deliver(receiver, { kind: "team", doc, name: record?.name ?? "" }).ok;
+    } catch { setOpen(true); return false; }
+  }, [deliver]);
+
   const setCurrentBox = useCallback((box: number) => {
     setCurrentBoxState(box);
     try { localStorage.setItem(BOX_KEY, String(box)); } catch { /* the choice lasts for this view */ }
@@ -182,9 +204,9 @@ export function LibraryWorkspaceProvider({ children }: { children: ReactNode }) 
 
   const value = useMemo<WorkspaceApi>(() => ({
     open, setOpen, receivers, sources, register, offer, active, setActive, dragging, setDragging, deliver,
-    currentBox, setCurrentBox, keepMon, saveRequest, requestSave,
+    currentBox, setCurrentBox, keepMon, saveRequest, requestSave, fillActiveTeam,
   }), [open, receivers, sources, register, offer, active, setActive, dragging, deliver, currentBox, setCurrentBox,
-    keepMon, saveRequest, requestSave]);
+    keepMon, saveRequest, requestSave, fillActiveTeam]);
   const [store] = useState<WorkspaceStore>(() => {
     const listeners = new Set<() => void>();
     return { value, listeners, subscribe: (listener) => {

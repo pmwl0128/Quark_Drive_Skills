@@ -21,7 +21,8 @@ import { SegmentedControl, segmentedPanelId, segmentedTabId }
   from "../components/SegmentedControl.tsx";
 import { ThinkingToggle } from "../components/ThinkingToggle.tsx";
 import { useDexByName, useDexIndex, useOppCache } from "../hooks.ts";
-import { displayName, optionalKey, useLang, useT } from "../i18n.ts";
+import { displayName, useLang } from "../i18n.ts";
+import { optionalAssistKey, useAssistT } from "./assist/messages.ts";
 import { useProseRenderer } from "../lib/prose.tsx";
 import {
   readTeamMembers, stashCalcTeams, stashDamageFill, stashDiagnoseFill,
@@ -33,27 +34,28 @@ import { MemberHover, slugify, useMemberProse, useMemberSets } from "../componen
 import { TeamCard } from "../components/team/TeamCard.tsx";
 import { HintButton } from "../components/HintButton.tsx";
 import { useTransferT } from "../lib/library/transferMessages.ts";
+import { BudgetNotice } from "./assist/BudgetNotice.tsx";
+import { BuilderPreview } from "./assist/BuilderPreview.tsx";
 import { useLibraryDrop, useLibraryReceiver, useLibrarySource } from "../lib/library/workspace.tsx";
 import { toTeamDoc } from "../lib/teamDoc.ts";
+import type { BuilderFill } from "../lib/builderHandoff.ts";
 
 type StartError =
-  | { kind: "limit" | "busy" | "unavailable" | "generic" }
+  | { kind: "limit" | "busy" | "unavailable" | "budget" | "generic" }
   | { kind: "unresolved"; names: string };
 
-/** POST /api/builder failures ride in HttpError's message (fetchJson keeps the body's
- * `detail` verbatim there) — enough to pick the right copy without a second wire shape. */
+/** POST /api/builder failures, read from the typed error code (never the message text). A spent
+ * daily budget normally arrives as a preview job instead; the code covers older servers. */
 function startError(e: unknown): StartError {
   if (!(e instanceof HttpError)) return { kind: "generic" };
-  if (e.status === 429) {
-    return { kind: e.message.includes("rate_limited") ? "limit" : "busy" };
-  }
+  if (e.code === "budget_exhausted") return { kind: "budget" };
+  if (e.status === 429) return { kind: e.code === "rate_limited" ? "limit" : "busy" };
   if (e.status === 503) return { kind: "unavailable" };
-  if (e.status === 400 && e.message.includes("unresolved_names")) {
-    const m = /"unresolved_names","message":"([^"]*)"/.exec(e.message);
-    return { kind: "unresolved", names: m?.[1] ?? "" };
-  }
+  if (e.code === "unresolved_names") return { kind: "unresolved", names: e.reason ?? "" };
   return { kind: "generic" };
 }
+
+const PREVIEW_GATES = new Set(["context", "frame", "ground"]);
 
 /** Terminal job codes -> copy keys (unknown/future codes fall back to generic). */
 const FAIL_COPY = {
@@ -66,7 +68,7 @@ const FAIL_COPY = {
 
 type View =
   | { phase: "form" }
-  | { phase: "watching"; jobId: string; job: BuilderJobDto | null }
+  | { phase: "watching"; jobId: string; job: BuilderJobDto | null; preview?: boolean }
   | { phase: "done"; job: BuilderJobDto }
   /** `job` kept when we have it: the gate timeline (with its fact summaries) stays
    * reviewable after a failure too — only an expired/unknown job leaves it null. */
@@ -88,6 +90,8 @@ interface Stash {
   form?: { format: FormatId; posture: "offense" | "balance" | "defense";
            anchor: string; owned: string; avoid: string; wants: string[]; thinking?: boolean };
   jobId?: string;
+  /** The accepted job's format survives edits to the next build's form. */
+  jobFormat?: FormatId;
   quota?: { used: number; limit: number };
 }
 
@@ -108,13 +112,13 @@ function writeStash(s: Stash): void {
 /** One gate's disclosure-trimmed fact summary: known keys localize, species arrays render
  * as localized chips (dex authority), scalars as text. */
 function GateDetail({ detail }: { detail: NonNullable<BuilderGateDto["detail"]> }) {
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const dex = useDexByName();
   return (
     <div className="gate-detail">
       {Object.entries(detail).map(([k, v]) => {
-        const label = optionalKey(`builder.detail.${k}`);
+        const label = optionalAssistKey(`builder.detail.${k}`);
         return (
           <div key={k} className="gate-detail-row">
             <span className="gate-detail-label">{label ? t(label) : k}</span>
@@ -144,7 +148,7 @@ function GateDetail({ detail }: { detail: NonNullable<BuilderGateDto["detail"]> 
 function GateTimeline({ gates, queuePosition, compact = false }: {
   gates: BuilderGateDto[]; queuePosition: number; compact?: boolean;
 }) {
-  const t = useT();
+  const t = useAssistT();
   return (
     <div className={`panel builder-progress${compact ? " compact" : ""}`}>
       <h2>{t("builder.progress")}</h2>
@@ -153,7 +157,7 @@ function GateTimeline({ gates, queuePosition, compact = false }: {
       )}
       <ol className="builder-gates">
         {gates.map((g) => {
-          const key = optionalKey(`gate.${g.gate}`);
+          const key = optionalAssistKey(`gate.${g.gate}`);
           return (
             <li key={g.gate} className={`gate-${g.status}`}>
               <div className="gate-line">
@@ -195,7 +199,7 @@ function ThreatAssessmentPanel({ assessment, team, format, dexByName }: {
   format: FormatId;
   dexByName: Map<string, DexIndexEntry>;
 }) {
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const prose = useProseRenderer();
   const navigate = useNavigate();
@@ -342,13 +346,16 @@ function ThreatAssessmentPanel({ assessment, team, format, dexByName }: {
   );
 }
 
-export function BuilderPage({ embedded = false, active = true }: {
+export function BuilderPage({ embedded = false, active = true, fill = null, onConsumeFill }: {
   embedded?: boolean;
   /** False while another assist tab is on screen: the library then sees none of this page. */
   active?: boolean;
+  /** A brief handed over from the home page: format, playstyle and core only. */
+  fill?: BuilderFill | null;
+  onConsumeFill?: () => void;
 } = {}) {
   const { adapter, can } = useRuntime();
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const dex = useDexIndex();
   const dexByName = useDexByName();
@@ -377,26 +384,39 @@ export function BuilderPage({ embedded = false, active = true }: {
     stash.quota ?? null);
   const [view, setView] = useState<View>(
     stash.jobId ? { phase: "watching", jobId: stash.jobId, job: null } : { phase: "form" });
+  const [jobFormat, setJobFormat] = useState<FormatId>(stash.jobFormat ?? stash.form?.format ?? "single");
+  const completedResult = view.phase === "done" ? view.job.result : null;
+  const resultFormat = toTeamDoc(completedResult?.team, jobFormat)?.format ?? jobFormat;
+
+  // A brief from the home page fills its fields (format, playstyle, core, tactics) and leaves the rest
+  // of the form alone; a stashed job keeps running, and the brief waits in the form beneath it.
+  useEffect(() => {
+    if (fill === null) return;
+    setFormat(fill.format);
+    setPosture(fill.posture);
+    setAnchor(fill.anchor);
+    setWants(new Set(fill.wants));
+    onConsumeFill?.();
+  }, [fill, onConsumeFill]);
 
   // Current results load the large Top-60 cache only when a visitor asks for calculator hand-off.
   // Legacy results still need it here because their old threat DTO has no self-describing variant id.
   const needsLegacyOppSets = view.phase === "done" && !!view.job.result
     && !view.job.result.matchupThreats
     && (!!view.job.result.worstMatchup || (view.job.result.threats?.length ?? 0) > 1);
-  const oppCacheState = useOppCache(format, needsLegacyOppSets);
+  const oppCacheState = useOppCache(resultFormat, needsLegacyOppSets);
   const oppSets = oppCacheState.status === "ready" ? oppCacheState.data?.sets : undefined;
 
   const stashJobId = view.phase === "watching" ? view.jobId
     : view.phase === "done" ? view.job.id : undefined;
-  const completedResult = view.phase === "done" ? view.job.result : null;
   const memberProse = useMemberProse(completedResult?.team);
   useEffect(() => {
     writeStash({
       form: { format, posture, anchor, owned, avoid, wants: [...wants], thinking },
-      ...(stashJobId ? { jobId: stashJobId } : {}),
+      ...(stashJobId ? { jobId: stashJobId, jobFormat } : {}),
       ...(quota ? { quota } : {}),
     });
-  }, [format, posture, anchor, owned, avoid, wants, thinking, stashJobId, quota]);
+  }, [format, posture, anchor, owned, avoid, wants, thinking, stashJobId, jobFormat, quota]);
 
   useEffect(() => {
     let live = true;
@@ -470,7 +490,7 @@ export function BuilderPage({ embedded = false, active = true }: {
     } } : null);
   const builtTeam = view.phase === "done" ? view.job.result?.team ?? null : null;
   useLibrarySource(active && builtTeam ? { id: "builder-keep", origin: "builder", kind: "team", label: bt("transfer.builder.save"),
-    read: () => toTeamDoc(builtTeam, format) } : null);
+    read: () => toTeamDoc(builtTeam, resultFormat) } : null);
   const ownedDrop = useLibraryDrop(["builder-box", "builder-mon"]);
 
   const submit = async () => {
@@ -489,8 +509,9 @@ export function BuilderPage({ embedded = false, active = true }: {
     };
     try {
       const start = await adapter.builder.start(req);
+      setJobFormat(req.format);
       setQuota(start.quota);
-      setView({ phase: "watching", jobId: start.jobId, job: null });
+      setView({ phase: "watching", jobId: start.jobId, job: null, preview: start.mode === "preview" });
     } catch (e) {
       setError(startError(e));
     } finally {
@@ -500,6 +521,11 @@ export function BuilderPage({ embedded = false, active = true }: {
 
   const pendingGates: BuilderGateDto[] =
     BUILDER_GATES.map((g) => ({ gate: g, status: "pending" as const }));
+  /** A preview job runs only the deterministic gates; the model's gates are not part of its story. */
+  const previewGates = (gates: BuilderGateDto[]) => gates.filter((g) => PREVIEW_GATES.has(g.gate));
+  const watchingPreview = view.phase === "watching" && view.preview === true;
+  const donePreview = view.phase === "done" && !view.job.result && view.job.preview
+    ? view.job.preview : null;
 
   return (
     <div>
@@ -589,7 +615,8 @@ export function BuilderPage({ embedded = false, active = true }: {
         </div>
       )}
 
-      {error && (
+      {error?.kind === "budget" && <BudgetNotice />}
+      {error && error.kind !== "budget" && (
         <p className="notice qa-error">
           {error.kind === "unresolved"
             ? `${t("builder.error.unresolved")}${error.names}`
@@ -603,8 +630,15 @@ export function BuilderPage({ embedded = false, active = true }: {
         </p>
       )}
 
+      {watchingPreview && (
+        <>
+          <BudgetNotice />
+          <p className="muted">{t("preview.watching")}</p>
+        </>
+      )}
       {view.phase === "watching" && (
-        <GateTimeline gates={view.job?.gates ?? pendingGates}
+        <GateTimeline gates={watchingPreview ? previewGates(view.job?.gates ?? pendingGates)
+                        : view.job?.gates ?? pendingGates}
                       queuePosition={view.job?.queuePosition ?? 0} />
       )}
       {view.phase === "failed" && view.job && (
@@ -615,6 +649,7 @@ export function BuilderPage({ embedded = false, active = true }: {
         <div className="panel result-panel builder-result">
           <TeamCard team={view.job.result.team} keepOrigin="builder" saveSource="builder-keep" badges={
             <div className="builder-badges">
+              <span className="badge-note">{t(`format.${resultFormat}`)}</span>
               <span className="badge-ok">✓ {t("builder.badge.valid")}</span>
               <span className="badge-ok">✓ {t("builder.badge.audit")}</span>
               {view.job.result.repaired && (
@@ -628,17 +663,17 @@ export function BuilderPage({ embedded = false, active = true }: {
                 {/* Diagnosis lives on the teams page; the team crosses over with the navigation. */}
                 {canDiagnose && (
                   <button type="button" className="second-btn"
-                          onClick={() => { stashDiagnoseFill(team); navigate("/assist?tab=diagnose"); }}>
+                          onClick={() => { stashDiagnoseFill(toTeamDoc(team, resultFormat) ?? team); navigate("/assist?tab=diagnose"); }}>
                     {t("builder.sendDiagnose")}
                   </button>
                 )}
                 <HintButton hint={t("team.sendCalcHint")}
                   onClick={() => {
-                    stashCalcTeams({ format, attackers: teamToCalcMembers(team), defenders: [] });
+                    stashCalcTeams({ format: resultFormat, attackers: teamToCalcMembers(team), defenders: [] });
                     navigate("/calc?tab=damage");
                   }}>{t("team.sendCalc")}</HintButton>
                 <HintButton hint={t("actual.sendMatchupHint")} onClick={() => {
-                  stashMatchupFill({ source: "builder", label: t("actual.source.builder"), format, team });
+                  stashMatchupFill({ source: "builder", label: t("actual.source.builder"), format: resultFormat, team });
                   navigate("/matchup?mode=actual");
                 }}>{t("actual.sendMatchup")}</HintButton>
               </>
@@ -660,7 +695,7 @@ export function BuilderPage({ embedded = false, active = true }: {
           </p>
           {view.job.result.matchupThreats && (
             <ThreatAssessmentPanel assessment={view.job.result.matchupThreats}
-              team={view.job.result.team} format={format} dexByName={dexByName} />
+              team={view.job.result.team} format={resultFormat} dexByName={dexByName} />
           )}
           {!view.job.result.matchupThreats && (view.job.result.threats?.length ?? 0) > 1 && (
             <div className="gate-detail-row">
@@ -685,8 +720,7 @@ export function BuilderPage({ embedded = false, active = true }: {
                                 const member = readTeamMembers(team)
                                   .find((m) => m.species === th.member);
                                 stashDamageFill({
-                                  format: (team as { format?: string }).format === "double"
-                                    ? "double" : "single",
+                                  format: resultFormat,
                                   attackerSlug: aSlug,
                                   attacker: {
                                     slug: aSlug,
@@ -744,8 +778,7 @@ export function BuilderPage({ embedded = false, active = true }: {
                           const aSlug = oppName?.slug ?? slugify(wm.opponent);
                           const aSet = oppSets?.[aSlug];
                           stashDamageFill({
-                            format: (team as { format?: string }).format === "double"
-                              ? "double" : "single",
+                            format: resultFormat,
                             attackerSlug: aSlug,
                             attacker: {
                               slug: aSlug,
@@ -774,7 +807,7 @@ export function BuilderPage({ embedded = false, active = true }: {
             <span className="muted">{t("builder.assumptions")}</span>
             <ul>
               {view.job.result.assumptions.map((k) => {
-                const key = optionalKey(`assumption.${k}`);
+                const key = optionalAssistKey(`assumption.${k}`);
                 return <li key={k}>{key ? t(key) : k}</li>;
               })}
             </ul>
@@ -783,8 +816,15 @@ export function BuilderPage({ embedded = false, active = true }: {
       )}
       {/* The run's gate timeline (with its fact summaries) stays reviewable under the
           result — the intermediate products are part of the answer, not just progress. */}
+      {donePreview && (
+        <>
+          <BudgetNotice />
+          <BuilderPreview preview={donePreview} />
+        </>
+      )}
       {view.phase === "done" && (
-        <GateTimeline gates={view.job.gates} queuePosition={0} compact />
+        <GateTimeline gates={donePreview ? previewGates(view.job.gates) : view.job.gates}
+                      queuePosition={0} compact />
       )}
       </>
       </div>

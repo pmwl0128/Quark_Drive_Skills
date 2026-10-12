@@ -7,7 +7,7 @@ import { STAT_KEYS } from "@pokemon-champions/protocol";
 import type { CSSProperties } from "react";
 import type { Async } from "../../hooks.ts";
 import { EntityHover } from "../../components/EntityHover.tsx";
-import { useT } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 import { spreadKey } from "../../lib/spread.ts";
 import { usageDelta } from "../../lib/usageDelta.ts";
 import { DeltaCell, pctText, spreadSeries, TrendAddon } from "./rows.tsx";
@@ -32,7 +32,7 @@ export function SpMatrix({ spreads, trend, baseline }: {
   trend: Async<UsageTrendDto | null>;
   baseline?: string;
 }) {
-  const t = useT();
+  const t = useMetaT();
   return (
     <div className="mc-sp">
       <div className="mc-sp-row mc-sp-cols" aria-hidden="true">

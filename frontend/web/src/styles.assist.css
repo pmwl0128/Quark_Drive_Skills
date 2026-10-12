@@ -146,3 +146,12 @@
 }
 .assist-surface .diag-note { font-size: 12.5px; line-height: 1.6; }
 .assist-surface .gate-chip { padding: 2px 8px; border-radius: 7px; }
+.budget-notice { display: grid; gap: 4px; }
+.budget-notice p { margin: 0; }
+.budget-notice-title { color: var(--ink); font-weight: 650; }
+.budget-notice-links { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; margin-left: 6px; }
+.builder-preview .builder-preview-skeleton { margin: 12px 0 0; }
+.builder-preview .builder-preview-skeleton h3 { margin: 0 0 4px; font-size: 13.5px; font-weight: 650; }
+.builder-preview .builder-preview-skeleton p { margin: 2px 0 0; }
+.builder-preview .gate-detail { margin-left: 0; }
+.builder-preview > .gate-detail { margin-top: 14px; }

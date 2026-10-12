@@ -5,12 +5,14 @@ import type { LearnsetDto, TuneCardDto } from "@pokemon-champions/protocol";
 import { TuneCardDtoSchema } from "@pokemon-champions/protocol";
 import { useState } from "react";
 import { useAsync, useDexByName } from "../../hooks.ts";
-import { displayName, optionalKey, useLang, useT, type MsgKey } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useCalcT, optionalCalcKey, type CalcMsgKey } from "./messages.ts";
 import { useProseRenderer } from "../../lib/prose.tsx";
 import { localName, useNameMaps } from "../../lib/names.ts";
 import { loadLearnset } from "../../runtime/projection.ts";
+import { SetOriginBadge, tuneSourceOrigin } from "../../components/SetOrigin.tsx";
 
-const RESULT_LABEL: Record<string, MsgKey> = {
+const RESULT_LABEL: Record<string, CalcMsgKey> = {
   already: "tune.res.already", cliff: "tune.res.cliff",
   infeasible: "tune.res.infeasible", unreachable: "tune.res.unreachable",
 };
@@ -34,7 +36,7 @@ export function TuneCard({ card }: { card: TuneCardDto }) {
 }
 
 function TuneCardBody({ card }: { card: TuneCardDto }) {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const dexByName = useDexByName();
   const names = useNameMaps();
@@ -70,25 +72,25 @@ function TuneCardBody({ card }: { card: TuneCardDto }) {
     [ownerSlug, card.move]);
   const moveInfo = ownerMoves.status === "ready" && ownerMoves.data
     ? ownerMoves.data.moves.find((m) => m.name === card.move) : undefined;
-  const kindKey = optionalKey(`tune.kind.${card.kind}`);
+  const kindKey = optionalCalcKey(`tune.kind.${card.kind}`);
   const resultLabel = (result: string) => {
     const key = RESULT_LABEL[result];
     return key ? t(key) : result;
   };
   const statLabel = (stat: string | undefined) => {
-    const key = stat ? optionalKey(`stat.${stat.toLowerCase()}`) : null;
+    const key = stat ? optionalCalcKey(`stat.${stat.toLowerCase()}`) : null;
     return key ? t(key) : stat?.toUpperCase() ?? "";
   };
   const sourceLabel = (source: string | undefined) => {
-    const key = source ? optionalKey(`tune.source.${source}`) : null;
+    const key = source ? optionalCalcKey(`tune.source.${source}`) : null;
     return key ? t(key) : (lang === "en" ? source ?? "—" : t("tune.source.synthetic"));
   };
   const probabilityLabel = (probability: string) => {
-    const key = optionalKey(`tune.prob.${probability}`);
+    const key = optionalCalcKey(`tune.prob.${probability}`);
     return key ? t(key) : probability;
   };
   const scopeLabel = (scope: string) => {
-    const key = optionalKey(`tune.scope.${scope}`);
+    const key = optionalCalcKey(`tune.scope.${scope}`);
     return key ? t(key) : scope;
   };
   return (
@@ -109,7 +111,7 @@ function TuneCardBody({ card }: { card: TuneCardDto }) {
             {card.need_total != null ? ` → ${card.need_total}` : ""}{card.stat ? ` ${statLabel(card.stat)}` : ""}</span>
         )}
         {card.confidence && <span className="tc-conf">{
-          (() => { const key = optionalKey(`conf.${card.confidence}`); return key ? t(key) : card.confidence; })()
+          (() => { const key = optionalCalcKey(`conf.${card.confidence}`); return key ? t(key) : card.confidence; })()
         }</span>}
       </div>
       {reallocation && (
@@ -152,7 +154,9 @@ function TuneCardBody({ card }: { card: TuneCardDto }) {
       {open && (
         <div className="tc-detail">
           {attacker && (
-            <div className="tc-line"><b>{t("tune.attackerSet")}</b> {sourceLabel(attacker.source)}
+            <div className="tc-line"><b>{t("tune.attackerSet")}</b>{" "}
+              <SetOriginBadge origin={tuneSourceOrigin(attacker.source)} label={sourceLabel(attacker.source)}
+                metaSpread={attacker.source === "real-team+meta-spread"} />
               {" · "}{attacker.ability ? localName(names.ability, attacker.ability, lang) : "—"}
               {" / "}{attacker.item ? localName(names.item, attacker.item, lang) : "—"}
               {" / "}{attacker.nature ? localName(names.nature, attacker.nature, lang) : "—"}</div>

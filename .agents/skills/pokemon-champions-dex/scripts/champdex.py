@@ -184,9 +184,48 @@ def _fuzzy_pool(c: sqlite3.Connection, kind: str) -> list[tuple[str, str]]:
     return pool
 
 
+# Split-gender forms (Indeedee / Indeedee-F, ...) differ in stats, abilities and learnsets, so a query
+# that names one gender must never fuzz onto the other's form: 'イエッサン♀' is distance 1 from the bare
+# (male) 'イエッサン' and nowhere near 'イエッサン（メスのすがた）'. The pairs (`X` / `X-F`) and the
+# qualifier suffixes come from the alias pool itself; these are the user-typed spellings it lacks.
+_GENDER_SYMBOLS = {"♀": "F", "♂": "M"}            # matched anywhere in the query
+_TYPED_GENDER_SUFFIXES = {"m": "M", "male": "M"}
+
+
+def _qualified_sibling(pool: list[tuple[str, str]], canonical: str, norm_text: str) -> str | None:
+    """The other-gender form when `canonical` is half of a split-gender pair and the query carries a
+    qualifier naming that other gender; None otherwise. Suffix qualifiers are the dex's own: each form
+    alias minus the shortest bare base alias it extends ('indeedeef' -> 'f', 'イエッサンオスのすがた' ->
+    'オスのすがた'), matched longest first so 'female' never reads as 'male'."""
+    names: dict[str, set[str]] = {}
+    for norm, cn in pool:
+        names.setdefault(cn, set()).add(norm)
+    if canonical.endswith("-F") and canonical[:-2] in names:
+        gender, sibling = "F", canonical[:-2]
+    elif canonical + "-F" in names:
+        gender, sibling = "M", canonical + "-F"
+    else:
+        return None
+    suffixes = dict(_TYPED_GENDER_SUFFIXES)
+    for base in (cn[:-2] for cn in names if cn.endswith("-F") and cn[:-2] in names):
+        for form, g in ((base + "-F", "F"), (base, "M")):
+            for alias in names[form]:
+                stems = [s for s in names[base] if s != alias and alias.startswith(s)]
+                if stems:
+                    suffixes[alias[len(min(stems, key=len)):]] = g
+    said = {g for sym, g in _GENDER_SYMBOLS.items() if sym in norm_text}
+    for sfx, g in sorted(suffixes.items(), key=lambda kv: -len(kv[0])):
+        if norm_text.endswith(sfx):
+            said.add(g)
+            break
+    return sibling if said - {gender} else None
+
+
 def _fuzzy_match(c: sqlite3.Connection, kind: str, norm_text: str) -> dict[str, Any] | None:
     """Best fuzzy canonical for a normalized query, or None. Refuses (canonical=None, ambiguous=True)
-    when >=2 distinct canonicals tie at the best distance — never guesses between them."""
+    when >=2 distinct canonicals tie at the best distance — never guesses between them — and when the
+    best hit is a split-gender form the query's own gender qualifier contradicts (the qualified form
+    leads the alternatives)."""
     if not norm_text:
         return None
     max_d = _fuzzy_max_distance(_dominant_script(norm_text), len(norm_text))
@@ -211,6 +250,11 @@ def _fuzzy_match(c: sqlite3.Connection, kind: str, norm_text: str) -> dict[str, 
     if len(ranked) >= 2 and ranked[1][1] == best_d:
         return {"canonical": None, "match_type": "fuzzy", "score": score(best_d),
                 "distance": best_d, "ambiguous": True, "alternatives": alts}
+    sibling = _qualified_sibling(_fuzzy_pool(c, kind), best_canon, norm_text) if kind == "pokemon" else None
+    if sibling:
+        lead = next((a for a in alts if a["canonical"] == sibling), {"canonical": sibling})
+        return {"canonical": None, "match_type": "fuzzy", "score": score(best_d), "distance": best_d,
+                "ambiguous": True, "alternatives": [lead, *(a for a in alts if a is not lead)]}
     return {"canonical": best_canon, "match_type": "fuzzy", "score": score(best_d),
             "distance": best_d, "alternatives": alts}
 
@@ -424,7 +468,7 @@ def resolve_name(c: sqlite3.Connection, kind: str, text: str, *, fuzzy: bool = T
             miss["suggestions"] = fm["alternatives"]
             if fm.get("ambiguous"):
                 miss["match_type"] = "ambiguous"
-                miss["error"]["code"] = "ambiguous"
+                miss["error"] = {"code": "ambiguous", "message": f"ambiguous name: {text}"}
     return miss
 
 
@@ -492,7 +536,7 @@ def get_one(c: sqlite3.Connection, kind: str, name: str, fuzzy: bool = True) -> 
             # ambiguity) so the caller decides — it never auto-resolves to one of them.
             nf["suggestions"] = rr["alternatives"]
             if rr.get("ambiguous"):
-                nf["error"]["code"] = "ambiguous"
+                nf["error"] = {"code": "ambiguous", "message": f"ambiguous name: {name}"}
         return nf
 
     if kind == "pokemon":
@@ -849,7 +893,9 @@ def format_md(data: Any) -> str:
         line = f"{prefix}{data.get('query')}: {msg}"
         sugg = data.get("suggestions")
         if sugg:
-            cands = _md_join(f"{s.get('canonical')} ({i18n.t('distance')} {s.get('distance')})" for s in sugg)
+            cands = _md_join(f"{s.get('canonical')}" + (f" ({i18n.t('distance')} {s['distance']})"
+                                                        if s.get("distance") is not None else "")
+                             for s in sugg)
             line += f" — {i18n.t('did_you_mean')}: {cands}"
         pk = data.get("possible_kinds") or []
         if pk:
@@ -976,8 +1022,8 @@ SCHEMA = {
         "strict": "--strict disables the fallback (exact only) for callers where a miss must stay a miss "
                   "(validation, integrity). find/reverse are always exact regardless.",
         "on_hit": "entity gains `resolution: {match_type:'fuzzy', score:float, distance:int, from:'<normalized query>'}`",
-        "on_miss": "error_shape may gain `suggestions:[{canonical,distance,score}]`; ambiguous ties set error.code='ambiguous' and resolve to NO canonical. Exact cross-kind hits are reported as `possible_kinds` (e.g. pokemon miss that is really an item).",
-        "discipline": "ambiguity (>=2 canonicals tie at best distance) -> refuse, never guess; Han disabled, Kana<=1, Latin<=2 edit distance, length-gated",
+        "on_miss": "error_shape may gain `suggestions:[{canonical,distance?,score?}]` (a qualifier-gate lead has no distance); ambiguous ties and qualifier conflicts set error.code='ambiguous' and resolve to NO canonical. Exact cross-kind hits are reported as `possible_kinds` (e.g. pokemon miss that is really an item).",
+        "discipline": "ambiguity (>=2 canonicals tie at best distance) -> refuse, never guess; a gender qualifier in the query (♀/♂, -F/-M, female/male, (メス)/(オス)(のすがた), ...) that contradicts a split-gender fuzzy hit (Indeedee vs Indeedee-F) -> refuse as ambiguous with the qualified form first; Han disabled, Kana<=1, Latin<=2 edit distance, length-gated",
     },
     "shapes": {
         "pokemon": {"name": "English canonical", "display_name": "str (zh)", "display_name_ja": "str|null",

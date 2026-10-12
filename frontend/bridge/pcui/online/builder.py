@@ -35,7 +35,7 @@ from typing import Any, Callable
 
 from .. import mappers
 from .provider import ChatResult, LlmProvider, LlmUnavailable
-from .qa import prune, spread_from_sps
+from .qa import _drop_name_glosses, _scrub_internal_tokens, prune, spread_from_sps
 
 BUILDER_DEADLINE_SECONDS = 420.0    # wall clock for the whole pipeline
 BUILDER_LLM_TIMEOUT = 90.0
@@ -73,6 +73,9 @@ ASSUMPTION_TEXT = {
     "no_benchmarks": "no extra numeric requirements — precise tuning was not run (profile default)",
     "single_candidate": "one candidate generated and pressure-tested against the top-K meta "
                         "(simplified wizard, not a full agent build)",
+    "owned_no_mega": "the owned pool holds no Mega-capable species, so the team registers no Mega",
+    "owned_one_mega": "the owned pool holds one Mega-capable species, so the team registers "
+                      "exactly one Mega",
 }
 
 
@@ -127,6 +130,14 @@ def make_context(form: BuilderForm) -> tuple[dict, list[str]]:
     if form.owned:
         ctx["owned"] = list(form.owned)
         ctx["owned_only"] = True
+        # The environment posture asks for the frame's usual registration count (two Megas in
+        # most frames), and a single wizard candidate outside it can never pass the gates. A
+        # pool with fewer Mega-capable species cannot reach that count, so the pool itself is
+        # the user's Mega choice: say so as an explicit posture instead of failing every build.
+        reachable = _mega_bases(form)
+        if reachable is not None and len(reachable) < 2:
+            ctx["mega_posture"] = "single" if reachable else "none"
+            assumptions.append("owned_one_mega" if reachable else "owned_no_mega")
     else:
         assumptions.append("from_scratch")
     if form.avoid:
@@ -237,40 +248,57 @@ def _detail_for_model(dto: dict) -> dict:
     }
 
 
+def _mega_forms(bases: list[str], form: BuilderForm) -> list[str]:
+    """Mega forms offerable around these species, read from the dex by BASE species, so every
+    form is found (X/Y and the Z stones alike) without guessing names. A fixed pool owns base
+    species — owning Garchomp is what makes Mega Garchomp available — so the pool filter reads
+    the Mega's base as well as its own name."""
+    conn = mappers._conn()
+    out: list[str] = []
+    for base in bases:
+        rows = conn.execute(
+            "select canonical, base_species from pokemon where is_mega = 1 and "
+            + ("canonical = ?" if base.startswith("Mega ") else "base_species = ? order by canonical"),
+            (base,)).fetchall()
+        for name, root in rows:
+            if name in out or name in form.avoid or root in form.avoid:
+                continue
+            if form.owned and name not in form.owned and root not in form.owned:
+                continue
+            out.append(name)
+    return out
+
+
+def _base_of(name: str) -> str:
+    """A Mega form's base species (the name itself for anything else)."""
+    row = mappers._conn().execute(
+        "select base_species from pokemon where canonical = ? and is_mega = 1", (name,)).fetchone()
+    return row[0] if row else name
+
+
+def _mega_bases(form: BuilderForm) -> list[str] | None:
+    """The owned pool's distinct species that can Mega Evolve; None when the dex cannot say."""
+    try:
+        return list(dict.fromkeys(_base_of(name) for name in _mega_forms(list(form.owned), form)))
+    except Exception:
+        return None
+
+
 def _mega_options(pool: Any, form: BuilderForm, bases: list[str], deadline: float) -> list[dict]:
     """Representative joint sets for the Mega forms around these base species — the model's
     ONLY legal source when it adds a Mega member. The meta side keys usage by BASE species
     (there is no 'Mega Metagross' detail entry), so without this the Mega-registration
     guidance forces the model to invent stones/abilities from main-series memory (the exact
-    hallucination the VPS diagnosis caught). dex exact-probing finds the form names; the
+    hallucination the VPS diagnosis caught). The dex lists the forms by base species; the
     team skill's repset supplies the real-team joint set (ability/stone/moves as one unit)."""
-    probes: list[str] = []
-    for base in bases:
-        if base.startswith("Mega "):
-            probes.append(base)     # a Mega skeleton core IS its own offer (wants-driven
-            #                         frames lead with Megas — they must reach mega_options)
-        else:
-            probes += [f"Mega {base}", f"Mega {base} X", f"Mega {base} Y"]
-    if form.anchor and form.anchor.startswith("Mega ") and form.anchor not in probes:
-        probes.append(form.anchor)
-    if not probes:
-        return []
+    # A Mega skeleton core IS its own offer (wants-driven frames lead with Megas — they must
+    # reach mega_options); a locked Mega anchor too.
+    if form.anchor and form.anchor not in bases:
+        bases = [form.anchor, *bases]
     try:
-        doc = pool.request_json(
-            "dex", ["resolve", *probes[:80], "--format", "json", "--kind", "pokemon"],
-            timeout=min(30.0, max(1.0, deadline - time.monotonic())))
+        megas = _mega_forms(bases, form)
     except Exception:
         return []
-    megas: list[str] = []
-    for e in doc if isinstance(doc, list) else []:
-        # raw CLI shape (snake_case) — exact matches only: the X/Y probes fuzzy-hit the
-        # plain form otherwise and the plain probe already covers it.
-        if isinstance(e, dict) and e.get("ok") and e.get("match_type") == "exact" \
-                and e.get("is_mega"):
-            name = str(e.get("canonical") or "")
-            if name and name not in megas and name not in form.avoid \
-                    and (not form.owned or name in form.owned):
-                megas.append(name)
     if not megas:
         return []
     ops = [{"op": "repset", "species": m, "format": form.format, "max_clusters": 1}
@@ -333,9 +361,18 @@ def _ground(pool: Any, form: BuilderForm, skeletons: list[dict], deadline: float
     rem = lambda: max(1.0, deadline - time.monotonic())  # noqa: E731
     species: list[str] = []
 
+    # Frame skeletons are real-team structures and do not read the owned pool: their cores
+    # outside it would fill every detail slot and push the pool's own members (and so their
+    # Megas) out of the input entirely, leaving the model nothing legal to assemble from.
+    try:
+        pool_megas = set(_mega_forms(list(form.owned), form)) if form.owned else set()
+    except Exception:
+        pool_megas = set()
+
     def add(name: Any) -> None:
         if isinstance(name, str) and name and name not in species \
-                and name not in form.avoid:
+                and name not in form.avoid \
+                and (not form.owned or name in form.owned or name in pool_megas):
             species.append(name)
 
     add(form.anchor)
@@ -360,6 +397,18 @@ def _ground(pool: Any, form: BuilderForm, skeletons: list[dict], deadline: float
             continue        # a fixed pool must not tempt the model with outside species
         if name not in detail_names and name not in form.avoid:
             detail_names.append(name)
+            add(name)
+    # A fixed pool IS the roster: members outside the top 20 still need grounding, and an owned
+    # Mega is grounded through its base species' usage (the meta keys Megas by base).
+    for name in form.owned:
+        if len(detail_names) >= MAX_DETAIL_SPECIES:
+            break
+        try:
+            base = _base_of(name)
+        except Exception:
+            base = name
+        if base not in detail_names and base not in form.avoid:
+            detail_names.append(base)
             add(name)
     details: dict[str, Any] = {}
     for name in detail_names[:MAX_DETAIL_SPECIES]:
@@ -421,7 +470,9 @@ Output STRICT JSON only — a single object, no prose, no markdown:
  "rationale": "3-5 sentences on how this team plays: the game plan, the key
   trade-offs you accepted, and what each flexible slot answers. Write it in the
   language given by output_language; name every Pokemon/move/item/ability by its
-  ENGLISH CANONICAL name exactly (the site localizes entity names itself)."}
+  ENGLISH CANONICAL name exactly (the site localizes entity names itself), once, with
+  no translation in parentheses. It is read by the player: never mention frame ids,
+  skeletons, role keys or constraint fields (mega_posture, owned_only, ...)."}
 Each member: {"species": "...", "item": "...", "ability": "...", "nature": "...",
  "moves": ["...", up to 4], "spread": {"hp":0,"atk":0,"def":0,"spa":0,"spd":0,"spe":0}}
 
@@ -454,7 +505,8 @@ Rules:
   the usage spreads from the input; do not exceed the caps.
 - Hard constraints: every "locked" species MUST be on the team; species in "avoid" and
   tactics in "exclude_tactics" MUST NOT appear; when "owned_only" is true use ONLY species
-  from "owned". Follow "style_lean" for the overall posture.
+  from "owned" — owning a base species includes its Mega forms listed in mega_options.
+  Follow "style_lean" for the overall posture.
 - "wants" lists the user's PREFERRED tactics: the skeletons were already selected for
   them — build the team around those tactics (e.g. a trickroom want means a Trick Room
   setter plus slow attackers, per the skeletons and usage details).
@@ -462,6 +514,7 @@ Rules:
   current meta register exactly TWO different Mega-stone holders in BOTH formats (the
   modal bucket: ~82% of real singles teams, ~56% of doubles). A locked Mega anchor counts
   as one — always add a second from mega_options. Never give two members the same stone.
+  A "pool_rules" entry in the input overrides this count.
 - Mega registration: observed teams for a skeleton often register SEVERAL Mega-stone
   holders. If a problems document reports "mega_registration" whose reference
   modal_buckets favor more registered Megas than your team has, add Mega species (with
@@ -740,6 +793,56 @@ def _item_suits(item: str, member: dict) -> bool:
     if item in _DEFENSIVE_FLAVOR:
         return not _is_offensive(member)
     return True                              # neutral filler suits either lean
+
+
+def _meet_mega_posture(members: list[dict], ctx: dict, mega_options: list[dict]) -> list[str]:
+    """A pool with ONE Mega-capable species sets mega_posture 'single'. A draft that kept that
+    member on a plain item is one item away from the constraint (models ignore it often enough
+    that the single repair round regularly fails on it), so give it the offered stone here — a
+    deterministic fix, disclosed like the others."""
+    if ctx.get("mega_posture") != "single":
+        return []
+    stones = {o.get("item") for o in mega_options if o.get("item")}
+    if any(m.get("item") in stones or str(m.get("species") or "").startswith("Mega ")
+           for m in members):
+        return []
+    for option in mega_options:
+        base = _base_of(str(option.get("species") or ""))
+        member = next((m for m in members if m.get("species") == base), None)
+        if member is not None and option.get("item"):
+            fix = (f"{member['species']}: item {member.get('item')} -> {option['item']} "
+                   "(the owned pool's one Mega is registered)")
+            member["item"] = option["item"]
+            return [fix]
+    return []
+
+
+def _pool_rules(ctx: dict) -> list[str]:
+    """What a fixed pool changes about the Mega rules, said only to builds that have a pool: the
+    same sentences in the shared prompt made ordinary builds shy away from Megas altogether."""
+    rules = ["A Pokemon and its own Mega form are ONE Pokemon (Species Clause): to use an owned "
+             "species' Mega, put its mega_options entry in that species' slot, never both."]
+    posture = ctx.get("mega_posture")
+    if posture == "single":
+        rules.append("The pool holds one Mega-capable species: register exactly ONE Mega, that one.")
+    elif posture == "none":
+        rules.append("The pool holds no Mega-capable species: register no Mega.")
+    return rules
+
+
+_FRAME_WORD = {"zh": "参考骨架", "ja": "参考骨格", "en": "the reference frame"}
+
+
+def _clean_rationale(text: str, lang: str, frame_ids: set) -> str:
+    """The rationale reaches the page as prose, so it gets the Q&A answer's deterministic guard
+    (design §2.1): frame ids, role keys and field names out, and a parenthesised dex name after
+    a canonical dropped — the page localizes the canonical itself."""
+    lang = lang if lang in _FRAME_WORD else "en"
+    for fid in sorted((f for f in frame_ids if isinstance(f, str) and f), key=len, reverse=True):
+        lead = r"\s*" if lang != "en" else r"(?:\b(?:the\s+)?(?:frame|skeleton)\s+)?"
+        tail = r"\s*" if lang != "en" else ""
+        text = re.sub(rf"{lead}\b{re.escape(fid)}\b{tail}", _FRAME_WORD[lang], text)
+    return _drop_name_glosses(_scrub_internal_tokens(text, lang)).strip()
 
 
 def sanitize_members(pool: Any, members: list[dict], deadline: float) -> list[str]:
@@ -1109,14 +1212,21 @@ def _fill_draft(skeleton: dict, assumptions: list[str], slate_out: dict) -> dict
 # -- pipeline ------------------------------------------------------------------------------
 
 
-def build(pool: Any, provider: LlmProvider, form: BuilderForm,
-          progress: Callable[[str, str, dict | None], None]) -> dict:
-    """Run the full wizard pipeline. Returns {"team", "legality", "audit", "assumptions",
-    "repaired", "tokens", ...metrics}; raises BuilderFailed / LlmUnavailable with the spend
-    attached. `progress(gate, status, detail)` mirrors the jobs.GATES timeline; `detail`
-    is each gate's disclosure-trimmed fact summary (species names in English canonical —
-    the SPA localizes; never a full frame/slate artifact, §7.1 boundary)."""
-    deadline = time.monotonic() + BUILDER_DEADLINE_SECONDS
+@dataclass
+class _Prepared:
+    """Everything the gates before the model produce; the build continues from it."""
+    ctx: dict
+    assumptions: list[str]
+    receipt: dict
+    frame_out: dict
+    skeletons: list[dict]
+    grounding: dict
+
+
+def _prepare(pool: Any, form: BuilderForm, progress: Callable[[str, str, dict | None], None],
+             deadline: float) -> _Prepared:
+    """Gates context -> frame -> ground: the deterministic front half. The full build and the
+    budget-exhausted preview share it, so a preview is exactly what a build would have started from."""
     ctx, assumptions = make_context(form)
 
     # Gate 1: context-audit (front gate) + intake done:true verification, one batch.
@@ -1174,6 +1284,46 @@ def build(pool: Any, provider: LlmProvider, form: BuilderForm,
            if grounding.get("anchor_dex_facts") else {}),
     }))
 
+    return _Prepared(ctx, assumptions, receipt, frame_out, skeletons, grounding)
+
+
+def preview(pool: Any, form: BuilderForm,
+            progress: Callable[[str, str, dict | None], None]) -> dict:
+    """The model-free answer when the daily model budget is spent (product roadmap §1.8): the
+    frame skeletons and the candidate pool a build would have assembled from. It names no team and
+    passes no slate, so it must never be presented as a build result. Species are English
+    canonical; provenance, shares and confidence stay out (the public layer, design §7.1)."""
+    deadline = time.monotonic() + BUILDER_DEADLINE_SECONDS
+    prep = _prepare(pool, form, progress, deadline)
+    tier = {"anchor": "anchor", "core-partner": "core", "recurring-partner": "partner"}
+    skeletons = []
+    for sk in prep.skeletons[:3]:
+        core = [{"species": cc["species"], "tier": tier.get(cc.get("role"), "partner")}
+                for cc in (sk.get("core_candidates") or [])
+                if isinstance(cc, dict) and isinstance(cc.get("species"), str)]
+        if core:
+            open_slots = (sk.get("flex_slots") or {}).get("open_count", 6 - len(core))
+            skeletons.append({"core": core, "openSlots": max(0, int(open_slots))})
+    if not skeletons:
+        raise BuilderFailed("no_frame")
+    return {"skeletons": skeletons,
+            "candidates": list(prep.grounding["usage_details"].keys()),
+            "megaOptions": [str(o.get("species")) for o in prep.grounding["mega_options"]
+                            if o.get("species")]}
+
+
+def build(pool: Any, provider: LlmProvider, form: BuilderForm,
+          progress: Callable[[str, str, dict | None], None]) -> dict:
+    """Run the full wizard pipeline. Returns {"team", "legality", "audit", "assumptions",
+    "repaired", "tokens", ...metrics}; raises BuilderFailed / LlmUnavailable with the spend
+    attached. `progress(gate, status, detail)` mirrors the jobs.GATES timeline; `detail`
+    is each gate's disclosure-trimmed fact summary (species names in English canonical —
+    the SPA localizes; never a full frame/slate artifact, §7.1 boundary)."""
+    deadline = time.monotonic() + BUILDER_DEADLINE_SECONDS
+    prep = _prepare(pool, form, progress, deadline)
+    ctx, assumptions, receipt = prep.ctx, prep.assumptions, prep.receipt
+    frame_out, skeletons, grounding = prep.frame_out, prep.skeletons, prep.grounding
+
     # Assemble (LLM, one candidate) + evaluate/audit with a shared single-repair budget.
     progress("generate", "running", None)
     assembler = _Assembler(provider, deadline)
@@ -1187,10 +1337,13 @@ def build(pool: Any, provider: LlmProvider, form: BuilderForm,
     }
     if grounding.get("anchor_dex_facts"):
         payload["anchor_dex_facts"] = grounding["anchor_dex_facts"]
+    if form.owned:
+        payload["pool_rules"] = _pool_rules(ctx)
     payload["output_language"] = form.lang
     members, frame_id, rationale = assembler.ask(payload)
     canonicalize_members(pool, members, deadline)
-    fixes = sanitize_members(pool, members, deadline)
+    fixes = sanitize_members(pool, members, deadline) \
+        + _meet_mega_posture(members, ctx, grounding["mega_options"])
     if fixes and rationale:
         try:
             rationale = assembler.refresh_rationale(members, form.lang, fixes)
@@ -1298,7 +1451,8 @@ def build(pool: Any, provider: LlmProvider, form: BuilderForm,
                     # Disclosure-safe extras (§7.1: counting facts + the model's OWN prose;
                     # never joint sets / frame / slate artifacts): the assembler's build
                     # rationale, the full guaranteed-OHKO threat list, the mega count.
-                    **({"rationale": rationale} if rationale else {}),
+                    **({"rationale": _clean_rationale(rationale, form.lang, known_ids)}
+                       if rationale else {}),
                     "threats": threat_rows[:5],
                     "matchupThreats": threat_assessment,
                     "megaCount": int((cand.get("mega_plan") or {})
@@ -1334,7 +1488,8 @@ def build(pool: Any, provider: LlmProvider, form: BuilderForm,
                            "problems MUST change accordingly, using only input data.",
         })
         canonicalize_members(pool, members, deadline)
-        fixes = sanitize_members(pool, members, deadline)
+        fixes = sanitize_members(pool, members, deadline) \
+            + _meet_mega_posture(members, ctx, grounding["mega_options"])
         if fixes and rationale:
             try:
                 rationale = assembler.refresh_rationale(members, form.lang, fixes)

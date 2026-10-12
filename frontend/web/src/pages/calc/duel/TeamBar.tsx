@@ -10,7 +10,7 @@
  * itself, and the wing's own button opens that side's toggles right under the roster it affects. */
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
-import { useT, type MsgKey } from "../../../i18n.ts";
+import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import { useLibraryDrop, useLibraryWorkspace } from "../../../lib/library/workspace.tsx";
 import { copyText } from "../../../lib/download.ts";
 import { formatPokepasteMon } from "../../../lib/pokepaste.ts";
@@ -155,7 +155,7 @@ export function TeamBar({
   /** The roster side a team or Pokémon dropped from the library lands on (calc/LibraryTransfers.tsx). */
   librarySide?: SideId;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const drop = useLibraryDrop(librarySide ? [`calc-team-${librarySide}`, `calc-mon-${librarySide}`] : []);
   const { requestSave } = useLibraryWorkspace("requestSave");
   const menu = usePopover();
@@ -200,7 +200,7 @@ export function TeamBar({
     sides: { ...current.sides, [side]: { ...current.sides[side], [key]: on } },
   }));
   const offered = SIDE_FLAGS.filter((flag) => !allowedFlags || allowedFlags.has(flag.key));
-  const flagName = (flag: (typeof SIDE_FLAGS)[number]) => t(flag.label as MsgKey);
+  const flagName = (flag: (typeof SIDE_FLAGS)[number]) => t(flag.label as CalcMsgKey);
   // Live conditions take the visible places first; a muted one only says "set, but ignored here".
   const active = offered.filter((flag) => flags[flag.key])
     .map((flag) => ({ flag, muted: !!flag.doublesOnly && singles }))
@@ -282,7 +282,7 @@ export function TeamBar({
             return (
               <button key={flag.key} type="button" className={`duel-toggle${on ? " on" : ""}`}
                 data-cat={flag.cat} aria-pressed={on} disabled={ignored && !on}
-                title={ignored ? t("calc.doublesOnlyHint") : flag.hint ? t(flag.hint as MsgKey) : undefined}
+                title={ignored ? t("calc.doublesOnlyHint") : flag.hint ? t(flag.hint as CalcMsgKey) : undefined}
                 onClick={() => setFlag(flag.key, !on)}>
                 <i aria-hidden />{flagName(flag)}
               </button>
@@ -349,7 +349,7 @@ export function TeamBar({
                       // still be switched off from here.
                       disabled={ignored && !on}
                       title={ignored ? t("calc.doublesOnlyHint")
-                        : flag.hint ? t(flag.hint as MsgKey) : undefined}
+                        : flag.hint ? t(flag.hint as CalcMsgKey) : undefined}
                       onClick={() => setFlag(flag.key, !on)}>
                       <i aria-hidden /><span>{flagName(flag)}</span>
                       {flag.doublesOnly && <small>{t("format.double")}</small>}

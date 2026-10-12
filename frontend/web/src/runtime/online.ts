@@ -140,7 +140,9 @@ export class OnlineAdapter implements RuntimeAdapter {
   }
 
   /** Static-projection resolve: exact/substring match over the trilingual card names.
-   * Deliberately simpler than the dex CLI's fuzzy resolver — misses stay misses. */
+   * Deliberately simpler than the dex CLI's fuzzy resolver — misses stay misses, and a substring
+   * shared by several cards (イエッサ: Indeedee and Indeedee-F) is refused with its candidates
+   * rather than settled on the first card. */
   async resolve(names: string[], kind?: string): Promise<ResolveEntryDto[]> {
     const k = (kind ?? "pokemon") as ResolveEntryDto["kind"];
     if (k !== "pokemon") {
@@ -150,12 +152,18 @@ export class OnlineAdapter implements RuntimeAdapter {
     }
     const cards = await loadCards(this.cfg.projectionBase);
     return names.map((query) => {
-      const q = query.trim().toLowerCase();
+      const raw = query.trim(), q = raw.toLowerCase();
+      if (!q) return { query, ok: false as const, kind: "pokemon" as const, matchType: null };
       const exact = cards.find((c) =>
-        c.name.toLowerCase() === q || c.nameZh === query.trim() || c.nameJa === query.trim());
-      const hit = exact ?? cards.find((c) =>
+        c.name.toLowerCase() === q || c.nameZh === raw || c.nameJa === raw);
+      const partial = exact ? [] : cards.filter((c) =>
         c.name.toLowerCase().includes(q) ||
-        (c.nameZh?.includes(query.trim()) ?? false) || (c.nameJa?.includes(query.trim()) ?? false));
+        (c.nameZh?.includes(raw) ?? false) || (c.nameJa?.includes(raw) ?? false));
+      if (partial.length > 1) {
+        return { query, ok: false as const, kind: "pokemon" as const, matchType: "ambiguous" as const,
+                 suggestions: partial.slice(0, 8).map((c) => c.name) };
+      }
+      const hit = exact ?? partial[0];
       return hit
         ? {
             query, ok: true as const, kind: "pokemon" as const, canonical: hit.name,

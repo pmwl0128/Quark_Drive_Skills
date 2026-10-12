@@ -12,7 +12,7 @@
  * and showing nothing would read as "we have no data".
  */
 import { useId } from "react";
-import { useT } from "../i18n.ts";
+import { useSharedT } from "./messages.ts";
 
 type State = "loading" | "error" | "missing" | "ready";
 
@@ -29,7 +29,7 @@ function MiniTrend({ periods, values, state, kind }: {
   state: State;
   kind: "pct" | "rank";
 }) {
-  const t = useT();
+  const t = useSharedT();
   const gradientId = useId().replace(/:/g, "");
   const rank = kind === "rank";
 

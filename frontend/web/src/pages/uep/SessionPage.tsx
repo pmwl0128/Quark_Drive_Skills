@@ -12,7 +12,8 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAsync } from "../../hooks.ts";
-import { optionalKey, useLang, useT } from "../../i18n.ts";
+import { useLang } from "../../i18n.ts";
+import { useUepT, optionalUepKey } from "./messages.ts";
 import { useProseRenderer } from "../../lib/prose.tsx";
 import { stashCalcTeams, stashMatchupFill, stashTuneFill, teamToCalcMembers }
   from "../../lib/team.ts";
@@ -30,7 +31,7 @@ import { toTeamDoc } from "../../lib/teamDoc.ts";
 function ArtifactBody({ sessions, hash, kind }: {
   sessions: SessionApi; hash: string; kind?: string;
 }) {
-  const t = useT();
+  const t = useUepT();
   const [showRaw, setShowRaw] = useState(false);
   const state = useAsync(() => sessions.artifact(hash), [hash]);
   if (state.status === "loading") return <div className="spinner">{t("state.loading")}</div>;
@@ -52,7 +53,7 @@ function ArtifactBody({ sessions, hash, kind }: {
 }
 
 function ArtifactRow({ sessions, entry }: { sessions: SessionApi; entry: LedgerEntryDto }) {
-  const t = useT();
+  const t = useUepT();
   const [open, setOpen] = useState(false);
   return (
     <div className="artifact-row">
@@ -133,7 +134,7 @@ function DecisionForm({ sessions, session, checkpoint, onCommitted }: {
   checkpoint: Record<string, unknown> | null;
   onCommitted: () => void;
 }) {
-  const t = useT();
+  const t = useUepT();
   const { lang } = useLang();
   // The agent's ACTUAL questions from the checkpoint artifact (trilingual) — the decision
   // buttons answer these, so they must be visible, live, in the viewer's language.
@@ -252,7 +253,7 @@ function ResultSection({ draft, intent, sessionId, provisional }: {
    * work-in-progress draft, never as the certified final team. */
   provisional?: boolean;
 }) {
-  const t = useT();
+  const t = useUepT();
   const { can } = useRuntime();
   const navigate = useNavigate();
   const loc = useProseRenderer();
@@ -345,11 +346,11 @@ function ResultSection({ draft, intent, sessionId, provisional }: {
               const o = asObj(a);
               if (!o) return <li key={i}>{String(a)}</li>;
               const gap = String(o.gap ?? "");
-              const gapKey = optionalKey(`gapfield.${gap}`);
+              const gapKey = optionalUepKey(`gapfield.${gap}`);
               return <li key={i}>{gapKey ? t(gapKey) : gap}{o.note ? <> — {loc(String(o.note))}</> : null}</li>;
             })}
             {tuning && typeof tuning.status === "string" && (() => {
-              const sKey = optionalKey(`tune.status.${tuning.status}`);
+              const sKey = optionalUepKey(`tune.status.${tuning.status}`);
               return (
                 <li>{t("uep.result.tuning")}: {sKey ? t(sKey) : tuning.status}
                   {typeof tuning.reason === "string" && tuning.reason ? ` — ${tuning.reason}` : ""}</li>
@@ -367,7 +368,7 @@ function ResultSection({ draft, intent, sessionId, provisional }: {
 export function SessionPage() {
   const { id = "" } = useParams();
   const { adapter } = useRuntime();
-  const t = useT();
+  const t = useUepT();
   const sessions = adapter.sessions;
   const [refresh, setRefresh] = useState(0);
   const bump = () => setRefresh((n) => n + 1);

@@ -6,7 +6,7 @@ same shapes the live bridge serves, and derives the deployment id from the same
 capabilities assembly — projection and API can never disagree about identity.
 
 Output (default frontend/web/public/projection/, gitignored):
-    manifest.json                     {deploymentId, generatedAt, environment}
+    manifest.json                     {webProtocolVersion, deploymentId, calcEngineDigest, generatedAt, environment}
     capabilities.json                 online handshake (static caps + explicitly enabled API caps)
     dex/cards.json                    all PokemonCardDto (browse index + card lookup)
     dex/{moves,abilities,natures,items}.json  complete trilingual vocabularies

@@ -6,7 +6,8 @@ import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AdaptiveCombobox } from "../AdaptiveCombobox.tsx";
 import { TypeBadge, typeLabel } from "../TypeBadge.tsx";
 import { typeColor } from "../../assets/icons.ts";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useSharedT } from "../messages.ts";
 import { shareLabel, splitByUsage, type MetaUsage } from "../../lib/metaUsage.ts";
 
 /** A learnset-restricted move input: typing resolves against this mon's own legal moves in any of
@@ -20,7 +21,7 @@ export function MoveSlot({ value, onChange, learnset, index, usage }: {
   usage?: MetaUsage | null;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useSharedT();
   const [text, setText] = useState("");
   const moves = learnset?.moves ?? [];
 

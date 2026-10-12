@@ -17,7 +17,8 @@ import { STAT_KEYS } from "@pokemon-champions/protocol";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx";
 import { useAsync, useMovesByName } from "../../hooks.ts";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useCalcT } from "./messages.ts";
 import { takeTuneFill } from "../../lib/team.ts";
 import { HttpError, type DexIndexEntry } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
@@ -27,7 +28,7 @@ import { monsFromPaste } from "./duel/paste.ts";
 import { SwapSeam } from "./duel/SwapSeam.tsx";
 import { TEAM_MAX, type ImportOutcome } from "./duel/TeamBar.tsx";
 import {
-  EMPTY_FIELD, applyBuildOption, damageRequest, effectiveEntry, makeMon, withoutMember,
+  EMPTY_FIELD, applyBuildOption, damageRequest, effectiveEntry, makeMon, monToMember, withoutMember,
   type FieldState, type MonState, type SideId,
 } from "./duel/state.ts";
 import { useRoster } from "./roster.tsx";
@@ -38,7 +39,7 @@ import {
 import { AttackerCard, DefenderCard, type MoveReading } from "./tune/MonCards.tsx";
 import { SCREEN_FLAGS, TeamStrip } from "./tune/TeamStrip.tsx";
 import { TARGET_LABEL, Verdict, type VerdictState } from "./tune/Verdict.tsx";
-import { TargetsPanel, type SolveEntry, type SolveRun, type TargetRow } from "./tune/Targets.tsx";
+import { TargetsPanel, type DragMemberOf, type SolveEntry, type SolveRun, type TargetRow } from "./tune/Targets.tsx";
 
 /** Our defender is the roster's side "a", the attackers side "b". */
 const SIDE: Record<TuneSide, SideId> = { mine: "a", foe: "b" };
@@ -69,7 +70,7 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
   onRailApi?: (api: CalcRailApi) => void;
 }) {
   const { adapter, can } = useRuntime();
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const moveVocab = useMovesByName();
   const store = useDamageStore(adapter);
@@ -259,7 +260,7 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
       { id: "secondary", label: t("speed.theirs") },
     ],
     pick: pickFromRail,
-  // `useT()` returns a render-local function; language, not that function identity, is the input.
+  // `useCalcT()` returns a render-local function; language, not that function identity, is the input.
   }), [field.format, pickFromRail, lang]);
   useEffect(() => { onRailApi?.(railApi); }, [onRailApi, railApi]);
 
@@ -498,7 +499,7 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
       // are not calculation errors, and "failed" for them reads as a broken tool.
       const refused = error instanceof HttpError && error.status === 429;
       setSolveError(t(!refused ? "calc.error"
-        : error.message.includes('"busy"') ? "tune.ws.busy" : "tune.ws.limit"));
+        : error.code === "busy" ? "tune.ws.busy" : "tune.ws.limit"));
     } finally {
       setSolveBusy(false);
     }
@@ -511,6 +512,15 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
   }, [updateMon, teams.a, setActive]);
 
   const memberMon = useCallback((uid: string) => findMon(teams, "a", uid) ?? null, [teams]);
+  // A target's avatars drag the build as it stands when the drag starts, not as it was pinned.
+  const latestTeams = useRef(teams);
+  latestTeams.current = teams;
+  const dragOf = useCallback<DragMemberOf>((side, uid) => findMon(teams, SIDE[side], uid)
+    ? () => {
+      const mon = findMon(latestTeams.current, SIDE[side], uid);
+      return mon ? monToMember(mon, dex) : null;
+    }
+    : null, [teams, dex]);
 
   const stripTeams = useMemo(() => ({ mine: teams.a, foe: teams.b }), [teams]);
 
@@ -548,7 +558,7 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
         run={run} stale={!!run && run.contextSig !== contextSig}
         preset={formatProbability(targetProbability(target))}
         natures={natures} memberOf={memberMon} entryOf={memberEntry} moveLabelOf={moveLabel}
-        onApply={applySpread} />
+        onApply={applySpread} dragOf={dragOf} />
     </div>
   );
 }

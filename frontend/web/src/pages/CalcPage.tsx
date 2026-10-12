@@ -6,7 +6,7 @@
 import { lazy, Suspense, useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDexIndex, useItems, useNatures } from "../hooks.ts";
-import { useT } from "../i18n.ts";
+import { useCalcT } from "./calc/messages.ts";
 import { PageHeader } from "../components/PageHeader.tsx";
 import { CalcRail, type CalcRailApi } from "../components/CalcRail.tsx";
 import { RailHandle, useSideRail } from "../components/SideRail.tsx";
@@ -31,7 +31,7 @@ type Tab = "damage" | "speed" | "tune" | "infer";
 
 export function CalcPage() {
   const { can } = useRuntime();
-  const t = useT();
+  const t = useCalcT();
   const dex = useDexIndex();
   const natures = useNatures();
   const items = useItems();

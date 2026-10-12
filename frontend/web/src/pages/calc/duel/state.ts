@@ -106,15 +106,6 @@ export function applyBuildOption(
   };
 }
 
-/** Abilities the calc ships toggled OFF because their trigger is invisible to a single damage frame,
- * so "it went off" is the caller's statement rather than a default. This copy only decides when the
- * page OFFERS the switch — `ncp-calc-api.js` ABILITY_TOGGLE_OFF owns the behaviour, and if the two
- * ever drift the cost is a switch that is not offered, never a number computed from a wrong flag. */
-export const ABILITY_NEEDS_TRIGGER = new Set([
-  "Flash Fire", "Plus", "Minus", "Trace", "Stakeout", "Sand Spit", "Battle Bond",
-  "Electromorphosis", "Wind Power", "Seed Sower",
-]);
-
 /** Side identity. "a" holds the attacker team, "b" the defender team; a direction is (from, to). */
 export type SideId = "a" | "b";
 export const otherSide = (side: SideId): SideId => (side === "a" ? "b" : "a");

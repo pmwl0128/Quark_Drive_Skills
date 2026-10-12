@@ -23,7 +23,8 @@ import type {
 } from "@pokemon-champions/protocol";
 import { CategoryBadge, TypeBadge } from "../../components/TypeBadge.tsx";
 import type { Async } from "../../hooks.ts";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 import { MonTile } from "./MonTile.tsx";
 import { TrendAddon, UsageRow } from "./rows.tsx";
 
@@ -74,7 +75,7 @@ function KoSide({ ko, side, trend, format, onPreviewOpen }: {
   format: FormatId;
   onPreviewOpen?: () => void;
 }) {
-  const t = useT();
+  const t = useMetaT();
   const outgoing = side === "koTargets";
   const retained = ko.coverage.panelReusedFrom?.[side];
   const moves = ko.coverage.moveShare === "absent" ? null
@@ -121,7 +122,7 @@ export function KoCard({ ko, trend, format, onPreviewOpen }: {
   format: FormatId;
   onPreviewOpen?: () => void;
 }) {
-  const t = useT();
+  const t = useMetaT();
   if (ko.status === "loading") return null;
   if (ko.status === "error") {
     // 404 is the factual "this snapshot was not collected"; anything else is a real load failure
@@ -133,25 +134,16 @@ export function KoCard({ ko, trend, format, onPreviewOpen }: {
     );
   }
   const data = ko.data;
-  const snapshot = data.snapshotId != null
-    ? t("mc.ko.snapshot").replace("{id}", String(data.snapshotId))
-      .replace("{time}", stampTime(data.updatedAt))
-    : t("mc.ko.updated").replace("{time}", stampTime(data.updatedAt));
   return (
     <section className="mc-card mc-ko" aria-label={t("ko.section")}>
       <header className="mc-ko-head">
         <h2>{t("ko.section")}</h2>
-        <span className="mc-ko-note">{t("ko.orderOnly")} · {t("mc.ko.useNote")}</span>
-        <span className="mc-ko-stamp">
-          {data.season} · {t(`format.${format}`)} · {snapshot}
-          {data.coverage.reusedFrom && (
-            <> · {t("mc.ko.reusedFrom").replace("{season}", data.coverage.reusedFrom.season)}</>
-          )}
-          {data.coverage.moveShareCapturedAt && (
-            <> · {t("mc.ko.movesAt").replace("{time}", stampTime(data.coverage.moveShareCapturedAt))}</>
-          )}
-        </span>
+        <span className="mc-ko-note">{t("ko.hidden")} · {t("ko.orderOnly")}</span>
       </header>
+      {/* The one provenance line that stays: a whole card borrowed from an earlier season must say so. */}
+      {data.coverage.reusedFrom && (
+        <p className="mc-ko-reused">{t("mc.ko.reusedFrom").replace("{season}", data.coverage.reusedFrom.season)}</p>
+      )}
       <div className="mc-ko-sides">
         <KoSide ko={data} side="koTargets" trend={trend} format={format} onPreviewOpen={onPreviewOpen} />
         <KoSide ko={data} side="koedBy" trend={trend} format={format} onPreviewOpen={onPreviewOpen} />

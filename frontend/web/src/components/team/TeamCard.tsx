@@ -10,7 +10,8 @@ import { EntityHover } from "../EntityHover.tsx";
 import { GameImage } from "../GameImage.tsx";
 import { TypeBadge } from "../TypeBadge.tsx";
 import { useAsync, useDexByName } from "../../hooks.ts";
-import { displayName, optionalKey, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useSharedT, optionalSharedKey } from "../messages.ts";
 import { localName, useNameMaps, type NameMaps } from "../../lib/names.ts";
 import { formatTeamPlainText, readTeamMembers, type TeamMemberish } from "../../lib/team.ts";
 import { KeepMonButton } from "../KeepMonButton.tsx";
@@ -39,7 +40,7 @@ function MemberCard({ mon, index, dex, names, format, corner, keepOrigin, onReor
   onReorder?: (from: number, to: number) => void;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useSharedT();
   const entry = dex.get(mon.species);
   const slug = entry?.slug ?? slugify(mon.species);
   const name = entry ? displayName(entry, lang) : mon.species;
@@ -138,7 +139,7 @@ function MemberCard({ mon, index, dex, names, format, corner, keepOrigin, onReor
       {sp.length > 0 && (
         <div className="party-sp num">
           {sp.map(([k, v]) => {
-            const key = optionalKey(`stat.${k}`);
+            const key = optionalSharedKey(`stat.${k}`);
             return `${key ? t(key) : k}${v}`;
           }).join(" / ")}
         </div>
@@ -171,7 +172,7 @@ export function TeamCard({ team, badges, actions, extraExport, keepOrigin = "man
   /** Empty places after the members, up to six, that add one (the teams page: from the boxes). */
   addSlot?: { label: string; onAdd: () => void };
 }) {
-  const t = useT();
+  const t = useSharedT();
   const dex = useDexByName();
   const names = useNameMaps();
   const { requestSave } = useLibraryWorkspace("requestSave");

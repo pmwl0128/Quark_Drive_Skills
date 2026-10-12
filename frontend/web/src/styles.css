@@ -31,6 +31,12 @@
      red-orange-amber-olive-green ramp (KO buckets) plus green/amber/grey (check grades), so a
      warm or green chip would read as a GRADE rather than a position. */
   --build-a: #2457df; --build-b: #7b45d6; --build-c: #0d7f92;
+  /* Solid action buttons (primary, the bulk tool's action, hover-filled keep/edit). On light they are
+     the brand; on dark the brand is a light blue that white text does not read on, and its coloured
+     glow looks like a highlight, so dark uses a deep blue with a plain drop shadow. */
+  --action: var(--brand); --action-hover: var(--brand-strong);
+  --action-shadow: 0 5px 14px color-mix(in srgb, var(--brand) 22%, transparent);
+  --action-shadow-hover: 0 8px 20px color-mix(in srgb, var(--brand) 28%, transparent);
   /* Day/night switch. The one place a warm hue is allowed outside the type system: the control
      names daylight and night, so borrowing brand blue for both made the active half unreadable. */
   --day: #c07c0c; --day-soft: #fbeed2;
@@ -63,10 +69,29 @@
     --shadow-raised: 0 18px 42px rgb(0 0 0 / 0.48);
     --pct-fill: color-mix(in srgb, var(--brand) 16%, transparent);
     --build-a: #7fa5ff; --build-b: #b48cf5; --build-c: #4fc0d4;
+    --action: #3667ee; --action-hover: #4a78f2;
+    --action-shadow: 0 8px 18px -14px rgb(0 0 0 / 0.8);
+    --action-shadow-hover: 0 10px 20px -14px rgb(0 0 0 / 0.85);
     --day: #edb45e; --day-soft: #3b2f15;
     --night: #a9b6ff; --night-soft: #232b52;
     --acc-ink-mix: 55%;
 }
+
+/* Tabular numerals subset (frontend/assets/fonts/pc-numerals/README.md), shared by the environment
+   card and the home page. unicode-range hands only digits and a few symbols to it; every other
+   character falls through to the UI font, and a weight downloads only once something uses it. */
+@font-face { font-family: "PC Numerals"; font-weight: 500; font-display: swap;
+  src: url("../../assets/fonts/pc-numerals/pc-numerals-500.woff2") format("woff2");
+  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
+@font-face { font-family: "PC Numerals"; font-weight: 600; font-display: swap;
+  src: url("../../assets/fonts/pc-numerals/pc-numerals-600.woff2") format("woff2");
+  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
+@font-face { font-family: "PC Numerals"; font-weight: 700; font-display: swap;
+  src: url("../../assets/fonts/pc-numerals/pc-numerals-700.woff2") format("woff2");
+  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
+@font-face { font-family: "PC Numerals"; font-weight: 800; font-display: swap;
+  src: url("../../assets/fonts/pc-numerals/pc-numerals-800.woff2") format("woff2");
+  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
 
 * { box-sizing: border-box; }
 html { scrollbar-gutter: stable; }
@@ -108,7 +133,9 @@ button, input, select {
 }
 .topbar .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px;
   letter-spacing: -0.02em; color: var(--ink); }
+.topbar .logo { text-decoration: none; border-radius: 8px; }
 .topbar .logo img { width: 30px; height: 30px; filter: drop-shadow(0 3px 6px rgb(36 87 223 / 0.18)); }
+.topbar .logo-sub { margin-left: 5px; color: var(--sub); font-weight: 600; }
 .topbar nav { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .topbar nav a { flex-shrink: 0; white-space: nowrap; }
 .topbar nav a {
@@ -264,6 +291,12 @@ main.content:focus { outline: none; }
 .site-footer-inner { width: min(1240px, 100% - 48px); margin: 0 auto; padding: 22px 0 18px; }
 .site-footer-main { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .footer-copyright { font-size: 12px; color: var(--sub); white-space: nowrap; }
+/* The brand line: mark, name, the slogan, then the copyright. */
+.footer-brand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
+.footer-brand img { width: 22px; height: 22px; flex: none; }
+.footer-brand-name { color: var(--ink); font-size: 13.5px; font-weight: 800; letter-spacing: -0.01em; }
+.footer-brand-name span { margin-left: 4px; color: var(--sub); font-weight: 600; }
+.footer-brand .footer-copyright { padding-left: 10px; border-left: 1px solid var(--line); }
 .footer-community { display: flex; align-items: center; gap: 24px; font-size: 12px; }
 .footer-community a { display: inline-flex; align-items: center; gap: 7px; color: var(--sub); white-space: nowrap; }
 .footer-community a:hover { color: var(--ink); text-decoration: none; }
@@ -478,7 +511,7 @@ input[type="number"].num::-webkit-inner-spin-button { -webkit-appearance: none; 
   width: 100%;
 }
 .primary-btn {
-  background: var(--brand); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px;
+  background: var(--action); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px;
   font-weight: 600; cursor: pointer;
 }
 .primary-btn:disabled { opacity: 0.5; cursor: default; }
@@ -1105,7 +1138,7 @@ a, button, .topbar nav a, .seg button, .subtab, .move-chip, .speed-presets butto
 
 /* hover HIGHLIGHT — the pointed element steps out of the page a touch */
 .topbar nav a:hover:not(.active) { background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
-.primary-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--brand) 88%, #000); }
+.primary-btn:hover:not(:disabled) { background: var(--action-hover); }
 .ghost-btn:hover { background: color-mix(in srgb, var(--brand) 8%, transparent); }
 .session-card:hover, .dex-card:hover {
   box-shadow: 0 4px 16px rgb(16 24 32 / 0.11); transform: translateY(-2px);
@@ -1249,20 +1282,17 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .thinking-help { position: relative; width: 20px; height: 20px; border: 1px solid var(--line);
   border-radius: 50%; padding: 0; background: var(--panel-2); color: var(--sub);
   font: 600 12px/18px ui-serif, Georgia, serif; cursor: help; }
-.thinking-help::after { content: attr(data-tooltip); position: absolute; z-index: 80;
-  left: 50%; bottom: calc(100% + 9px); width: min(280px, calc(100vw - 32px));
-  transform: translate(-50%, 4px); padding: 8px 10px; border: 1px solid var(--line);
+.thinking-help::after { content: attr(data-tooltip); display: none; position: absolute; z-index: 80;
+  right: 0; bottom: calc(100% + 9px); width: min(280px, calc(100vw - 32px));
+  padding: 8px 10px; border: 1px solid var(--line);
   border-radius: 8px; background: var(--ink); color: var(--panel); font: 12px/1.55 var(--font-sans);
   text-align: left; white-space: normal; overflow-wrap: anywhere; box-sizing: border-box;
-  box-shadow: var(--shadow); opacity: 0; pointer-events: none;
-  transition: opacity 140ms ease, transform 140ms ease; }
+  box-shadow: var(--shadow); pointer-events: none; }
 .thinking-help:hover::after, .thinking-help:focus-visible::after {
-  opacity: 1; transform: translate(-50%, 0); }
+  display: block; }
 @media (max-width: 600px) {
   .thinking-help::after { position: fixed; left: 16px; right: 16px; bottom: 16px;
-    width: auto; transform: translateY(4px); }
-  .thinking-help:hover::after, .thinking-help:focus-visible::after {
-    transform: translateY(0); }
+    width: auto; }
 }
 .second-btn {
   border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
@@ -1718,10 +1748,10 @@ input:focus, select:focus, textarea:focus {
 }
 .primary-btn {
   min-height: 40px; border-radius: 9px; padding: 9px 20px; font-weight: 750;
-  background: var(--brand); box-shadow: 0 5px 14px color-mix(in srgb, var(--brand) 22%, transparent);
+  background: var(--action); box-shadow: var(--action-shadow);
 }
 .primary-btn:hover:not(:disabled) {
-  background: var(--brand-strong); box-shadow: 0 8px 20px color-mix(in srgb, var(--brand) 28%, transparent);
+  background: var(--action-hover); box-shadow: var(--action-shadow-hover);
   transform: translateY(-1px);
 }
 .second-btn, .ghost-btn, .mini-x, .qa-example, .speed-presets button {
@@ -2962,8 +2992,14 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   border-radius: 6px; background: color-mix(in srgb, var(--brand) 14%, var(--panel-2));
   color: var(--brand); font: 750 10px/1 var(--font-mono);
 }
-.build-card-tag.meta { color: #9a6827; background: color-mix(in srgb, #c98a34 17%, var(--panel-2)); }
-.build-card-tag.custom { color: var(--success); background: color-mix(in srgb, var(--success) 14%, var(--panel-2)); }
+/* First-tier set origin (components/SetOrigin.tsx): one colour per origin wherever a set is shown. */
+.origin-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 6px; font: 650 11px/1.5 var(--font-ui);
+  color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, var(--panel-2));
+}
+.origin-meta { color: #9a6827; background: color-mix(in srgb, #c98a34 17%, var(--panel-2)); }
+.origin-custom { color: var(--success); background: color-mix(in srgb, var(--success) 14%, var(--panel-2)); }
+.origin-estimate { color: var(--sub); background: var(--panel-2); }
 .build-card-primary { display: flex; align-items: baseline; min-width: 0; gap: 5px; overflow: hidden; }
 .build-card-primary b {
   flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
@@ -3554,6 +3590,9 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 /* An editor's portrait carries the whole build: dragged onto a dock box cell it is kept there. */
 .duel-portrait.draggable { cursor: grab; }
 .duel-portrait.draggable:active { cursor: grabbing; }
+/* Small portraits elsewhere that carry a build (components/library/DragMon.tsx). */
+.lib-drag { display: inline-flex; align-items: center; cursor: grab; }
+.lib-drag:active { cursor: grabbing; }
 .duel-ident { display: grid; gap: 3px; min-width: 0; }
 .duel-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .duel-name {
@@ -3803,12 +3842,12 @@ button.swap-seam:active:not(:disabled) { transform: none; }
    stack as one column and swapping a label never resizes anything. */
 .tw-action {
   flex: none; width: 156px; height: 38px; padding: 0 12px; cursor: pointer;
-  border: 1px solid var(--brand); border-radius: 9px; background: var(--brand); color: #fff;
+  border: 1px solid var(--action); border-radius: 9px; background: var(--action); color: #fff;
   font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap;
-  box-shadow: 0 5px 14px color-mix(in srgb, var(--brand) 22%, transparent);
+  box-shadow: var(--action-shadow);
   transition: background-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
-.tw-action:hover:not(:disabled) { background: var(--brand-strong); border-color: var(--brand-strong); }
+.tw-action:hover:not(:disabled) { background: var(--action-hover); border-color: var(--action-hover); }
 .tw-action.done {
   border-color: color-mix(in srgb, var(--success) 45%, var(--line)); box-shadow: none;
   background: color-mix(in srgb, var(--success) 9%, var(--panel)); color: var(--success);
@@ -4168,7 +4207,7 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   transition: color 120ms, background-color 120ms, border-color 120ms;
 }
 .keep-mon svg { width: 12px; height: 12px; stroke-width: 2.4; }
-.keep-mon:hover:not(:disabled) { color: #fff; background: var(--brand); border-color: var(--brand); }
+.keep-mon:hover:not(:disabled) { color: #fff; background: var(--action); border-color: var(--action); }
 .keep-mon:disabled { opacity: 0.5; cursor: default; }
 .keep-mon:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 /* Beside the environment-build button of an editor, where the row already spaces its controls. */

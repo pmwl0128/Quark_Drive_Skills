@@ -3,7 +3,8 @@
  * visited it stays mounted, so in-flight jobs and hand-offs survive tab switches.
  *
  * "Diagnose this team" from elsewhere (the teams page, a builder result) arrives as a hand-off with
- * the navigation to `?tab=diagnose`. */
+ * the navigation to `?tab=diagnose`; the home page's builder brief arrives the same way with
+ * `?tab=wizard`. */
 import "../styles.assist.css";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -11,8 +12,9 @@ import { PageHeader } from "../components/PageHeader.tsx";
 import {
   SegmentedControl, segmentedPanelId, segmentedTabId,
 } from "../components/SegmentedControl.tsx";
-import { useT } from "../i18n.ts";
+import { useAssistT } from "./assist/messages.ts";
 import { takeDiagnoseFill } from "../lib/team.ts";
+import { takeBuilderFill, type BuilderFill } from "../lib/builderHandoff.ts";
 import { useRuntime } from "../runtime/context.tsx";
 
 const QaPage = lazy(() => import("./QaPage.tsx").then((m) => ({ default: m.QaPage })));
@@ -25,7 +27,7 @@ type AssistantTab = "qa" | "wizard" | "diagnose";
 
 export function AssistantPage() {
   const { adapter, can } = useRuntime();
-  const t = useT();
+  const t = useAssistT();
   const [params, setParams] = useSearchParams();
   const showQa = can("llm.qa") && !!adapter.qa;
   const showWizard = can("llm.builder") && !!adapter.builder;
@@ -39,6 +41,7 @@ export function AssistantPage() {
   const tab: AssistantTab = requested && tabs.includes(requested) ? requested : tabs[0] ?? "qa";
   const [visited, setVisited] = useState<ReadonlySet<AssistantTab>>(() => new Set([tab]));
   const [diagnoseFill, setDiagnoseFill] = useState<unknown | null>(null);
+  const [builderFill, setBuilderFill] = useState<BuilderFill | null>(null);
 
   useEffect(() => {
     setVisited((previous) => previous.has(tab) ? previous : new Set([...previous, tab]));
@@ -49,6 +52,11 @@ export function AssistantPage() {
     if (tab !== "diagnose") return;
     const handed = takeDiagnoseFill();
     if (handed !== null) setDiagnoseFill(handed);
+  }, [tab]);
+  useEffect(() => {
+    if (tab !== "wizard") return;
+    const handed = takeBuilderFill();
+    if (handed !== null) setBuilderFill(handed);
   }, [tab]);
 
   const setTab = (next: AssistantTab) => {
@@ -81,7 +89,8 @@ export function AssistantPage() {
         <div role="tabpanel" id={segmentedPanelId("assistant-mode", "wizard")}
           aria-labelledby={segmentedTabId("assistant-mode", "wizard")} hidden={tab !== "wizard"}>
           <Suspense fallback={<div className="spinner">{t("state.loading")}</div>}>
-            <BuilderPage embedded active={tab === "wizard"} />
+            <BuilderPage embedded active={tab === "wizard"} fill={builderFill}
+              onConsumeFill={() => setBuilderFill(null)} />
           </Suspense>
         </div>
       )}

@@ -6,7 +6,7 @@
  * it would make the live number and the solved number disagree. Whatever else is set on the shared
  * field stays there for the calculator and simply is not shown. */
 import { memo, type Dispatch, type SetStateAction } from "react";
-import { useT, type MsgKey } from "../../../i18n.ts";
+import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
 import { FieldPanel, useFieldOffers } from "../duel/FieldPanel.tsx";
@@ -15,7 +15,7 @@ import type { FieldState, MonState, SharedFlagKey } from "../duel/state.ts";
 import type { TuneSide } from "./model.ts";
 
 /** Our screens, stored on the shared field's side "a" — ours, the side being hit here. */
-export const SCREEN_FLAGS: Array<{ key: string; label: MsgKey }> = [
+export const SCREEN_FLAGS: Array<{ key: string; label: CalcMsgKey }> = [
   { key: "reflect", label: "calc.reflect" },
   { key: "light_screen", label: "calc.lightScreen" },
   { key: "aurora_veil", label: "calc.auroraVeil" },
@@ -39,7 +39,7 @@ export const TeamStrip = memo(function TeamStrip({ teams, active, field, setFiel
   onReset: (side: TuneSide) => void;
   onImport: (side: TuneSide, text: string) => Promise<ImportOutcome>;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const offers = useFieldOffers();
   const roster = (side: TuneSide) => ({
     team: teams[side], index: active[side], dex, items, field, setField,

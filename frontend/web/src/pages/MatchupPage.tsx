@@ -25,7 +25,8 @@ import { SegmentedControl, segmentedPanelId, segmentedTabId }
   from "../components/SegmentedControl.tsx";
 import { useOppCache, useOppChecks, useOppKo, useOppSets } from "../hooks.ts";
 import { useRuntime } from "../runtime/context.tsx";
-import { displayName, useLang, useT, type Lang } from "../i18n.ts";
+import { displayName, useLang, type Lang } from "../i18n.ts";
+import { useMatchupT } from "./matchup/messages.ts";
 import { useDamageText } from "../lib/damageText.tsx";
 import { koTone } from "../lib/ko.ts";
 import { populatedAxes } from "../lib/matchupGrid.ts";
@@ -96,7 +97,7 @@ function CellCalculate({ sets, aSlug, bSlug, format, move }: {
   /** The cell's own move: pre-selected in the calculator hand-off. */
   move?: string | null;
 }) {
-  const t = useT();
+  const t = useMatchupT();
   const navigate = useNavigate();
   if (!sets || (!sets[aSlug] && !sets[bSlug])) return null;
   return (
@@ -285,7 +286,7 @@ const CheckRow = memo(function CheckRow(props: GridRowProps<CheckCell> & {
   setSel: Dispatch<SetStateAction<{ m: string; o: string } | null>>;
 }) {
   const { rk, cols, colKeys, cells, selCol, setSel } = props;
-  const t = useT();
+  const t = useMatchupT();
   return (
     <tr>
       <GridRowHead {...(props as GridRowProps<unknown>)} />
@@ -325,7 +326,7 @@ function KoGrid({ format }: { format: FormatId }) {
   const buildState = useOppSets(format);
   const headerSets = buildState.status === "ready" ? buildState.data.sets : undefined;
   const { lang } = useLang();
-  const t = useT();
+  const t = useMatchupT();
   const damageText = useDamageText();
   const [sel, setSel] = useState<{ a: string; d: string } | null>(null);
   // The overview paints every cell from a compact document. The full 7–14 MB cache is useful only
@@ -465,7 +466,7 @@ function KoGrid({ format }: { format: FormatId }) {
 }
 
 function KoLegend() {
-  const t = useT();
+  const t = useMatchupT();
   const tones: Array<["ohkoG" | "ohko" | "2hko" | "3hko" | "4hko" | "slow", string]> = [
     ["ohkoG", "OHKO"], ["2hko", "2HKO"], ["3hko", "3HKO"], ["4hko", "4HKO"], ["slow", "5+"],
   ];
@@ -491,7 +492,7 @@ function CheckGrid({ format }: { format: FormatId }) {
   const sets = cacheState.status === "ready" && cacheState.data
     ? cacheState.data.sets : undefined;
   const { lang } = useLang();
-  const t = useT();
+  const t = useMatchupT();
   const damageText = useDamageText();
   const [rowPicks, setRowPicks] = useState<Record<string, string>>({});
   const [colPicks, setColPicks] = useState<Record<string, string>>({});
@@ -625,7 +626,7 @@ function CheckGrid({ format }: { format: FormatId }) {
 }
 
 function CheckLegend() {
-  const t = useT();
+  const t = useMatchupT();
   return (
     <div className="legend">
       <span className="chip grade-C2">C2</span><span className="muted">{t("matchup.c2")}</span>
@@ -639,7 +640,7 @@ function CheckLegend() {
 
 export function MatchupPage() {
   const { can } = useRuntime();
-  const t = useT();
+  const t = useMatchupT();
   const [format, setFormat] = useState<FormatId>("single");
   const [view, setView] = useState<"ko" | "check" | "actual">(() => {
     const requested = new URLSearchParams(window.location.search).get("mode");

@@ -11,6 +11,7 @@ import type {
   OnlineQuotaDto, QaAnswerDto, QaRequestDto, RankingDto, ResolveEntryDto, SessionDto, SessionWithLedgerDto,
   MetaKoTrendDto, SpeedBatchResultDto, SpeedInputDto, TrendDto, TuneResultDto, UsageTrendDto,
 } from "@pokemon-champions/protocol";
+import { OnlineErrorDetailSchema } from "@pokemon-champions/protocol";
 
 /** Lightweight dex-browse entry (projection-only shape: full cards stay lazy). */
 export interface DexIndexEntry {
@@ -120,10 +121,29 @@ export interface RuntimeConfig {
 /** HTTP failure carrying the status code, so callers can tell a 404 (e.g. "not ranked this
  * period" — a fact) from a 401 (auth) or a 5xx (real failure) instead of parsing a string. */
 export class HttpError extends Error {
-  constructor(readonly status: number, message: string) {
+  /** The online API's `detail.error.code` / `.message` when the body carried them. Pages branch on
+   * `code`, never on message text (design §2.1). */
+  readonly code?: string;
+  readonly reason?: string;
+  constructor(readonly status: number, message: string, detail?: unknown) {
     super(message);
     this.name = "HttpError";
+    const parsed = OnlineErrorDetailSchema.safeParse(detail);
+    if (parsed.success) {
+      this.code = parsed.data.error.code;
+      this.reason = parsed.data.error.message;
+    }
   }
+}
+
+/** An HttpError for a non-OK response, keeping the body's `detail` both readable and typed. */
+async function responseError(resp: Response, url: string): Promise<HttpError> {
+  let detail: unknown;
+  try {
+    detail = ((await resp.json()) as { detail?: unknown }).detail;
+  } catch { /* non-JSON error body */ }
+  const text = detail === undefined ? "" : JSON.stringify(detail);
+  return new HttpError(resp.status, `${resp.status} ${url}${text ? ` — ${text}` : ""}`, detail);
 }
 
 let projectionVersion = "";
@@ -141,13 +161,7 @@ export function versionParam(): string {
 
 export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(url, init);
-  if (!resp.ok) {
-    let detail = "";
-    try {
-      detail = JSON.stringify((await resp.json()).detail ?? "");
-    } catch { /* non-JSON error body */ }
-    throw new HttpError(resp.status, `${resp.status} ${url}${detail ? ` — ${detail}` : ""}`);
-  }
+  if (!resp.ok) throw await responseError(resp, url);
   return (await resp.json()) as T;
 }
 
@@ -168,14 +182,7 @@ export async function postNdjson(url: string, body: unknown,
     headers: { "Content-Type": "application/json", "Accept": "application/x-ndjson" },
     body: JSON.stringify(body),
   });
-  if (!response.ok) {
-    let detail = "";
-    try {
-      detail = JSON.stringify((await response.json() as { detail?: unknown }).detail ?? "");
-    } catch { /* non-JSON error body */ }
-    throw new HttpError(response.status,
-      `${response.status} ${url}${detail ? ` — ${detail}` : ""}`);
-  }
+  if (!response.ok) throw await responseError(response, url);
   // A deployment that answered plain JSON (an older origin, or a proxy that stripped the
   // stream) still carries the whole payload in the body.
   if (!response.body) return await response.json();
@@ -197,7 +204,7 @@ export async function postNdjson(url: string, body: unknown,
         };
         if (event.type === "error") {
           throw new HttpError(event.status ?? 500,
-            `${event.status ?? 500} ${url} — ${JSON.stringify(event.detail ?? "")}`);
+            `${event.status ?? 500} ${url} — ${JSON.stringify(event.detail ?? "")}`, event.detail);
         }
         if (event.type === "report") onReport?.(event.report);
         if (event.type === "done") final = { value: event.result };

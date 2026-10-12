@@ -6,6 +6,7 @@
  * front-end visibility; the server whitelists every endpoint independently (§7.5).
  */
 import { z } from "zod";
+import { FormatIdSchema } from "./common.ts";
 
 // Bumped 1 → 2: ItemPanelEntryDto.key went from absent to REQUIRED (a breaking DTO change). Without
 // a bump, a projection built by an older mapper (no item keys) would share a deploymentId with a
@@ -20,7 +21,9 @@ import { z } from "zod";
 // Bumped 4 → 5: meta detail popovers now require the lazy per-Pokemon usage-trend endpoint/projection.
 // Bumped 6 → 7: calculator defaults and matchup build previews require the lightweight
 // `oppsets_<format>.json` / `view=sets` resource instead of loading the full matchup matrix.
-export const WEB_PROTOCOL_VERSION = "7";
+// Bumped 7 → 8: environment.sourceFingerprints is REQUIRED — the per-format data identity (meta
+// panels + real-team library) that derived views were built from, independent of code changes.
+export const WEB_PROTOCOL_VERSION = "8";
 
 export const SKILL_IDS = ["dex", "meta", "calc", "team"] as const;
 export type SkillId = (typeof SKILL_IDS)[number];
@@ -35,6 +38,12 @@ export const KNOWN_CAPABILITIES = [
 ] as const;
 export type KnownCapability = (typeof KNOWN_CAPABILITIES)[number];
 
+export const SourceFingerprintsSchema = z.object({
+  meta: z.string().min(1),
+  teamLibrary: z.string().min(1),
+});
+export type SourceFingerprints = z.infer<typeof SourceFingerprintsSchema>;
+
 export const CapabilitiesSchema = z.object({
   webProtocolVersion: z.string().min(1),
   deploymentId: z.string().min(1),
@@ -44,6 +53,9 @@ export const CapabilitiesSchema = z.object({
     season: z.string().min(1),
     rule: z.string().min(1),
     asOf: z.string().optional(),
+    /** Content hashes of the data derived views (sets, matchup grids) were built from. They change
+     * only when that data changes, so a saved result can be checked against them across releases. */
+    sourceFingerprints: z.record(FormatIdSchema, SourceFingerprintsSchema),
   }),
   capabilities: z.array(z.string()),
 });

@@ -1,0 +1,87 @@
+/** Copy of the metagame detail page (usage card, KO card, share image), in its lazy chunk. */
+import { defineMessages, type ScopedKey } from "../../i18n.ts";
+import { SHARED_MESSAGES } from "../../components/messages.ts";
+
+const META_MESSAGES = {
+  ...SHARED_MESSAGES,
+  "detail.moves": { zh: "招式", en: "Moves", ja: "わざ" },
+  "detail.items": { zh: "道具", en: "Items", ja: "もちもの" },
+  "detail.natures": { zh: "性格", en: "Natures", ja: "せいかく" },
+  "detail.partners": { zh: "常见队友", en: "Partners", ja: "相方" },
+  "detail.spreads": { zh: "SP 分布", en: "SP spreads", ja: "SP配分" },
+  "detail.statValuesRange": {
+    zh: "0 SP（无补正）→ 32 SP（有利性格）",
+    en: "0 SP neutral → 32 SP boosting nature",
+    ja: "0 SP（無補正）→ 32 SP（上昇性格）" },
+  "detail.notRanked": { zh: "本期未上榜", en: "Not ranked this period", ja: "今期圏外" },
+  "ko.section": { zh: "击倒关系", en: "Knock-outs", ja: "KO関係" },
+  "ko.targets": { zh: "常击倒对象", en: "Most KOs", ja: "よく倒す相手" },
+  "ko.koedBy": { zh: "常被击倒于", en: "Most KO'd by", ja: "よく倒される相手" },
+  "ko.hidden": { zh: "游戏内未展示的 KO 统计", en: "KO statistics not shown in-game", ja: "ゲーム内では表示されないKO統計" },
+  "ko.orderOnly": { zh: "按图鉴编号统计，不区分具体形态", en: "Grouped by Pokédex number; forms are not separated", ja: "図鑑番号ごとに集計（フォルムの区別なし）" },
+  "ko.moves": { zh: "击倒所用招式", en: "KO moves", ja: "倒すときのわざ" },
+  "ko.koedByMoves": { zh: "被击倒的招式", en: "KO'd by moves", ja: "倒されたわざ" },
+  "ko.missing": { zh: "本快照没有击倒数据", en: "no KO data in this snapshot", ja: "このスナップショットにKOデータはありません" },
+  "ko.formCollapsed": {
+    zh: "同编号多形态，来源未区分",
+    en: "same dex no., form not distinguished upstream",
+    ja: "同番号の複数フォルム、出典は未区別",
+  },
+  "ko.usageRank": { zh: "该对象在本赛制的使用率名次", en: "this opponent's usage rank in this format", ja: "このフォーマットでの採用率順位" },
+  "mc.pct": { zh: "占比", en: "Share", ja: "採用率" },
+  "mc.pctVs": { zh: "占比 · 较 {date}", en: "share · vs {date}", ja: "採用率 · {date}比" },
+  "mc.change": { zh: "变化", en: "Δ", ja: "変化" },
+  "mc.new": { zh: "新", en: "new", ja: "新" },
+  "mc.newTitle": {
+    zh: "窗口首期不在前十，期间内新进入",
+    en: "outside the top 10 at the start of the window, entered since",
+    ja: "期間初めは上位10位圏外、期間中に新たに入った" },
+  "mc.deltaTitle": { zh: "较 {date}：{v} 个百分点", en: "vs {date}: {v} pts", ja: "{date}比：{v}ポイント" },
+  "mc.baseTotal": { zh: "合计", en: "Total", ja: "合計" },
+  "mc.baseNote": { zh: "种族值 · 悬停看 50 级实际值", en: "base stats · hover for Lv.50 values",
+                   ja: "種族値 · ホバーでLv.50実数値" },
+  "mc.statRange": { zh: "50 级实际值 {min}–{max}", en: "Lv.50 actual {min}–{max}", ja: "Lv.50実数値 {min}–{max}" },
+  "mc.formatSwitch": { zh: "切换赛制", en: "Switch format", ja: "形式を切り替え" },
+  "mc.spNote": {
+    zh: "每行一种配置 · 格内为 SP · 前 {n} 种合计 {sum}%",
+    en: "one spread per row · SP in each cell · top {n} total {sum}%",
+    ja: "1行1配分 · マス内はSP · 上位{n}種の合計 {sum}%" },
+  "mc.partnersNote": {
+    zh: "角标为共现顺序 · 下方为环境名次",
+    en: "corner: co-occurrence order · below: usage rank",
+    ja: "左上は共起順 · 下は採用率順位" },
+  "mc.share": { zh: "保存分享图", en: "Save image", ja: "画像を保存" },
+  "mc.set.modal": { zh: "主流配置", en: "Common set", ja: "最頻構成" },
+  "mc.set.nth": { zh: "配置 {n}", en: "Set {n}", ja: "構成 {n}" },
+  "mc.set.runForm": { zh: "以{form}出场", en: "runs as {form}", ja: "{form}で使用" },
+  "mc.set.prev": { zh: "上一套配置", en: "Previous set", ja: "前の構成" },
+  "mc.set.next": { zh: "下一套配置", en: "Next set", ja: "次の構成" },
+  "mc.ko.reusedFrom": { zh: "暂用 {season} 的采集值，本赛季 KO 数据尚未采集", en: "Using the {season} capture; this season's KO data is not collected yet", ja: "{season}の採取値を暫定使用（今シーズンのKOは未採取）" },
+  "mc.ko.zeroRetained": { zh: "本期该方向为零记录，沿用 {season} · {time} 的采集值", en: "No current records in this direction; retaining {season} · {time}", ja: "今期この方向は記録なし。{season} · {time}の採取値を使用" },
+  "mc.ko.movesAbsent": { zh: "招式占比待采集", en: "Move shares not collected yet", ja: "わざの採用率は未取得" },
+  "share.title": { zh: "保存分享图", en: "Save as image", ja: "画像として保存" },
+  "share.content": { zh: "内容", en: "Content", ja: "内容" },
+  "share.usage": { zh: "使用率卡", en: "Usage card", ja: "採用率カード" },
+  "share.ko": { zh: "击倒卡", en: "KO card", ja: "KOカード" },
+  "share.both": { zh: "两张", en: "Both", ja: "両方" },
+  "share.theme": { zh: "外观", en: "Theme", ja: "外観" },
+  "share.light": { zh: "浅色", en: "Light", ja: "ライト" },
+  "share.dark": { zh: "深色", en: "Dark", ja: "ダーク" },
+  "share.ratio": { zh: "比例", en: "Ratio", ja: "比率" },
+  "share.wide": { zh: "16:9 横版", en: "16:9 landscape", ja: "16:9 横" },
+  "share.tall": { zh: "3:4 竖版", en: "3:4 portrait", ja: "3:4 縦" },
+  "share.copy": { zh: "复制图片", en: "Copy image", ja: "画像をコピー" },
+  "share.download": { zh: "下载 PNG", en: "Download PNG", ja: "PNGを保存" },
+  "share.working": { zh: "正在生成…", en: "Rendering…", ja: "生成中…" },
+  "share.copied": { zh: "已复制到剪贴板", en: "Copied to the clipboard", ja: "クリップボードにコピーしました" },
+  "share.saved": { zh: "已开始下载", en: "Download started", ja: "保存を開始しました" },
+  "share.copyFailed": {
+    zh: "浏览器不允许写入剪贴板，请改用下载",
+    en: "The browser blocked the clipboard; use Download instead",
+    ja: "ブラウザがクリップボードへの書き込みを拒否しました。保存をお使いください" },
+  "share.failed": { zh: "生成失败，请重试", en: "Rendering failed; try again", ja: "生成に失敗しました。もう一度お試しください" },
+};
+
+export const useMetaT = defineMessages(META_MESSAGES);
+export const optionalMetaKey = useMetaT.optionalKey;
+export type MetaMsgKey = ScopedKey<typeof META_MESSAGES>;

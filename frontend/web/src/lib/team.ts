@@ -233,24 +233,4 @@ export function takeCalcTeams(): CalcTeamsFill | null {
   }
 }
 
-const DIAGNOSE_FILL_KEY = "pc-diagnose-fill-v1";
-
-/** "Diagnose this team" from another page (builder result, library). The diagnose tab lives on the
- * assist page, so the team crosses a navigation instead of a sibling-tab state. */
-export function stashDiagnoseFill(team: unknown): void {
-  try {
-    sessionStorage.setItem(DIAGNOSE_FILL_KEY, JSON.stringify(team));
-  } catch { /* storage blocked — the diagnose tab just opens on its own form */ }
-}
-
-/** Read AND CLEAR, like every hand-off: one trip only. */
-export function takeDiagnoseFill(): unknown | null {
-  try {
-    const raw = sessionStorage.getItem(DIAGNOSE_FILL_KEY);
-    if (!raw) return null;
-    sessionStorage.removeItem(DIAGNOSE_FILL_KEY);
-    return JSON.parse(raw) as unknown;
-  } catch {
-    return null;
-  }
-}
+export { stashDiagnoseFill, takeDiagnoseFill } from "./diagnoseHandoff.ts";

@@ -4,7 +4,7 @@
  * for. */
 import { useLayoutEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useT } from "../i18n.ts";
+import { useSharedT } from "./messages.ts";
 import { EscapeLayerScope, useEscapeLayer } from "./EscapeLayers.tsx";
 
 const FOCUSABLE = "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), "
@@ -19,7 +19,7 @@ export function Modal({ title, onClose, children, footer, width = 560, className
   width?: number;
   className?: string;
 }) {
-  const t = useT();
+  const t = useSharedT();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previousRef = useRef(document.activeElement as HTMLElement | null);

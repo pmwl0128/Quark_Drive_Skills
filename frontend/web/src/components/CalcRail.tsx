@@ -11,7 +11,8 @@ import {
 } from "./DexRail.tsx";
 import type { RailState } from "./SideRail.tsx";
 import { useLearners } from "../hooks.ts";
-import { displayName, useLang, useT } from "../i18n.ts";
+import { displayName, useLang } from "../i18n.ts";
+import { useCalcT } from "../pages/calc/messages.ts";
 import type { DexIndexEntry } from "../runtime/adapter.ts";
 import { useBuildOptions, type BuildOption } from "./build/inputs.tsx";
 
@@ -55,7 +56,7 @@ export function CalcRail({ state, dex, tab, api }: {
   tab: CalcRailTab;
   api: CalcRailApi | undefined;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const loadOptions = useBuildOptions();
   const [query, setQuery] = useState("");

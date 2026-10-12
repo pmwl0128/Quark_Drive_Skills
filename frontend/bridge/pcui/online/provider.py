@@ -395,6 +395,11 @@ class AnthropicMessagesProvider:
         return AnthropicMessagesProvider(replace(
             self.config, thinking="enabled" if enabled else "disabled"))
 
+    def with_model(self, model: str) -> "AnthropicMessagesProvider":
+        if not model.strip():
+            raise ValueError("model must be non-empty")
+        return AnthropicMessagesProvider(replace(self.config, model=model.strip()))
+
     def chat(self, messages: list[dict], tools: list[dict], *, max_tokens: int,
              tool_choice: str, timeout: float) -> ChatResult:
         cfg = self.config

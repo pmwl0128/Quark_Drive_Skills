@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:pokemon-champions:protocol:0.1.0",
-  "title": "Pokemon Champions Web Protocol",
+  "title": "Turn Zero Web Protocol",
   "description": "Generated from @pokemon-champions/protocol Zod schemas; do not edit by hand.",
-  "x-schema-count": 102,
-  "x-export-fingerprint": "192848d4b1d433677198c38ed46ed565824793a1563dba47c7c9ac3d21da0ec6",
+  "x-schema-count": 105,
+  "x-export-fingerprint": "44636f55f4e519031d17cd00bca76c8ca226fa9050aca473d20d6c3f69fcb403",
   "$defs": {
     "AbilityDtoSchema": {
       "type": "object",
@@ -3094,6 +3094,38 @@
           ],
           "additionalProperties": false
         },
+        "preview": {
+          "type": "object",
+          "properties": {
+            "skeletons": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BuilderJobDtoSchema/$defs/__schema3"
+              }
+            },
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "megaOptions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "skeletons",
+            "candidates",
+            "megaOptions"
+          ],
+          "additionalProperties": false
+        },
         "errorCode": {
           "type": "string"
         }
@@ -3166,6 +3198,128 @@
             "move",
             "evidenceId",
             "usageRank"
+          ],
+          "additionalProperties": false
+        },
+        "__schema3": {
+          "type": "object",
+          "properties": {
+            "core": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BuilderJobDtoSchema/$defs/__schema4"
+              }
+            },
+            "openSlots": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "core",
+            "openSlots"
+          ],
+          "additionalProperties": false
+        },
+        "__schema4": {
+          "type": "object",
+          "properties": {
+            "species": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tier": {
+              "type": "string",
+              "enum": [
+                "anchor",
+                "core",
+                "partner"
+              ]
+            }
+          },
+          "required": [
+            "species",
+            "tier"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "BuilderPreviewDtoSchema": {
+      "type": "object",
+      "properties": {
+        "skeletons": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BuilderPreviewDtoSchema/$defs/__schema0"
+          }
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "megaOptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "skeletons",
+        "candidates",
+        "megaOptions"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "__schema0": {
+          "type": "object",
+          "properties": {
+            "core": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BuilderPreviewDtoSchema/$defs/__schema1"
+              }
+            },
+            "openSlots": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "core",
+            "openSlots"
+          ],
+          "additionalProperties": false
+        },
+        "__schema1": {
+          "type": "object",
+          "properties": {
+            "species": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tier": {
+              "type": "string",
+              "enum": [
+                "anchor",
+                "core",
+                "partner"
+              ]
+            }
+          },
+          "required": [
+            "species",
+            "tier"
           ],
           "additionalProperties": false
         }
@@ -3710,6 +3864,13 @@
             "limit"
           ],
           "additionalProperties": false
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "build",
+            "preview"
+          ]
         }
       },
       "required": [
@@ -3769,11 +3930,44 @@
             },
             "asOf": {
               "type": "string"
+            },
+            "sourceFingerprints": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "enum": [
+                  "single",
+                  "double"
+                ]
+              },
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "meta": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "teamLibrary": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "meta",
+                  "teamLibrary"
+                ],
+                "additionalProperties": false
+              },
+              "required": [
+                "single",
+                "double"
+              ]
             }
           },
           "required": [
             "season",
-            "rule"
+            "rule",
+            "sourceFingerprints"
           ],
           "additionalProperties": false
         },
@@ -8621,6 +8815,32 @@
       ],
       "additionalProperties": false
     },
+    "OnlineErrorDetailSchema": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 1
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": false
+    },
     "OnlineQuotaDtoSchema": {
       "type": "object",
       "properties": {
@@ -11968,6 +12188,24 @@
         "heads",
         "meta",
         "ledger"
+      ],
+      "additionalProperties": false
+    },
+    "SourceFingerprintsSchema": {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "type": "string",
+          "minLength": 1
+        },
+        "teamLibrary": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "meta",
+        "teamLibrary"
       ],
       "additionalProperties": false
     },

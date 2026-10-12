@@ -1,7 +1,8 @@
 /** Observable conditions of their Pokémon. All edits still go to the calc page's shared roster;
  * nature and SP belong to the inference result, not to this input card. */
 import { useEffect, type Dispatch, type SetStateAction } from "react";
-import { displayName, useLang, useT, type MsgKey } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
 import { BOOST_KEYS, STATUSES, boostLabel, megaFor } from "../../../components/build/inputs.tsx";
@@ -10,7 +11,7 @@ import { effectiveEntry, makeMon, type MonState } from "../duel/state.ts";
 import type { KnownFacts, SpaceInfo } from "./context.ts";
 import { useInferT } from "./messages.ts";
 
-const STAT_LABEL: Record<string, MsgKey> = {
+const STAT_LABEL: Record<string, CalcMsgKey> = {
   atk: "stat.atk", def: "stat.def", spa: "stat.spa", spd: "stat.spd", spe: "stat.spe",
 };
 
@@ -24,7 +25,7 @@ export function FoeCard({ foe, setFoe, dex, items, info, known, onKnown }: {
   onKnown: (known: KnownFacts) => void;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useCalcT();
   const ti = useInferT();
   const literal = dex.find((entry) => entry.slug === foe.slug);
   const mega = literal?.isMega ? literal : megaFor(foe.slug, foe.item, dex, items);
@@ -87,7 +88,7 @@ export function FoeCard({ foe, setFoe, dex, items, info, known, onKnown }: {
           <label>{t("calc.status")}
             <select value={foe.status} onChange={(event) => setFoe((current) => ({ ...current, status: event.target.value }))}>
               {STATUSES.map((status) => (
-                <option key={status} value={status === "Healthy" ? "" : status}>{t(`status.${status}` as MsgKey)}</option>
+                <option key={status} value={status === "Healthy" ? "" : status}>{t(`status.${status}` as CalcMsgKey)}</option>
               ))}
             </select>
           </label>

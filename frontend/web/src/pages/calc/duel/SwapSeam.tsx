@@ -7,10 +7,10 @@
  * DOM (so the tab order runs card → swap → card) and floats over the gap without taking space: the
  * cards keep exactly the layout they had. Side by side it points ⇄, stacked it turns to ⇅. */
 import { useState } from "react";
-import { useT } from "../../../i18n.ts";
+import { useCalcT } from "../messages.ts";
 
 export function SwapSeam({ onSwap }: { onSwap: () => void }) {
-  const t = useT();
+  const t = useCalcT();
   // Each press turns the arrows half a turn further, so the motion always follows the click.
   const [turns, setTurns] = useState(0);
   return (

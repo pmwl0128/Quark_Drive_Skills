@@ -1,8 +1,10 @@
 /** Copy of the teams page. It lives in the page's lazy chunk (i18n `defineMessages`), so none of it
  * weighs on the entry bundle; shared keys still resolve through the same `t`. */
 import { defineMessages } from "../../i18n.ts";
+import { SHARED_MESSAGES } from "../messages.ts";
 
 const LIBRARY_MESSAGES = {
+  ...SHARED_MESSAGES,
   "lib.title": { zh: "队伍", en: "Teams", ja: "チーム" },
   "lib.lead": {
     zh: "队伍和宝可梦只保存在当前浏览器里，不会上传到服务器。",
@@ -345,6 +347,7 @@ const LIBRARY_MESSAGES = {
 export type LibraryMsgKey = keyof typeof LIBRARY_MESSAGES;
 
 export const useLibraryT = defineMessages(LIBRARY_MESSAGES);
+export const optionalLibraryKey = useLibraryT.optionalKey;
 
 /** `{name}`-style placeholders; a missing value leaves its placeholder visible rather than blank. */
 export function fill(template: string, values: Record<string, string | number>): string {

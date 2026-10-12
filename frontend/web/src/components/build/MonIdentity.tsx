@@ -4,7 +4,8 @@ import { GameImage } from "../GameImage.tsx";
 import { TypeBadge } from "../TypeBadge.tsx";
 import { PLACEHOLDERS, typeColor } from "../../assets/icons.ts";
 import { useLibraryDragSource } from "../../lib/library/workspace.tsx";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useSharedT } from "../messages.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import type { ItemRef } from "../../runtime/projection.ts";
 import { MonPicker, megaFor } from "./inputs.tsx";
@@ -53,7 +54,7 @@ export function MonNameRow({ slug, item, dex, items, pickerKey, actions, nameExt
   onForme: (slug: string, dropStone: boolean) => void;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useSharedT();
   const literal = dex.find((e) => e.slug === slug);
   const mega = literal?.isMega ? literal : megaFor(slug, item, dex, items);
   const entry = mega ?? literal;

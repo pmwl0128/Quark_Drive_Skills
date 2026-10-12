@@ -12,7 +12,8 @@ import { GameImage } from "../../components/GameImage.tsx";
 import { KeepMonButton } from "../../components/KeepMonButton.tsx";
 import { TypeBadge } from "../../components/TypeBadge.tsx";
 import { useDexByName, useItemsByName, useMovesByName, useNatures } from "../../hooks.ts";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 import { localName, useNameMaps } from "../../lib/names.ts";
 import type { RealSet } from "../../lib/realSets.ts";
 
@@ -23,7 +24,7 @@ export function SetStrip({ sets, index, onIndex }: {
   onIndex?: (index: number) => void;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useMetaT();
   const maps = useNameMaps();
   const moves = useMovesByName();
   const items = useItemsByName();

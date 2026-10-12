@@ -1,7 +1,7 @@
 /** Actual stat values at level 50 (IV 31), using the Champions formula: SP (stat points) are
- * added DIRECTLY, capped at 32 per stat — NOT the mainline EV/4 term. This matches the calc
- * engine (ncp stat_data.js CALC_*_CHAMP); the displayed range is 0 SP up to 32 SP with a
- * boosting nature. */
+ * added DIRECTLY, capped at 32 per stat — NOT the mainline EV/4 term. This is the game's formula, so
+ * it holds for any conforming calc engine; the displayed range is 0 SP up to 32 SP with a boosting
+ * nature. */
 import type { StatKey, NatureDto } from "@pokemon-champions/protocol";
 
 const LEVEL = 50;

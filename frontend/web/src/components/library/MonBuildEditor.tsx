@@ -14,7 +14,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { GameImage } from "../GameImage.tsx";
 import { typeColor, PLACEHOLDERS } from "../../assets/icons.ts";
 import { useAsync, useDexIndex, useItems, useNatures } from "../../hooks.ts";
-import { displayName, useLang, useT, type MsgKey } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
 import { actualStat, natureMultiplier } from "../../lib/stats.ts";
 import { loadLearnset } from "../../runtime/projection.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
@@ -24,7 +24,7 @@ import {
   BuildPickerButton, clampNum, ItemCombo, megaFor, NatureOptions, spSum, spSumClass, type BuildOption,
 } from "../build/inputs.tsx";
 import { useMetaUsage } from "../../lib/metaUsage.ts";
-import { useLibraryT } from "./messages.ts";
+import { useLibraryT, type LibraryMsgKey } from "./messages.ts";
 
 import { MOVE_SLOTS } from "../../lib/battle.ts";
 const BOTH_FORMATS: readonly FormatId[] = ["single", "double"];
@@ -49,7 +49,7 @@ function BuildStats({ entry, nature, spread, onSp }: {
   spread: Partial<Record<StatKey, number>>;
   onSp: (key: StatKey, value: number) => void;
 }) {
-  const t = useT();
+  const t = useLibraryT();
   const lt = useLibraryT();
   const multOf = (key: StatKey) => natureMultiplier(nature, key);
   const rows = STAT_KEYS.map((key) => {
@@ -70,12 +70,12 @@ function BuildStats({ entry, nature, spread, onSp }: {
       </div>
       {rows.map(({ key, base, sp, mult, value }) => (
         <div key={key} className={`mbe-stat${mult > 1 ? " up" : mult < 1 ? " down" : ""}`}>
-          <span className="k" title={t(`stat.${key}` as MsgKey)}>{STAT_SHORT[key]}</span>
+          <span className="k" title={t(`stat.${key}` as LibraryMsgKey)}>{STAT_SHORT[key]}</span>
           <span className="bv num">{base || "—"}</span>
           <span className="track base">
             <span className="fill" style={{ width: `${Math.min(100, (base / BASE_SCALE) * 100)}%`, background: baseColor(base) }} />
           </span>
-          <input type="number" min={0} max={32} step={1} className="num" value={sp} aria-label={`${t(`stat.${key}` as MsgKey)} SP`}
+          <input type="number" min={0} max={32} step={1} className="num" value={sp} aria-label={`${t(`stat.${key}` as LibraryMsgKey)} SP`}
                  onChange={(event) => onSp(key, clampNum(event.target.value, 0, 32))} />
           <span className="track actual">
             <span className="fill" style={{ width: `${Math.min(100, (value / top) * 100)}%` }} />
@@ -102,7 +102,7 @@ export function MonBuildEditor({ value, onChange, layout = "dialog", beside, for
   /** Whose environment builds the picker offers: both for a box Pokémon, the page's own elsewhere. */
   formats?: readonly FormatId[];
 }) {
-  const t = useT();
+  const t = useLibraryT();
   const { lang } = useLang();
   const dex = useDexIndex();
   const items = useItems();
@@ -229,7 +229,7 @@ export function MonBuildEditor({ value, onChange, layout = "dialog", beside, for
         <span className="mbe-sp-head">SP <span className={`sp-sum num ${spSumClass(total)}`}>{total}/66</span></span>
         {STAT_KEYS.map((key) => (
           <label key={key} className="mbe-sp-cell">
-            <span>{t(`stat.${key}` as MsgKey)}</span>
+            <span>{t(`stat.${key}` as LibraryMsgKey)}</span>
             <input type="number" min={0} max={32} step={1} className="num" value={spread[key] ?? 0}
                    onChange={(event) => setSp(key, clampNum(event.target.value, 0, 32))} />
           </label>

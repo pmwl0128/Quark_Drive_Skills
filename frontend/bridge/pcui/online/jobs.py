@@ -81,8 +81,8 @@ class JobStore:
         return job_id
 
     def snapshot(self, job_id: str) -> dict[str, Any] | None:
-        """The client-facing view: {id, status, gates, queuePosition, result?, errorCode?}.
-        None for unknown/expired ids."""
+        """The client-facing view: {id, status, gates, queuePosition, result? | preview?,
+        errorCode?}. None for unknown/expired ids."""
         with self._lock:
             row = self._con.execute(
                 "SELECT status, gates_json, result_json, error_code, created_at, expires_at "
@@ -99,7 +99,12 @@ class JobStore:
                                "gates": json.loads(gates_json),
                                "queuePosition": position}
         if result_json:
-            out["result"] = json.loads(result_json)
+            stored = json.loads(result_json)
+            # A preview is not a build result and never travels under `result` (finish_preview).
+            if isinstance(stored, dict) and set(stored) == {"preview"}:
+                out["preview"] = stored["preview"]
+            else:
+                out["result"] = stored
         if error_code:
             out["errorCode"] = error_code
         return out
@@ -151,6 +156,11 @@ class JobStore:
         self._update(job_id, status="done",
                      result_json=json.dumps(result, ensure_ascii=False),
                      expires_at=time.time() + JOB_TTL_SECONDS)
+
+    def finish_preview(self, job_id: str, preview: dict) -> None:
+        """Success of a model-free preview job (budget exhausted): the gates the model would have
+        run stay pending, and the payload is served as `preview`, never as a build `result`."""
+        self.finish(job_id, {"preview": preview})
 
     def fail(self, job_id: str, error_code: str) -> None:
         # Keep the timeline consistent with the terminal job state. A builder failure used

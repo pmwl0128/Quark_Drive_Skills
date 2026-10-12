@@ -30,7 +30,8 @@ import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx"
 import { EntityHover } from "../../components/EntityHover.tsx";
 import { GameImage } from "../../components/GameImage.tsx";
 import { loadOppSetsCached, useMovesByName, useRanking } from "../../hooks.ts";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useCalcT } from "./messages.ts";
 import type { DexIndexEntry, RuntimeAdapter } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import type { ItemRef } from "../../runtime/projection.ts";
@@ -170,7 +171,7 @@ export function SpeedTab({ dex, natures, items, onRailApi, active: visible = tru
   active?: boolean;
 }) {
   const { adapter, capabilities } = useRuntime();
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const moveVocab = useMovesByName();
   const { teams, active, field, setTeams, setActive, setField, swapSides, baselineOf } = useRoster();

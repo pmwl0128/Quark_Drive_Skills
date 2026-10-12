@@ -22,7 +22,7 @@ The `source` columns are present for schema stability but are not populated in t
 
 Normalize names by NFKC-folding (so full-width and half-width characters match, e.g. `１０` = `10`), lowercasing, and removing spaces, hyphens, apostrophes, dots, underscores, and common brackets. Chinese and Japanese characters are preserved. All queries should resolve through `aliases` before matching canonical values.
 
-When an exact alias/canonical match fails, the resolver applies a conservative typo fallback **by default** (bounded edit distance, script- and length-gated; an ambiguous tie refuses rather than guessing). A fuzzy hit tags the result with a `resolution` block; `--strict` disables the fallback (exact only) for callers where a miss must stay a miss. `find`/`reverse` are always exact.
+When an exact alias/canonical match fails, the resolver applies a conservative typo fallback **by default** (bounded edit distance, script- and length-gated; an ambiguous tie refuses rather than guessing, and so does a hit on a split-gender form such as `Indeedee` / `Indeedee-F` that contradicts the query's gender qualifier, e.g. `イエッサン♀`, with the qualified form as the first suggestion). A fuzzy hit tags the result with a `resolution` block; `--strict` disables the fallback (exact only) for callers where a miss must stay a miss. `find`/`reverse` are always exact.
 
 ## Multi-Condition Search
 

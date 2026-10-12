@@ -12,7 +12,8 @@ import { FormatTabs } from "../components/FormatTabs.tsx";
 import { TypeBadge } from "../components/TypeBadge.tsx";
 import { ThinkingToggle } from "../components/ThinkingToggle.tsx";
 import { useDexByName } from "../hooks.ts";
-import { displayName, optionalKey, useLang, useT } from "../i18n.ts";
+import { displayName, useLang } from "../i18n.ts";
+import { optionalAssistKey, useAssistT } from "./assist/messages.ts";
 import { useNavigate } from "react-router-dom";
 import { useDamageText } from "../lib/damageText.tsx";
 import { useAbilitiesByName, useItemsByName, useOppCache } from "../hooks.ts";
@@ -32,13 +33,14 @@ import { KeepMonButton } from "../components/KeepMonButton.tsx";
 import { useTransferT } from "../lib/library/transferMessages.ts";
 import { useLibraryDrop, useLibraryReceiver, useLibrarySource } from "../lib/library/workspace.tsx";
 import { toTeamDoc } from "../lib/teamDoc.ts";
+import { isDiagnoseTextFill } from "../lib/diagnoseHandoff.ts";
 
 type ErrorKind = "limit" | "unparseable" | "generic";
 
 function errorKind(e: unknown): ErrorKind {
   if (!(e instanceof HttpError)) return "generic";
   if (e.status === 429) return "limit";
-  if (e.status === 400 && e.message.includes("unparseable")) return "unparseable";
+  if (e.code === "unparseable") return "unparseable";
   return "generic";
 }
 
@@ -79,7 +81,7 @@ function submittedTeam(text: string, format: FormatId): unknown | null {
 }
 
 function DiagnoseElapsed({ startedAt }: { startedAt: number }) {
-  const t = useT();
+  const t = useAssistT();
   const [seconds, setSeconds] = useState(() => Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -94,7 +96,7 @@ function DiagnoseProgress({ submission, reportReady }: {
   submission: DiagnoseSubmission;
   reportReady: boolean;
 }) {
-  const t = useT();
+  const t = useAssistT();
   const team = useMemo(
     () => submittedTeam(submission.text, submission.format),
     [submission.text, submission.format]);
@@ -214,7 +216,7 @@ type CheckRow = NonNullable<DiagnoseReportDto["checks"]>["byOpponent"][number];
 function CheckRowDetail({ row, team, format }: {
   row: CheckRow; team: unknown; format: "single" | "double";
 }) {
-  const t = useT();
+  const t = useAssistT();
   const damageText = useDamageText();
   const navigate = useNavigate();
   // Every retained observed variant is an independent opponent. Its exact set is keyed by
@@ -297,7 +299,7 @@ function CheckRowDetail({ row, team, format }: {
             {t("matchup.speed")}: {cell.speed.member ?? "—"} {t("matchup.vs")}{" "}
             {cell.speed.opponent ?? "—"}
             {cell.speed.faster ? (() => {
-              const k = optionalKey(`matchup.faster.${cell.speed.faster}`);
+              const k = optionalAssistKey(`matchup.faster.${cell.speed.faster}`);
               return k ? ` · ${t(k)}` : "";
             })() : ""}
             <button type="button" className="second-btn md-verify" onClick={() => toCalc(cell)}>
@@ -324,7 +326,7 @@ function offenseKoChanceDiag(off: NonNullable<CheckRow["cells"]>[number]["offens
 /** Mega facts (all dex/projection data, client-side): who holds a matching stone, the
  * Mega form's stat/type/ability deltas, and the registered count vs the meta modal. */
 function MegaFacts({ team }: { team: unknown }) {
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const dex = useDexByName();
   const items = useItemsByName();
@@ -397,7 +399,7 @@ function MegaFacts({ team }: { team: unknown }) {
  * Terrain is listed in BOTH formats, mirroring the terrain-control coverage row: a terrain
  * archetype is answered either by overwriting the field or by removing it. */
 function ModePressure({ report }: { report: DiagnoseReportDto }) {
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const abilities = useAbilitiesByName();
   const members = readTeamMembers(report.team);
@@ -533,7 +535,7 @@ function ModePressure({ report }: { report: DiagnoseReportDto }) {
         <tbody>
           {order.map((key) => {
             const r = allRows[key]!;   // order only lists keys present in allRows
-            const descKey = optionalKey(`diag.modeDesc.${key}`);
+            const descKey = optionalAssistKey(`diag.modeDesc.${key}`);
             return (
               <tr key={key}>
                 <td><span className={descKey ? "diag-label-info" : undefined}
@@ -562,7 +564,7 @@ function ModePressure({ report }: { report: DiagnoseReportDto }) {
 }
 
 function Report({ report }: { report: DiagnoseReportDto }) {
-  const t = useT();
+  const t = useAssistT();
   const navigate = useNavigate();
   const prose = useProseRenderer();
   const memberProse = useMemberProse(report.team);
@@ -591,7 +593,7 @@ function Report({ report }: { report: DiagnoseReportDto }) {
     setShowAllChecks(false);
   }, [report]);
   const issueText = (issue: (typeof issues)[number]) => {
-    const key = optionalKey(`validation.${issue.code}`);
+    const key = optionalAssistKey(`validation.${issue.code}`);
     return key ? fillTemplate(t(key), issue.params) : t("diag.warningGeneric");
   };
   const signalText = (signal: string) => {
@@ -601,13 +603,13 @@ function Report({ report }: { report: DiagnoseReportDto }) {
       const isItem = signal.startsWith("item:");
       const value = signal.slice(isItem ? 5 : 8);
       const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const meaning = optionalKey(`diag.sig.${slug}`);
+      const meaning = optionalAssistKey(`diag.sig.${slug}`);
       const label = prose(value);
       return meaning
         ? <>{label}<span className="diag-sig-meaning">（{t(meaning)}）</span></>
         : prose(t(isItem ? "diag.signal.item" : "diag.signal.ability").replace("{value}", value));
     }
-    const key = optionalKey(`diag.cov.${signal}`);
+    const key = optionalAssistKey(`diag.cov.${signal}`);
     return key ? t(key) : signal;
   };
   const bearerHow = (raw: string | null | undefined) => {
@@ -680,7 +682,10 @@ function Report({ report }: { report: DiagnoseReportDto }) {
           ))}
         </div>
       )}
-      {report.explanationError && (
+      {report.explanationError === "budget_exhausted" && (
+        <p className="notice" role="status">{t("budget.explainPaused")}</p>
+      )}
+      {report.explanationError && report.explanationError !== "budget_exhausted" && (
         <p className="notice qa-error">
           {t(report.explanationError === "rate_limited"
             ? "diag.explainError.limit" : "diag.explainError.generic")}
@@ -857,8 +862,8 @@ function Report({ report }: { report: DiagnoseReportDto }) {
         <table className="data-table diag-table diag-coverage-table">
           <tbody>
             {report.roles.coverage.map((c) => {
-              const key = optionalKey(`diag.cov.${c.key}`);
-              const descKey = optionalKey(`diag.covDesc.${c.key}`);
+              const key = optionalAssistKey(`diag.cov.${c.key}`);
+              const descKey = optionalAssistKey(`diag.covDesc.${c.key}`);
               // Public attention levels deliberately avoid the skill's legacy
               // required|optional wording. Both kinds of absence stay visible; color shows how
               // strongly the user should weigh the missing signal.
@@ -911,7 +916,7 @@ export function DiagnoseTab({ active, fill, onConsumeFill }: {
   onConsumeFill: () => void;
 }) {
   const { adapter } = useRuntime();
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const stash = useMemo(readStash, []);
   const [format, setFormat] = useState<FormatId>(stash.format ?? "single");
@@ -1038,8 +1043,13 @@ export function DiagnoseTab({ active, fill, onConsumeFill }: {
   // A hand-off only fills the editable form. The visitor may change sets, format,
   // AI-reading mode, or thinking mode before consciously spending a diagnosis allowance.
   const takeTeam = (team: unknown) => {
-    setFormat((team as { format?: string }).format === "double" ? "double" : "single");
-    setText(JSON.stringify(team, null, 1));
+    if (isDiagnoseTextFill(team)) {
+      setText(team.text);
+      if (team.format === "single" || team.format === "double") setFormat(team.format);
+    } else {
+      setFormat((team as { format?: string }).format === "double" ? "double" : "single");
+      setText(JSON.stringify(team, null, 1));
+    }
     setReport(null);
     setError(null);
     setHandoffReady(true);

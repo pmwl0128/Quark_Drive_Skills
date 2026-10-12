@@ -13,7 +13,8 @@
 import type { FormatId, Terrain, Weather } from "@pokemon-champions/protocol";
 import { TERRAINS, WEATHERS } from "@pokemon-champions/protocol";
 import { useRef, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { useLang, useT } from "../../../i18n.ts";
+import { useLang } from "../../../i18n.ts";
+import { useCalcT } from "../messages.ts";
 import { localName, useNameMaps } from "../../../lib/names.ts";
 import { roveFocus, useFocusOnOpen, usePopover } from "../../../lib/popover.ts";
 import { useRoster } from "../roster.tsx";
@@ -118,7 +119,7 @@ export function FieldPanel({
   /** Show the field-wide switches as toggles on the console line instead of chips plus a popover. */
   inlineShared?: boolean;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const sharedPop = usePopover();
   const sharedList = useRef<HTMLDivElement>(null);
   useFocusOnOpen(sharedPop.open, sharedList, ".duel-opt");

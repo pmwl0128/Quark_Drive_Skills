@@ -9,7 +9,8 @@ import type { FormatId } from "@pokemon-champions/protocol";
 import type { ReactNode } from "react";
 import { EntityHover } from "../../components/EntityHover.tsx";
 import { GameImage } from "../../components/GameImage.tsx";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 
 /** Past this usage rank a Pokemon is a rare pick, so its position here is a signal rather than
  * exposure — worth marking, because that distinction is why the usage rank is shown at all. */
@@ -35,7 +36,7 @@ export function MonTile({ entry, format, addon, onPreviewOpen }: {
   onPreviewOpen?: () => void;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useMetaT();
   const label = displayName(entry, lang);
   const rare = entry.usageRank != null && entry.usageRank > RARE_USAGE_RANK;
   const assetKey = entry.key ?? (entry.slug ? `pokemon:${entry.slug}` : "pokemon:");

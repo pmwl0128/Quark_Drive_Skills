@@ -24,7 +24,8 @@ import { FunnelIcon } from "./MetaRails.tsx";
 import { RailLayer, RailSection, useRailEscape, type RailState } from "./SideRail.tsx";
 import { TypeBadge } from "./TypeBadge.tsx";
 import { useAbilities, useMoves } from "../hooks.ts";
-import { displayName, useLang, useT, type MsgKey } from "../i18n.ts";
+import { displayName, useLang } from "../i18n.ts";
+import { useDexT, type DexMsgKey } from "../pages/dex/messages.ts";
 import type { ItemRef, MoveRef } from "../runtime/projection.ts";
 
 export const TYPE_NAMES = [
@@ -125,7 +126,7 @@ export function activeCount(tab: string, f: DexFilters): number {
 /** Every type as an icon+name chip. Clicking again clears it, so the grid carries no extra control
  * and no mode label — how picks combine is a property of the tab, stated in this module's header. */
 function TypeGrid({ picked, onToggle }: { picked: Set<string>; onToggle: (t: string) => void }) {
-  const t = useT();
+  const t = useDexT();
   return (
     <div className="type-grid">
       {TYPE_NAMES.map((type) => {
@@ -200,7 +201,7 @@ function PickList({ options, picked, onToggle, placeholder, single, count }: {
   count?: (name: string) => number | undefined;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useDexT();
   const [q, setQ] = useState("");
   const needle = q.trim().toLowerCase();
   const pickedSet = new Set(picked);
@@ -243,10 +244,10 @@ function PokemonBody({ value, onChange, learners }: {
   onChange: (f: PokemonFilter) => void;
   learners: Record<string, string[]> | null;
 }) {
-  const t = useT();
+  const t = useDexT();
   const abilities = useAbilities();
   const moves = useMoves();
-  const STATS: Array<[StatKey | "bst", MsgKey]> = [
+  const STATS: Array<[StatKey | "bst", DexMsgKey]> = [
     ["hp", "stat.hp"], ["atk", "stat.atk"], ["def", "stat.def"],
     ["spa", "stat.spa"], ["spd", "stat.spd"], ["spe", "stat.spe"], ["bst", "dex.bst"],
   ];
@@ -299,7 +300,7 @@ function MovesBody({ value, onChange, priorities }: {
   onChange: (f: MoveFilter) => void;
   priorities: number[];
 }) {
-  const t = useT();
+  const t = useDexT();
   const toggleIn = <T,>(set: Set<T>, v: T): Set<T> => {
     const next = new Set(set);
     if (next.has(v)) next.delete(v); else next.add(v);
@@ -336,7 +337,7 @@ function MovesBody({ value, onChange, priorities }: {
 }
 
 function ItemsBody({ value, onChange }: { value: ItemFilter; onChange: (f: ItemFilter) => void }) {
-  const t = useT();
+  const t = useDexT();
   return (
     <RailSection title={t("dex.category")}>
       <ChipToggles values={ITEM_CATEGORIES} picked={value.categories}
@@ -364,7 +365,7 @@ function DexFilterFlyout({ tab, filters, setFilters, learners, priorities, match
   matching: number;
   onClose: () => void;
 }) {
-  const t = useT();
+  const t = useDexT();
   const picks = activeCount(tab, filters);
   return (
     <aside className="filter-flyout" aria-label={t("rail.filter")}>
@@ -422,7 +423,7 @@ export function DexRail({
   onPokemonClick?: (entry: DexIndexEntry) => void;
   renderPokemonExpansion?: (entry: DexIndexEntry) => ReactNode;
 }) {
-  const t = useT();
+  const t = useDexT();
   const { lang } = useLang();
   const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);

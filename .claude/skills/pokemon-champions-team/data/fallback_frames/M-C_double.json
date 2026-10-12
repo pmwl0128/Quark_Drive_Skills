@@ -5,21 +5,21 @@
   "format": "double",
   "rule": "M-C",
   "season": "M-7",
-  "built_at": "2026-10-10T03:16:03Z"
+  "built_at": "2026-10-12T09:16:16Z"
  },
  "counts": {
-  "history": 14,
-  "partners": 7
+  "history": 9,
+  "partners": 6
  },
  "anchors": {
   "Aegislash-Shield|": {
    "source": "partners",
    "partners": [
-    "Raichu",
     "Salamence",
-    "Sylveon"
+    "Pelipper",
+    "Swampert"
    ],
-   "teams": 55
+   "teams": 12
   },
   "Aromatisse|": {
    "source": "history",
@@ -46,14 +46,6 @@
    ],
    "teams": 10
   },
-  "Flareon|": {
-   "source": "history",
-   "seasons": [
-    "M-4",
-    "M-5"
-   ],
-   "teams": 4
-  },
   "Furfrou|": {
    "source": "history",
    "seasons": [
@@ -66,57 +58,37 @@
   "Gourgeist-Large|": {
    "source": "partners",
    "partners": [
-    "Kommo-o",
-    "Grimmsnarl"
+    "Tyranitar",
+    "Excadrill",
+    "Farigiraf"
    ],
-   "teams": 4
+   "teams": 14
   },
   "Gourgeist-Small|": {
    "source": "partners",
    "partners": [
-    "Delphox",
-    "Raichu",
+    "Kingambit",
+    "Gengar",
     "Kommo-o"
    ],
-   "teams": 18
-  },
-  "Lycanroc-Midday|": {
-   "source": "history",
-   "seasons": [
-    "M-1",
-    "M-2",
-    "M-3",
-    "M-4",
-    "M-5"
-   ],
-   "teams": 38
+   "teams": 40
   },
   "Morpeko-Hangry|": {
    "source": "partners",
    "partners": [
     "Raichu",
-    "Dragonite",
-    "Gholdengo"
+    "Ceruledge",
+    "Milotic"
    ],
-   "teams": 33
+   "teams": 97
   },
   "Palafin-Hero|": {
    "source": "partners",
    "partners": [
-    "Incineroar",
     "Gengar",
-    "Raichu"
+    "Salamence"
    ],
-   "teams": 14
-  },
-  "Passimian|": {
-   "source": "history",
-   "seasons": [
-    "M-1",
-    "M-4",
-    "M-5"
-   ],
-   "teams": 9
+   "teams": 8
   },
   "Qwilfish|": {
    "source": "history",
@@ -126,32 +98,6 @@
     "M-5"
    ],
    "teams": 15
-  },
-  "Rotom|": {
-   "source": "history",
-   "seasons": [
-    "M-3",
-    "M-5"
-   ],
-   "teams": 7
-  },
-  "Samurott|": {
-   "source": "partners",
-   "partners": [
-    "Raichu",
-    "Pelipper",
-    "Archaludon"
-   ],
-   "teams": 57
-  },
-  "Simipour|": {
-   "source": "history",
-   "seasons": [
-    "M-1",
-    "M-4",
-    "M-5"
-   ],
-   "teams": 20
   },
   "Simisage|": {
    "source": "history",
@@ -185,10 +131,10 @@
   "Tauros-Paldea-Combat|": {
    "source": "partners",
    "partners": [
-    "Talonflame",
-    "Froslass"
+    "Farigiraf",
+    "Swampert"
    ],
-   "teams": 21
+   "teams": 51
   },
   "Tauros|": {
    "source": "history",

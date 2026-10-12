@@ -16,7 +16,8 @@ import { BRAND_LOGO, typeColor } from "../../assets/icons.ts";
 import { GameImage } from "../../components/GameImage.tsx";
 import { CategoryBadge, TypeBadge } from "../../components/TypeBadge.tsx";
 import { useNatures, type Async } from "../../hooks.ts";
-import { displayName, useLang, useT } from "../../i18n.ts";
+import { displayName, useLang } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 import type { RealSet } from "../../lib/realSets.ts";
 import { usageDelta } from "../../lib/usageDelta.ts";
 import { MetaHero, type MetaForm } from "./MetaHero.tsx";
@@ -24,6 +25,8 @@ import { MonTile } from "./MonTile.tsx";
 import { PanelHead, partnerRanks, TrendAddon, UsageRow, usageSeries } from "./rows.tsx";
 import { SetStrip } from "./SetStrip.tsx";
 import { SpMatrix } from "./SpMatrix.tsx";
+
+const SPREAD_ROWS = 10;
 
 export function accentStyle(mon: PokemonCardDto): CSSProperties {
   const [first, second] = mon.types;
@@ -61,11 +64,13 @@ export function UsageCard(props: UsageCardProps) {
   const { mon, forms, format, ranks, onFormat, detail, trend, usageRank, sets, setIndex,
     onSetIndex, host, onShare } = props;
   const { lang } = useLang();
-  const t = useT();
+  const t = useMetaT();
   const natureList = useNatures();
   const natures = useMemo(() => new Map(natureList.status === "ready"
     ? natureList.data.map((n) => [n.name, n] as const) : []), [natureList]);
   const ready = detail.status === "ready" ? detail.data : null;
+  // Every other panel arrives as its top ten; the spreads source sends thirty, and the card shows ten.
+  const spreads = ready ? ready.panels.spreads.slice(0, SPREAD_ROWS) : [];
   // A 404 is the factual "not ranked this period"; anything else is a real load failure and must
   // not masquerade as a metagame fact.
   const bodyState = detail.status === "loading" ? t("state.loading")
@@ -107,7 +112,7 @@ export function UsageCard(props: UsageCardProps) {
                 sideFoot={
                   <span className="mc-brand">
                       <img src={BRAND_LOGO} alt="" />
-                      <span>Champions{host ? ` · ${host}` : ""}</span>
+                      <span>Turn Zero{host ? ` · ${host}` : ""}</span>
                       {onShare && (
                         <button type="button" className="mc-share-btn" onClick={onShare}>
                           <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5v7.5M3.8 6 7 9.2 10.2 6M2 11.5h10" /></svg>
@@ -167,9 +172,9 @@ export function UsageCard(props: UsageCardProps) {
           </div>
           <div className="mc-panel mc-spreads">
             <PanelHead title={t("detail.spreads")} note={t("mc.spNote").replace("{n}",
-              String(ready.panels.spreads.length)).replace("{sum}", ready.panels.spreads
+              String(spreads.length)).replace("{sum}", spreads
               .reduce((sum, s) => sum + (s.percentage ?? 0), 0).toFixed(1))} />
-            <SpMatrix spreads={ready.panels.spreads} trend={trend} baseline={baseline} />
+            <SpMatrix spreads={spreads} trend={trend} baseline={baseline} />
           </div>
           <div className="mc-panel mc-partners">
             <PanelHead title={t("detail.partners")} note={t("mc.partnersNote")} />

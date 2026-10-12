@@ -6,7 +6,7 @@
  * engine's caveats and both sides' sets, the actual-sets grid showed neither. Callers now normalise
  * their facts into the shapes below and this component owns the layout. */
 import { useCallback, useRef, type ReactNode } from "react";
-import { useT } from "../i18n.ts";
+import { useMatchupT } from "../pages/matchup/messages.ts";
 import { useDamageText } from "../lib/damageText.tsx";
 import { BuildSetSummary, type BuildCardOption } from "./BuildPicker.tsx";
 import { ExportMenu } from "./ExportMenu.tsx";
@@ -61,7 +61,7 @@ export function CellInspector({
   calculate?: ReactNode;
   extra?: ReactNode;
 }) {
-  const t = useT();
+  const t = useMatchupT();
   const damageText = useDamageText();
   const rootRef = useRef<HTMLDivElement>(null);
   const attachRef = useCallback((node: HTMLDivElement | null) => {

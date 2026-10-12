@@ -24,7 +24,8 @@ from .worker import WorkerPool
 # is unchanged.
 # Version 6 requires clients to stop consuming transitional team evidence at expiry.
 # Version 7 adds the lightweight opponent-set catalog used by calculator defaults and build previews.
-WEB_PROTOCOL_VERSION = "7"
+# Version 8 requires environment.sourceFingerprints, the data identity that derived views were built from.
+WEB_PROTOCOL_VERSION = "8"
 
 # Ids derived from the installed skill snapshot. A deployed release carries a `release-<hash>`
 # id instead, bound to the whole payload rather than to the skill data alone.
@@ -122,6 +123,21 @@ def calc_engine_digest() -> str:
     return h.hexdigest()
 
 
+def source_fingerprints(season: str, rule: str) -> dict[str, dict[str, str]]:
+    """Per-format identity of the mutable data the derived views come from: the season's meta panels
+    and the real-team partitions feeding the rule. These are the opponent cache's own validity hashes
+    (`oppcache.source_fingerprints`), so a cache that loads at all was built from exactly these inputs.
+    Unlike deploymentId they ignore code, so a consumer can tell "same data, new release" apart from
+    "the data moved"."""
+    from . import mappers
+    oppcache = mappers._oppcache_mod()
+    out = {}
+    for fmt in ("single", "double"):
+        prints = oppcache.source_fingerprints(fmt, rule, season)
+        out[fmt] = {"meta": prints["meta"], "teamLibrary": prints["team_library"]}
+    return out
+
+
 def assemble(pool: WorkerPool, deployment_id: str | None = None,
              ui_build_id: str | None = None) -> dict:
     data = {k: _data_digest(v) for k, v in _DATA_TREES.items()}
@@ -162,6 +178,7 @@ def assemble(pool: WorkerPool, deployment_id: str | None = None,
     as_of = (current.get("seasons", {}).get(season, {}).get("updated_at") or "")[:10]
     if as_of:
         env["asOf"] = as_of
+    env["sourceFingerprints"] = source_fingerprints(season, env["rule"])
     return {
         "webProtocolVersion": WEB_PROTOCOL_VERSION,
         "deploymentId": deployment_id,

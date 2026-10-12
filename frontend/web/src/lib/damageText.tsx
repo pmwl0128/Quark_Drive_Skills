@@ -1,6 +1,7 @@
 import type { DamageResultDto } from "@pokemon-champions/protocol";
 import type { ReactNode } from "react";
-import { optionalKey, useLang, useT } from "../i18n.ts";
+import { useLang } from "../i18n.ts";
+import { useSharedT, optionalSharedKey } from "../components/messages.ts";
 import { useProseRenderer } from "./prose.tsx";
 
 type KoChance = DamageResultDto["koChance"];
@@ -9,7 +10,7 @@ type Caveat = NonNullable<DamageResultDto["koCaveats"]>[number];
 /** Render structured calculation facts at the locale boundary. The engine's English prose
  * remains diagnostic data; Chinese and Japanese never have to parse or translate it. */
 export function useDamageText() {
-  const t = useT();
+  const t = useSharedT();
   const { lang } = useLang();
   const prose = useProseRenderer();
   const fill = (template: string, values: Record<string, string | number>) =>
@@ -33,8 +34,8 @@ export function useDamageText() {
   };
 
   const caveat = (value: Caveat): string => {
-    const codeKey = optionalKey(`calc.caveat.${value.code}`);
-    const dirKey = optionalKey(`calc.caveat.direction.${value.direction}`);
+    const codeKey = optionalSharedKey(`calc.caveat.${value.code}`);
+    const dirKey = optionalSharedKey(`calc.caveat.direction.${value.direction}`);
     if (lang === "en" && value.cause) return `${value.cause} — ${value.direction}`;
     const detail = codeKey ? t(codeKey) : t("calc.caveat.generic");
     return dirKey ? `${detail}；${t(dirKey)}` : detail;

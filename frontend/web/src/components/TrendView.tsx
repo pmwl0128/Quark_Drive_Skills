@@ -3,7 +3,7 @@
 import type { FormatId } from "@pokemon-champions/protocol";
 import { lazy, Suspense } from "react";
 import { useTrend } from "../hooks.ts";
-import { useT } from "../i18n.ts";
+import { useSharedT } from "./messages.ts";
 
 // Start the chart chunk alongside the trend request, but only once this view is shown.
 const trendChartModule = import("./TrendChart.tsx");
@@ -11,7 +11,7 @@ const TrendChart = lazy(() => trendChartModule);
 
 export function TrendView({ format }: { format: FormatId }) {
   const trend = useTrend(format);
-  const t = useT();
+  const t = useSharedT();
 
   return (
     <section className="trend-view">

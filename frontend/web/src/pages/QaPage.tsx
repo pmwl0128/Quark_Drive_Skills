@@ -8,20 +8,23 @@
  * the route/nav are capability-gated and this chunk is lazy. */
 import type { QaAnswerDto } from "@pokemon-champions/protocol";
 import { QA_QUESTION_MAX_CHARS } from "@pokemon-champions/protocol";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "../components/PageHeader.tsx";
-import { optionalKey, useLang, useT } from "../i18n.ts";
+import { useLang } from "../i18n.ts";
+import { useAssistT, optionalAssistKey } from "./assist/messages.ts";
 import { useProseRenderer } from "../lib/prose.tsx";
 import { HttpError } from "../runtime/adapter.ts";
+import { BudgetNotice } from "./assist/BudgetNotice.tsx";
 import { useRuntime } from "../runtime/context.tsx";
 
-type ErrorKind = "limit" | "busy" | "unavailable" | "generic";
+type ErrorKind = "limit" | "busy" | "unavailable" | "budget" | "generic";
 
-/** The endpoint's error DETAIL codes ride inside HttpError's message (fetchJson keeps the
- * body's `detail` verbatim there) — enough to pick the right copy without a second wire shape. */
+/** Pick the copy from the endpoint's typed error code, never from message text. */
 function errorKind(e: unknown): ErrorKind {
   if (!(e instanceof HttpError)) return "generic";
-  if (e.status === 429) return e.message.includes("rate_limited") ? "limit" : "busy";
+  if (e.code === "budget_exhausted") return "budget";
+  if (e.status === 429) return e.code === "rate_limited" ? "limit" : "busy";
   if (e.status === 503) return "unavailable";
   return "generic";
 }
@@ -76,14 +79,14 @@ function recordAnswer(entry: HistoryEntry): HistoryEntry[] {
 }
 
 function AnswerCard({ entry, quotaLine }: { entry: HistoryEntry; quotaLine: boolean }) {
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const prose = useProseRenderer();
   const traceLabel = (source: QaAnswerDto["toolTrace"][number]): string => {
     if (!source.params) return lang === "en" ? source.label : t("qa.trace.generic");
     const key = source.tool.startsWith("dex.")
       ? `qa.trace.dex.${source.tool.slice(4)}` : `qa.trace.${source.tool}`;
-    const msgKey = optionalKey(key);
+    const msgKey = optionalAssistKey(key);
     const translated = msgKey ? t(msgKey) : source.label;
     const params = { ...source.params };
     if (params.format === "single" || params.format === "double") {
@@ -123,10 +126,23 @@ function AnswerCard({ entry, quotaLine }: { entry: HistoryEntry; quotaLine: bool
 
 export function QaPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { adapter } = useRuntime();
-  const t = useT();
+  const t = useAssistT();
   const { lang } = useLang();
   const stash = useMemo(readQaStash, []);
-  const [question, setQuestion] = useState(stash.question ?? "");
+  // `?q=` (the home page's ask box and examples) only fills the box: sending spends the reader's
+  // allowance, so it stays their click. The parameter is dropped once read, so a reload keeps the
+  // reader's own edits.
+  const [params, setParams] = useSearchParams();
+  const handed = params.get("q")?.slice(0, QA_QUESTION_MAX_CHARS) ?? null;
+  const [question, setQuestion] = useState(handed ?? stash.question ?? "");
+  const questionBox = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (handed === null) return;
+    setQuestion(handed);
+    const next = new URLSearchParams(params);
+    next.delete("q");
+    setParams(next, { replace: true });
+  }, [handed]);
   const [history, setHistory] = useState<HistoryEntry[]>(stash.history ?? []);
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<ErrorKind | null>(null);
@@ -179,6 +195,7 @@ export function QaPage({ embedded = false }: { embedded?: boolean } = {}) {
 
       <div className="panel form-panel qa-form">
         <textarea
+          ref={questionBox}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => {
@@ -196,7 +213,12 @@ export function QaPage({ embedded = false }: { embedded?: boolean } = {}) {
           <span className="qa-examples">
             {EXAMPLE_KEYS.map((k) => (
               <button key={k} type="button" className="qa-example"
-                      onClick={() => { setQuestion(t(k)); void ask(t(k)); }}>
+                      onClick={() => {
+                        // An example fills the box; sending stays the reader's choice (a question
+                        // spends model quota, and the reader may want to adjust it first).
+                        setQuestion(t(k));
+                        questionBox.current?.focus();
+                      }}>
                 {t(k)}
               </button>
             ))}
@@ -209,7 +231,8 @@ export function QaPage({ embedded = false }: { embedded?: boolean } = {}) {
       </div>
 
       {asking && <div className="spinner">{t("qa.asking")}</div>}
-      {error && <p className="notice qa-error">{t(`qa.error.${error}`)}</p>}
+      {error === "budget" && <BudgetNotice />}
+      {error && error !== "budget" && <p className="notice qa-error">{t(`qa.error.${error}`)}</p>}
 
       {history[0] !== undefined && <AnswerCard entry={history[0]} quotaLine />}
 

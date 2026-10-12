@@ -186,9 +186,14 @@ def map_resolve_entry(raw: dict) -> dict:
     for src, dst in (("canonical", "canonical"), ("display_name", "displayName"),
                      ("display_name_ja", "displayNameJa"), ("score", "score"),
                      ("is_mega", "isMega"), ("base_species", "baseSpecies"),
-                     ("required_item", "requiredItem"), ("suggestions", "suggestions")):
+                     ("required_item", "requiredItem")):
         if src in raw and raw[src] is not None:
             out[dst] = raw[src]
+    # The dex reports candidates as {canonical, distance, score}; the DTO carries the names only,
+    # in the dex's order (an ambiguous qualifier refusal puts the qualified form first).
+    if raw.get("suggestions"):
+        out["suggestions"] = [s.get("canonical") if isinstance(s, dict) else s
+                              for s in raw["suggestions"]]
     return out
 
 

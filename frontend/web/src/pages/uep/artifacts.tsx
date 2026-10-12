@@ -3,12 +3,13 @@
  * guarantees the VERBATIM payload, not a schema (design §6), so every renderer is a lenient
  * reader over `unknown`: shapes come from real M-4 sessions, any miss returns null and the
  * caller falls back to raw. Skill vocab tokens (gap fields, speed-control modes, audit
- * counters) map to trilingual labels via optionalKey — unknown tokens render verbatim
+ * counters) map to trilingual labels via optionalUepKey — unknown tokens render verbatim
  * rather than breaking. Never Zod-validate these payloads. */
 import type { ReactNode } from "react";
 import type { TuneCardDto } from "@pokemon-champions/protocol";
 import { TypeBadge } from "../../components/TypeBadge.tsx";
-import { optionalKey, useLang, useT } from "../../i18n.ts";
+import { useLang } from "../../i18n.ts";
+import { useUepT, optionalUepKey } from "./messages.ts";
 import { TuneCard } from "../calc/TuneCard.tsx";
 import { MonRow } from "../../components/team/MonChip.tsx";
 import { readTeamMembers, useDexByName, type TeamMemberish } from "../../components/team/TeamCard.tsx";
@@ -26,10 +27,10 @@ function Chip({ tone, children }: { tone?: "ok" | "warn" | "bad"; children: Reac
 
 // -- context (build-context: the user's intent, in their language) --------------------------
 function ContextCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   const { lang } = useLang();
   const dex = useDexByName();
-  const styleKey = optionalKey(`style.${str(d.style_lean)}`);
+  const styleKey = optionalUepKey(`style.${str(d.style_lean)}`);
   const locked = strs(d.locked);
   const prefer = strs(d.prefer);
   const avoid = strs(d.avoid);
@@ -69,7 +70,7 @@ function ContextCard({ d }: { d: Record<string, unknown> }) {
 
 // -- audit (context-audit output) ----------------------------------------------------------
 function AuditCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   const { lang } = useLang();
   const receipt = obj(d.audit_receipt);
   const gaps = arr(d.gaps).map(obj).filter(Boolean) as Record<string, unknown>[];
@@ -99,9 +100,9 @@ function AuditCard({ d }: { d: Record<string, unknown> }) {
         <ul className="uep-card-list">
           {gaps.map((g, i) => {
             const level = str(g.level);
-            const levelKey = optionalKey(`audit.level.${level}`);
+            const levelKey = optionalUepKey(`audit.level.${level}`);
             const field = str(g.field) || str(g.trigger);
-            const fieldKey = optionalKey(`gapfield.${field}`);
+            const fieldKey = optionalUepKey(`gapfield.${field}`);
             return (
               <li key={i} title={lang === "en" ? str(g.note) : undefined}>
                 <Chip tone={level === "blocking" ? "bad" : level === "conflict" ? "warn" : undefined}>
@@ -119,7 +120,7 @@ function AuditCard({ d }: { d: Record<string, unknown> }) {
 
 // -- frame (skeletons: the grounded lanes a build can take) ----------------------------------
 function FrameCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   const { lang } = useLang();
   const dex = useDexByName();
   const skeletons = arr(d.skeletons).map(obj).filter(Boolean) as Record<string, unknown>[];
@@ -145,14 +146,14 @@ function FrameCard({ d }: { d: Record<string, unknown> }) {
             <div className="uep-card-row">
               <span className="mono muted">{str(s.frame_id).slice(0, 8)}</span>
               {modes.map((m) => {
-                const k = optionalKey(`frame.mode.${m}`);
+                const k = optionalUepKey(`frame.mode.${m}`);
                 return <Chip key={m}>{k ? t(k) : m}</Chip>;
               })}
               {count !== null && share !== null && (
                 <span className="muted num">{count} {t("frame.teams")} · {(share * 100).toFixed(0)}%</span>
               )}
               <Chip tone={str(s.confidence) === "low" || s.thin === true ? "warn" : undefined}>
-                {(() => { const k = optionalKey(`conf.${str(s.confidence)}`); return k ? t(k) : str(s.confidence); })()}
+                {(() => { const k = optionalUepKey(`conf.${str(s.confidence)}`); return k ? t(k) : str(s.confidence); })()}
               </Chip>
             </div>
             {cores.length > 0 && (
@@ -172,7 +173,7 @@ function FrameCard({ d }: { d: Record<string, unknown> }) {
 /** Flags collapse by kind: ONE "missing coverage" line and ONE "weak stack" line — a
  * per-flag prefix repeated five times read as noise, not information. */
 function FlagLines({ flags }: { flags: Record<string, unknown>[] }) {
-  const t = useT();
+  const t = useUepT();
   const gaps = flags.filter((f) => str(f.kind) === "hard_gap").flatMap((f) => strs(f.types));
   const weaks = flags.filter((f) => str(f.kind) === "weakness_concentration");
   if (gaps.length === 0 && weaks.length === 0) return null;
@@ -198,7 +199,7 @@ function FlagLines({ flags }: { flags: Record<string, unknown>[] }) {
 }
 
 function SlateCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   const { lang } = useLang();
   const dex = useDexByName();
   const survivors = new Set(arr(d.survivors).map((x) => num(x)).filter((x) => x !== null));
@@ -235,7 +236,7 @@ function SlateCard({ d }: { d: Record<string, unknown> }) {
                 // 399fcf2: the frame-aware registration relation rides next to the raw count —
                 // modal/common read neutral, minority warns, rare flags (labels, never a score).
                 const rel = str(obj(c.mega_registration_assessment)?.relation ?? null);
-                const relKey = optionalKey(`mega.rel.${rel}`);
+                const relKey = optionalUepKey(`mega.rel.${rel}`);
                 return (
                   <>
                     <Chip>{t("uep.slate.mega")} {num(mega.registered_mega_count) ?? "?"}</Chip>
@@ -257,7 +258,7 @@ function SlateCard({ d }: { d: Record<string, unknown> }) {
               <ul className="uep-card-list bad">
                 {issues.length > 0
                   ? issues.map((issue, j) => {
-                      const key = optionalKey(`validation.${str(issue.code)}`);
+                      const key = optionalUepKey(`validation.${str(issue.code)}`);
                       const params = obj(issue.params) ?? {};
                       const text = key ? t(key).replace(/\{([^}]+)\}/g,
                         (_, name: string) => String(params[name] ?? `{${name}}`))
@@ -285,7 +286,7 @@ function SlateCard({ d }: { d: Record<string, unknown> }) {
 
 // -- checkpoint ------------------------------------------------------------------------------
 function CheckpointCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   const { lang } = useLang();
   const dex = useDexByName();
   if (typeof d.pause !== "boolean") return null;
@@ -343,7 +344,7 @@ function DraftCard({ d }: { d: Record<string, unknown> }) {
 
 // -- answer-audit ----------------------------------------------------------------------------
 function AnswerAuditCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   if (typeof d.pass !== "boolean") return null;
   const checked = obj(d.checked);
   const violations = arr(d.violations);
@@ -352,7 +353,7 @@ function AnswerAuditCard({ d }: { d: Record<string, unknown> }) {
       <div className="uep-card-row">
         <Chip tone={d.pass ? "ok" : "bad"}>{d.pass ? t("uep.aa.pass") : t("uep.aa.fail")}</Chip>
         {checked && Object.entries(checked).map(([k, v]) => {
-          const key = optionalKey(`aa.checked.${k}`);
+          const key = optionalUepKey(`aa.checked.${k}`);
           return <span key={k} className="muted num">{key ? t(key) : k} {String(v)}</span>;
         })}
       </div>
@@ -367,7 +368,7 @@ function AnswerAuditCard({ d }: { d: Record<string, unknown> }) {
 
 // -- tune-request (panel-authored: the user's plain-language tune ask) -------------------------
 function TuneRequestCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   const { lang } = useLang();
   const dex = useDexByName();
   const member = str(d.member);
@@ -396,7 +397,7 @@ function TuneResultCard({ d }: { d: Record<string, unknown> }) {
 
 // -- decision (panel-authored, render it nicely too) ------------------------------------------
 function DecisionCard({ d }: { d: Record<string, unknown> }) {
-  const t = useT();
+  const t = useUepT();
   if (d.gate !== "checkpoint" || !str(d.action)) return null;
   const label = d.action === "chooseCandidate" ? t("uep.checkpoint.choose")
     : d.action === "requestChanges" ? t("uep.checkpoint.changes")

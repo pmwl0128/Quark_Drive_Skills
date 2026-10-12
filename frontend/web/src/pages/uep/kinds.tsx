@@ -2,9 +2,9 @@
  * payloads are agent-authored skill JSON the panel must NOT re-validate (design §4.2 keeps
  * them verbatim) — rendering is best-effort, the raw text is always the fallback. */
 import { UEP_GATE_KINDS, type UepGateKind } from "@pokemon-champions/protocol";
-import { optionalKey, useT, type MsgKey } from "../../i18n.ts";
+import { useUepT, optionalUepKey, type UepMsgKey } from "./messages.ts";
 
-const KIND_KEYS: Record<UepGateKind, MsgKey> = {
+const KIND_KEYS: Record<UepGateKind, UepMsgKey> = {
   "intake": "kind.intake",
   "context": "kind.context",
   "audit": "kind.audit",
@@ -20,8 +20,8 @@ export const isGateKind = (kind: string): kind is UepGateKind =>
   (UEP_GATE_KINDS as readonly string[]).includes(kind);
 
 export function KindBadge({ kind }: { kind: string }) {
-  const t = useT();
-  const extra = optionalKey(`kind.${kind}`);
+  const t = useUepT();
+  const extra = optionalUepKey(`kind.${kind}`);
   const label = isGateKind(kind) ? t(KIND_KEYS[kind]) : extra ? t(extra) : kind;
   return <span className={`uep-kind uep-kind-${isGateKind(kind) ? kind : "other"}`}>{label}</span>;
 }

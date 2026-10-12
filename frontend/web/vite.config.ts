@@ -127,5 +127,15 @@ export default defineConfig({
     target: "es2022",
     // Uncompressed main-thread chunks. check-dist enforces this and the separate worker budget.
     chunkSizeWarningLimit: 300,
+    rolldownOptions: {
+      output: {
+        // React and the router are the bulk of every first load and change only with a lockfile
+        // bump. In their own chunk they stay cached across releases, and the entry chunk holds only
+        // the app shell, so where the shared runtime modules land no longer decides the budget.
+        codeSplitting: {
+          groups: [{ name: "react", test: /node_modules[\\/](react|react-dom|scheduler|react-router)[\\/]/ }],
+        },
+      },
+    },
   },
 });

@@ -3,7 +3,8 @@
  * both tabs — and differ only in between: our side edits the bulk spread, theirs its offence. */
 import type { FormatId, LearnsetDto, NatureDto, TeamMemberDoc } from "@pokemon-champions/protocol";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
-import { displayName, useLang, useT, type MsgKey } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
 import {
@@ -28,7 +29,7 @@ function useMemberReader(mon: MonState, dex: DexIndexEntry[]) {
 
 const BULK_STATS: BulkStat[] = ["hp", "def", "spd"];
 const OTHER_STATS = ["atk", "spa", "spe"] as const;
-const STAT_LABEL: Record<string, MsgKey> = {
+const STAT_LABEL: Record<string, CalcMsgKey> = {
   hp: "stat.hp", atk: "stat.atk", def: "stat.def", spa: "stat.spa", spd: "stat.spd", spe: "stat.spe",
 };
 
@@ -77,7 +78,7 @@ const Identity = memo(function Identity({ slug, ability, nature, item, status, d
   onChange: MonUpdate;
   onPickBuild: (option: BuildOption) => void;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const { literal, mega, requiredStone } = useMegaConsistency(slug, item, ability, dex, items, onChange);
   const entry = mega ?? literal;
@@ -222,7 +223,7 @@ export const DefenderCard = memo(function DefenderCard({ mon, baseline, dex, nat
   onPickBuild: (option: BuildOption) => void;
   onRestore: () => void;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const entry = effectiveEntry(mon, dex, items);
   const total = spSum(mon.sps);
   const nature = natures.find((candidate) => candidate.name === mon.nature);
@@ -341,7 +342,7 @@ export const AttackerCard = memo(function AttackerCard({ mon, baseline, dex, nat
   onPickBuild: (option: BuildOption) => void;
   onRestore: () => void;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const changed = spreadChanged(mon, baseline);
   const member = useMemberReader(mon, dex);
   const restoreOn = useMemo(() => ({ enabled: true, onRestore }), [onRestore]);

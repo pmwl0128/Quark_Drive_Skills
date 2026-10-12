@@ -13,7 +13,8 @@ import { typeColor } from "../../assets/icons.ts";
 import { EntityHover } from "../../components/EntityHover.tsx";
 import { GameImage } from "../../components/GameImage.tsx";
 import { TypeBadge } from "../../components/TypeBadge.tsx";
-import { displayName, secondaryName, useLang, useT } from "../../i18n.ts";
+import { displayName, secondaryName, useLang } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 import { actualStat } from "../../lib/stats.ts";
 
 export interface MetaForm {
@@ -37,7 +38,7 @@ function nameSize(label: string): string {
 }
 
 function BaseStats({ mon }: { mon: PokemonCardDto }) {
-  const t = useT();
+  const t = useMetaT();
   const top = Math.max(...STAT_KEYS.map((key) => mon.stats[key]));
   const total = STAT_KEYS.reduce((sum, key) => sum + mon.stats[key], 0);
   return (
@@ -91,7 +92,7 @@ export function MetaHero({ mon, forms, rank, ranks, format, onFormat, rankTitle,
   sideFoot?: ReactNode;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useMetaT();
   const alt = secondaryName(mon, lang);
   return (
     <header className="mc-hero">

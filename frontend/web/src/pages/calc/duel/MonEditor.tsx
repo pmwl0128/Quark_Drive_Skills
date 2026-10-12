@@ -13,7 +13,8 @@ import { EntityHover } from "../../../components/EntityHover.tsx";
 import { GameImage } from "../../../components/GameImage.tsx";
 import { PLACEHOLDERS } from "../../../assets/icons.ts";
 import { KeepMonButton } from "../../../components/KeepMonButton.tsx";
-import { displayName, useLang, useT } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
 import {
@@ -22,9 +23,10 @@ import {
 } from "../../../components/build/inputs.tsx";
 import { useMetaUsage } from "../../../lib/metaUsage.ts";
 import {
-  ABILITY_NEEDS_TRIGGER, boostedStat, curHPOf, effectiveEntry, finalStat, makeMon,
+  boostedStat, curHPOf, effectiveEntry, finalStat, makeMon,
   maxHPOf, monToMember, type MonState,
 } from "./state.ts";
+import { ABILITY_NEEDS_TRIGGER } from "../../../lib/calc-engine/semantics.ts";
 
 import { MonNameRow, MonPortrait } from "../../../components/build/MonIdentity.tsx";
 export { MonNameRow, MonPortrait } from "../../../components/build/MonIdentity.tsx";
@@ -45,7 +47,7 @@ export function MonEditor({
   keep?: boolean;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useCalcT();
   const literal = dex.find((e) => e.slug === mon.slug);
   const mega = literal?.isMega ? literal : megaFor(mon.slug, mon.item, dex, items);
   const entry = effectiveEntry(mon, dex, items);
@@ -311,7 +313,7 @@ export function MonAvatar({ mon, dex, items, active, onClick, onRemove, title }:
   title?: string;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useCalcT();
   const entry = effectiveEntry(mon, dex, items);
   const name = entry ? displayName(entry, lang) : t("calc.emptySlot");
   const hasBuild = !!entry && !!(mon.ability || mon.item || mon.nature

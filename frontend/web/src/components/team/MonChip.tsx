@@ -13,7 +13,8 @@ import { typeColor } from "../../assets/icons.ts";
 import { GameImage } from "../GameImage.tsx";
 import { TypeBadge } from "../TypeBadge.tsx";
 import { useAsync, useDexByName, useDexIndex, useItems, useNatures } from "../../hooks.ts";
-import { displayName, optionalKey, useLang, useT, type Lang } from "../../i18n.ts";
+import { displayName, useLang, type Lang } from "../../i18n.ts";
+import { useSharedT, optionalSharedKey } from "../messages.ts";
 import { dexLookup, megaFor } from "../../lib/lookup.ts";
 import { localName, useNameMaps } from "../../lib/names.ts";
 import { actualStat, natureMultiplier } from "../../lib/stats.ts";
@@ -41,7 +42,7 @@ export function HoverSet({ anchorRef, slug, label, mon, lang, side = "below" }: 
   slug: string; label: string; mon: TeamMemberish; lang: Lang;
   side?: "below" | "left";
 }) {
-  const t = useT();
+  const t = useSharedT();
   const names = useNameMaps();
   const dex = useDexIndex();
   const items = useItems();
@@ -100,7 +101,7 @@ export function HoverSet({ anchorRef, slug, label, mon, lang, side = "below" }: 
   }, [anchorRef, moves.status, side, entry?.slug]);
 
   const statName = (key: StatKey) => {
-    const found = optionalKey(`stat.${key}`);
+    const found = optionalSharedKey(`stat.${key}`);
     return found ? t(found) : key.toUpperCase();
   };
   return createPortal(

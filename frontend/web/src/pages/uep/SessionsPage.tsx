@@ -6,13 +6,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageHeader } from "../../components/PageHeader.tsx";
 import { useAsync } from "../../hooks.ts";
-import { useT } from "../../i18n.ts";
+import { useUepT } from "./messages.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import { KindBadge, localTime } from "./kinds.tsx";
 
 export function SessionsPage() {
   const { adapter } = useRuntime();
-  const t = useT();
+  const t = useUepT();
   const navigate = useNavigate();
   const sessions = adapter.sessions;
   const [intent, setIntent] = useState("");

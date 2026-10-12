@@ -12,7 +12,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { EagerImages } from "../../components/GameImage.tsx";
 import { Modal } from "../../components/Modal.tsx";
 import { SegmentedControl } from "../../components/SegmentedControl.tsx";
-import { useT } from "../../i18n.ts";
+import { useMetaT } from "./messages.ts";
 import { saveBlob } from "../../lib/download.ts";
 
 type Content = "usage" | "ko" | "both";
@@ -49,7 +49,7 @@ export default function ShareDialog({ usage, ko, fileBase, snapshot, onClose }: 
   snapshot: string;
   onClose: () => void;
 }) {
-  const t = useT();
+  const t = useMetaT();
   const [content, setContent] = useState<Content>("usage");
   const [theme, setTheme] = useState<Theme>(
     () => document.documentElement.dataset.theme === "dark" ? "dark" : "light");

@@ -8,7 +8,8 @@
  * strip above: they belong to a side and to the field, not to one Pokémon. */
 import type { FormatId, NatureDto, SpeedInputDto, SpeedlineDto } from "@pokemon-champions/protocol";
 import { useEffect } from "react";
-import { displayName, useLang, useT } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT } from "../messages.ts";
 import { localName, useNameMaps } from "../../../lib/names.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
@@ -38,7 +39,7 @@ const WEATHER_SPEED: Record<string, string> = {
  * be visibly wrong, never silently. */
 function useSpeedChain(input: SpeedInputDto | null, result: SpeedlineDto | null,
                        items: ItemRef[]): { parts: string[]; factor: number } {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const abilityNames = useNameMaps().ability;
   if (!input || !result) return { parts: [], factor: 1 };
@@ -89,7 +90,7 @@ export function SpeedCard({
   /** The spread this Pokémon arrived with, what 还原 puts back (shared with the durability tool). */
   baseline: Baseline;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const literal = dex.find((e) => e.slug === mon.slug);
   const mega = literal?.isMega ? literal : megaFor(mon.slug, mon.item, dex, items);

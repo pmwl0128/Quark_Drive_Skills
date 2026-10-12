@@ -5,12 +5,12 @@
   "format": "single",
   "rule": "M-C",
   "season": "M-7",
-  "built_at": "2026-10-10T03:15:53Z"
+  "built_at": "2026-10-12T09:16:08Z"
  },
  "counts": {
   "history": 1,
-  "partners": 12,
-  "stand_in": 2
+  "partners": 11,
+  "stand_in": 1
  },
  "anchors": {
   "Aegislash-Shield|": {
@@ -22,22 +22,13 @@
    ],
    "teams": 4
   },
-  "Castform|": {
-   "source": "partners",
-   "partners": [
-    "Basculegion",
-    "Swampert",
-    "Pelipper"
-   ],
-   "teams": 6
-  },
   "Garbodor|": {
    "source": "partners",
    "partners": [
-    "Meowscarada",
-    "Dragonite"
+    "Basculegion",
+    "Metagross"
    ],
-   "teams": 14
+   "teams": 5
   },
   "Gourgeist-Large|": {
    "source": "partners",
@@ -45,24 +36,23 @@
     "Indeedee",
     "Sneasler"
    ],
-   "teams": 68
+   "teams": 73
   },
   "Gourgeist-Small|": {
    "source": "partners",
    "partners": [
-    "Clefable",
-    "Arcanine"
+    "Arcanine",
+    "Clefable"
    ],
    "teams": 5
   },
   "Hydrapple|": {
    "source": "partners",
    "partners": [
-    "Greninja",
-    "Toucannon",
-    "Pawmot"
+    "Charizard",
+    "Baxcalibur"
    ],
-   "teams": 3
+   "teams": 43
   },
   "Lycanroc-Dusk|": {
    "source": "history",
@@ -76,19 +66,19 @@
   "Meowstic-F|": {
    "source": "partners",
    "partners": [
-    "Golisopod",
-    "Cinderace",
-    "Indeedee"
+    "Hippowdon",
+    "Meowscarada",
+    "Dragonite"
    ],
-   "teams": 3
+   "teams": 4
   },
   "Morpeko-Hangry|": {
    "source": "partners",
    "partners": [
-    "Metagross",
-    "Gholdengo"
+    "Gholdengo",
+    "Cinderace"
    ],
-   "teams": 9
+   "teams": 18
   },
   "Oranguru|": {
    "source": "stand_in",
@@ -100,53 +90,40 @@
     "roles": 3,
     "field": 0
    },
-   "teams": 10
+   "teams": 11
   },
   "Passimian|": {
    "source": "partners",
    "partners": [
-    "Gyarados",
-    "Gholdengo"
-   ],
-   "teams": 21
-  },
-  "Raichu-Alola|": {
-   "source": "partners",
-   "partners": [
-    "Blastoise",
-    "Golisopod",
-    "Indeedee"
+    "Greninja",
+    "Sylveon"
    ],
    "teams": 8
   },
   "Squawkabilly-Yellow|": {
    "source": "partners",
    "partners": [
-    "Golisopod",
-    "Blastoise",
+    "Glimmora",
+    "Vanilluxe",
     "Indeedee"
    ],
-   "teams": 8
+   "teams": 3
   },
   "Tauros-Paldea-Aqua|": {
    "source": "partners",
    "partners": [
-    "Dragonite",
-    "Metagross"
+    "Aegislash",
+    "Rillaboom"
    ],
-   "teams": 16
+   "teams": 18
   },
   "Tauros-Paldea-Combat|": {
-   "source": "stand_in",
-   "species": "Pawmot",
-   "hits": {
-    "types": 1,
-    "lean": 1,
-    "speed_band": 1,
-    "roles": 1,
-    "field": 0
-   },
-   "teams": 119
+   "source": "partners",
+   "partners": [
+    "Gyarados",
+    "Cinderace"
+   ],
+   "teams": 13
   }
  }
 }

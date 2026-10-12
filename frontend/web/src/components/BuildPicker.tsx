@@ -5,7 +5,8 @@ import { useEscapeLayer } from "./EscapeLayers.tsx";
 import { STAT_KEYS, type OppSetDto, type StatKey } from "@pokemon-champions/protocol";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { displayName, useLang, useT } from "../i18n.ts";
+import { displayName, useLang } from "../i18n.ts";
+import { useSharedT } from "./messages.ts";
 import { useDexByName, useMovesByName, useNatures } from "../hooks.ts";
 import { localName, useNameMaps } from "../lib/names.ts";
 import { actualStat, natureMultiplier } from "../lib/stats.ts";
@@ -13,6 +14,7 @@ import { SP_MAX, MOVE_SLOTS } from "../lib/battle.ts";
 import type { LibraryOrigin } from "../lib/library/records.ts";
 import { KeepMonButton } from "./KeepMonButton.tsx";
 import { TypeBadge } from "./TypeBadge.tsx";
+import { SetOriginBadge, buildSourceOrigin } from "./SetOrigin.tsx";
 
 export interface BuildCardOption {
   key: string;
@@ -54,7 +56,7 @@ export function BuildSetSummary({ option, index, selected = false, title, keep, 
   corner?: ReactNode;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useSharedT();
   const maps = useNameMaps();
   const moves = useMovesByName();
   const dex = useDexByName();
@@ -85,7 +87,7 @@ export function BuildSetSummary({ option, index, selected = false, title, keep, 
   return (
     <span className={`build-card-body${selected ? " selected" : ""}`}>
       <span className="build-card-top">
-        <span className={`build-card-tag${option.source !== "aggregate" ? ` ${option.source}` : ""}`}>{tag}</span>
+        <SetOriginBadge origin={buildSourceOrigin(option.source)} label={tag} className="build-card-tag" />
         <span className="build-card-primary">
           <b>{set.item ? localName(maps.item, set.item, lang) : "—"}</b>
           {entry?.isMega && <span className="build-mega-badge">MEGA</span>}
@@ -180,7 +182,7 @@ export function BuildPicker({
   hint: ReactNode;
   busy?: boolean;
 }) {
-  const t = useT();
+  const t = useSharedT();
   useEscapeLayer(true, onClose, 50);
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<CSSProperties>({ visibility: "hidden" });

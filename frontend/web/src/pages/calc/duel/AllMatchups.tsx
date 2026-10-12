@@ -7,10 +7,13 @@
 import type { DamageResultDto } from "@pokemon-champions/protocol";
 import { isErrorShape } from "@pokemon-champions/protocol";
 import { useState } from "react";
-import { BuildSetSummary, type BuildCardOption } from "../../../components/BuildPicker.tsx";
+import { BuildSetSummary, setMember, type BuildCardOption } from "../../../components/BuildPicker.tsx";
+import { DragMon } from "../../../components/library/DragMon.tsx";
+import { toTeamMember } from "../../../lib/teamDoc.ts";
 import { EntityHover } from "../../../components/EntityHover.tsx";
 import { GameImage } from "../../../components/GameImage.tsx";
-import { displayName, useLang, useT } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT } from "../messages.ts";
 import { useDamageText } from "../../../lib/damageText.tsx";
 import { koLabel, koTone } from "../../../lib/ko.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
@@ -32,6 +35,9 @@ export interface GridRow {
   build: BuildCardOption;
 }
 
+/** The exact build a header was computed with, as a library member (Mega form and stone normalized). */
+const buildMember = (build: BuildCardOption) => () => toTeamMember(setMember(build.set));
+
 export function AllMatchups({
   rows, cols, results, onRun, runnable, stale, busy, error, fromLabel, toLabel,
 }: {
@@ -52,7 +58,7 @@ export function AllMatchups({
   toLabel: string;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useCalcT();
   const damageText = useDamageText();
   const [cell, setCell] = useState<{ r: number; c: number } | null>(null);
 
@@ -102,11 +108,11 @@ export function AllMatchups({
                   <th key={`${g.index}-${gi}`} colSpan={g.span} className="grid-attacker">
                     <EntityHover kind="spread" name="" link={false}
                       previewAddon={<BuildSetSummary option={g.build} index={0} />}>
-                      <span className="p-inner">
+                      <DragMon className="p-inner" member={buildMember(g.build)} name={displayName(g.entry, lang)}>
                         <GameImage assetKey={g.entry.key} role="dense"
                           alt={displayName(g.entry, lang)} className="mini" />
                         <span className="nm">{displayName(g.entry, lang)}</span>
-                      </span>
+                      </DragMon>
                     </EntityHover>
                   </th>
                 ))}
@@ -127,11 +133,11 @@ export function AllMatchups({
                   <th className="row-mon">
                     <EntityHover kind="spread" name="" link={false}
                       previewAddon={<BuildSetSummary option={row.build} index={0} />}>
-                      <span className="p-inner">
+                      <DragMon className="p-inner" member={buildMember(row.build)} name={displayName(row.entry, lang)}>
                         <GameImage assetKey={row.entry.key} role="dense"
                           alt={displayName(row.entry, lang)} className="mini" />
                         <span className="nm">{displayName(row.entry, lang)}</span>
-                      </span>
+                      </DragMon>
                     </EntityHover>
                   </th>
                   {cols.map((_, ci) => {

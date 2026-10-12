@@ -2,14 +2,15 @@
  * from the engine's own sixteen rolls, and the control that pins it as a standing target. */
 import { memo } from "react";
 import { GameImage } from "../../../components/GameImage.tsx";
-import { displayName, useLang, useT, type MsgKey } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import {
   TARGETS, formatProbability, rollSurvival, survival, targetProbability,
   type GoalTarget, type Hits, type Rolls,
 } from "./model.ts";
 
-export const TARGET_LABEL: Record<GoalTarget, MsgKey> = {
+export const TARGET_LABEL: Record<GoalTarget, CalcMsgKey> = {
   guaranteed: "tune.ws.prob.guaranteed",
   near_guaranteed: "tune.ws.prob.nearGuaranteed",
   likely: "tune.ws.prob.likely",
@@ -26,7 +27,7 @@ function HitsToggle({ hits, onHits }: {
   hits: Hits;
   onHits: (hits: Hits) => void;
 }) {
-  const t = useT();
+  const t = useCalcT();
   return (
     <span className="seg tw-hits" role="group"
       aria-label={t("tune.ws.hitsLabel")}>
@@ -44,7 +45,7 @@ function TargetSelect({ target, onTarget }: {
   target: GoalTarget;
   onTarget: (target: GoalTarget) => void;
 }) {
-  const t = useT();
+  const t = useCalcT();
   return (
     <select className="tw-target-select" value={target} aria-label={t("tune.ws.target")}
       onChange={(event) => onTarget(event.target.value as GoalTarget)}>
@@ -72,7 +73,7 @@ export const Verdict = memo(function Verdict({ foe, mine, moveLabel, rolls, pend
   pinned: boolean;
   onTogglePin: () => void;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const ready = state === "ready" && !!rolls;
   const live = survival(ready ? rolls : null, hits);

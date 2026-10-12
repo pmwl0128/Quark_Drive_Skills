@@ -13,7 +13,8 @@ import {
   AdaptiveCombobox, type ComboboxCommitReason,
 } from "../AdaptiveCombobox.tsx";
 import { loadOppSetsCached, useDexIndex, useItems } from "../../hooks.ts";
-import { displayName, useLang, useT, type MsgKey } from "../../i18n.ts";
+import { displayName, useLang, type MsgKey } from "../../i18n.ts";
+import { useSharedT } from "../messages.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import { HttpError, type DexIndexEntry } from "../../runtime/adapter.ts";
 import type { ItemRef } from "../../runtime/projection.ts";
@@ -441,7 +442,7 @@ export function BuildPickerButton({
   className?: string;
   label?: ReactNode;
 }) {
-  const t = useT();
+  const t = useSharedT();
   const loadBuildOptions = useBuildOptions();
   const anchor = useRef<HTMLButtonElement>(null);
   const requestSeq = useRef(0);
@@ -608,7 +609,7 @@ export function MonPicker({ slug, onSlug, dex, placeholder, ariaLabel }: {
   ariaLabel?: string;
 }) {
   const { lang } = useLang();
-  const t = useT();
+  const t = useSharedT();
   const { adapter } = useRuntime();
   const entry = dex.find((e) => e.slug === slug);
   const [text, setText] = useState("");

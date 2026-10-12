@@ -11,7 +11,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAbilitiesByName, useDexByName, useItemsByName, useMovesByName } from "../hooks.ts";
-import { displayName, effectText, useLang, useT } from "../i18n.ts";
+import { displayName, effectText, useLang } from "../i18n.ts";
+import { useSharedT } from "./messages.ts";
 import { GameImage } from "./GameImage.tsx";
 import { CategoryBadge, TypeBadge } from "./TypeBadge.tsx";
 
@@ -57,7 +58,7 @@ export function EntityHover({
   const suppressTouchClick = useRef(false);
   const open = hovered || focused || pinned;
   const navigate = useNavigate();
-  const t = useT();
+  const t = useSharedT();
   const { lang } = useLang();
   const dex = useDexByName(kind === "pokemon");
   const moves = useMovesByName(kind === "move");

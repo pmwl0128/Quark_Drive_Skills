@@ -5,7 +5,8 @@ import type { TeamMemberDoc } from "@pokemon-champions/protocol";
 import { IconPlus } from "@tabler/icons-react";
 import { useState, type MouseEvent } from "react";
 import { useDexByName } from "../hooks.ts";
-import { displayName, useLang, useT } from "../i18n.ts";
+import { displayName, useLang } from "../i18n.ts";
+import { useSharedT } from "./messages.ts";
 import type { LibraryOrigin } from "../lib/library/records.ts";
 import { useLibraryWorkspace } from "../lib/library/workspace.tsx";
 import { toTeamMember } from "../lib/teamDoc.ts";
@@ -18,7 +19,7 @@ export function KeepMonButton({ member, name, origin, className = "" }: {
   origin: LibraryOrigin;
   className?: string;
 }) {
-  const t = useT();
+  const t = useSharedT();
   const { lang } = useLang();
   const dex = useDexByName();
   const { keepMon } = useLibraryWorkspace("keepMon");

@@ -1,4 +1,5 @@
 import { IconBrandX, IconCopy, IconQrcode } from "@tabler/icons-react";
+import { BRAND_LOGO } from "../assets/icons.ts";
 import { useT } from "../i18n.ts";
 import { usePopover } from "../lib/popover.ts";
 import { useToast } from "./Toast.tsx";
@@ -52,7 +53,11 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="site-footer-main">
-          <span className="footer-copyright">© {new Date().getFullYear()} pmwl</span>
+          <div className="footer-brand">
+            <img src={BRAND_LOGO} alt="" aria-hidden="true" />
+            <span className="footer-brand-name">Turn Zero<span>Web</span></span>
+            <span className="footer-copyright">© {new Date().getFullYear()} pmwl</span>
+          </div>
           <nav className="footer-community" aria-label={t("footer.community")}>
             <a href="https://x.com/pmwl007" target="_blank" rel="noopener noreferrer">
               <IconBrandX aria-hidden /><span>@pmwl007</span>

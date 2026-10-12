@@ -511,7 +511,7 @@
   border-radius: 999px; background: var(--panel); color: var(--sub); cursor: pointer;
 }
 .party-edit svg, .party-remove svg { width: 13px; height: 13px; stroke-width: 2.2; }
-.party-edit:hover { color: #fff; background: var(--brand); border-color: var(--brand); }
+.party-edit:hover { color: #fff; background: var(--action); border-color: var(--action); }
 .party-remove:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
 .party-remove:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 

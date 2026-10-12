@@ -176,6 +176,7 @@ def cmd_online_serve(ns) -> int:
         print(i18n.t("expose_online", host=ns.host))
         if input(i18n.t("confirm")).strip() != "yes":
             return 1
+    qa_provider = None
     if ns.provider == "echo":
         provider = EchoProvider()
         thinking_provider = provider
@@ -190,11 +191,15 @@ def cmd_online_serve(ns) -> int:
         base_provider = AnthropicMessagesProvider(llm_config) if llm_config.api_key else None
         provider = base_provider.with_thinking(False) if base_provider else None
         thinking_provider = base_provider.with_thinking(True) if base_provider else None
+        qa_provider = (base_provider.with_model(
+            os.environ.get("PCUI_MIMO_QA_MODEL", "mimo-v2.6-flash"))
+            .with_thinking(False) if base_provider and ns.provider == "mimo" else provider)
         if fallback_config and fallback_config.api_key:
             fallback_base = AnthropicMessagesProvider(fallback_config)
             fallback = fallback_base.with_thinking(False)
             thinking_fallback = fallback_base.with_thinking(True)
             provider = FallbackProvider(provider, fallback) if provider else fallback
+            qa_provider = FallbackProvider(qa_provider, fallback) if qa_provider else fallback
             thinking_provider = (FallbackProvider(thinking_provider, thinking_fallback)
                                  if thinking_provider else thinking_fallback)
         if provider is None:
@@ -226,7 +231,7 @@ def cmd_online_serve(ns) -> int:
     access_log = AccessLog(data_dir() / "access-log.db")
     pool = WorkerPool()
     app = create_online_app(
-        pool, provider, limits, thinking_provider=thinking_provider,
+        pool, provider, limits, thinking_provider=thinking_provider, qa_provider=qa_provider,
         dist_dir=Path(ns.dist) if ns.dist else None,
         projection_dir=Path(ns.projection) if ns.projection else None,
         deployment_id=_projection_deployment_id(ns.projection),
@@ -243,7 +248,7 @@ def cmd_online_serve(ns) -> int:
         jobs=JobStore(data_dir() / "online.db"))
     provider_summary = getattr(provider, "safe_summary", None)
     provider_text = ((f"{provider_summary()}, "
-                      "qa=non-thinking, diagnose/builder=optional thinking")
+                      "diagnose/builder=optional thinking")
                      if provider_summary
                      else ns.provider if provider else "none")
     print(f"pcui online API: http://127.0.0.1:{ns.port}/ "
@@ -251,6 +256,9 @@ def cmd_online_serve(ns) -> int:
           f"{', local unmetered' if unmetered else ''}"
           f"{', browser access enabled' if dev_key else ''}"
           f"{', smoke access enabled' if smoke_key else ''})", flush=True)
+    qa_summary = getattr(qa_provider or provider, "safe_summary", None)
+    if qa_summary:
+        print(f"pcui Q&A: {qa_summary()}", flush=True)
     try:
         uvicorn.run(app, host=ns.host, port=ns.port, log_level="warning")
     finally:

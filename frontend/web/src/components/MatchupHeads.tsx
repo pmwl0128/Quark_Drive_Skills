@@ -6,7 +6,8 @@
 import type { OppSetDto, OppVariantRef, SpeciesRowDto } from "@pokemon-champions/protocol";
 import { useRef } from "react";
 import { GameImage } from "./GameImage.tsx";
-import { displayName, useT, type Lang } from "../i18n.ts";
+import { displayName, type Lang } from "../i18n.ts";
+import { useMatchupT } from "../pages/matchup/messages.ts";
 import { BuildPicker, BuildSetSummary, type BuildCardOption } from "./BuildPicker.tsx";
 import { EntityHover } from "./EntityHover.tsx";
 
@@ -58,7 +59,7 @@ function VariantPicker({ s, picks, onPick, onClose, anchorRef, hintKey, sets, se
    * the actual-configuration table only re-reads the column (its rows are the user's own team). */
   hintKey?: "matchup.variantPick" | "matchup.variantPickCol";
 }) {
-  const t = useT();
+  const t = useMatchupT();
   const current = activeKey(s, picks);
   const options: BuildCardOption[] = (s.variants ?? []).map((variant) => ({
     key: variant.key,

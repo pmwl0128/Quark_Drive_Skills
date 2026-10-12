@@ -2,10 +2,12 @@
  * solution cards it returns. Each allocation the operator reports is an absolute spread relative to
  * the spread it was solved from, so "apply" restores that base and writes the lane on top — applying
  * one lane after another never stacks two answers. */
-import type { NatureDto, TuneCardDto } from "@pokemon-champions/protocol";
+import type { NatureDto, TeamMemberDoc, TuneCardDto } from "@pokemon-champions/protocol";
+import { DragMon } from "../../../components/library/DragMon.tsx";
 import { useEffect, useRef, useState } from "react";
 import { GameImage } from "../../../components/GameImage.tsx";
-import { displayName, optionalKey, useLang, useT, type MsgKey } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT, optionalCalcKey, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import { natureLabel, spSum } from "../../../components/build/inputs.tsx";
 import type { MonState } from "../duel/state.ts";
@@ -16,7 +18,7 @@ import {
 import { TARGET_LABEL, TARGET_SHORT } from "./Verdict.tsx";
 import { TuneCard } from "../TuneCard.tsx";
 
-const STAT_LABEL: Record<string, MsgKey> = {
+const STAT_LABEL: Record<string, CalcMsgKey> = {
   hp: "stat.hp", atk: "stat.atk", def: "stat.def", spa: "stat.spa", spd: "stat.spd", spe: "stat.spe",
 };
 
@@ -51,14 +53,17 @@ function sameSpread(a: Spread, b: Spread): boolean {
     .every((key) => (a[key] ?? 0) === (b[key] ?? 0));
 }
 
-const RESULT_KEY: Record<string, MsgKey> = {
+const RESULT_KEY: Record<string, CalcMsgKey> = {
   already: "tune.res.already", cliff: "tune.res.cliff",
   infeasible: "tune.res.infeasible", unreachable: "tune.res.unreachable",
 };
 const tone = (result: string) =>
   result === "already" ? "pass" : result === "cliff" ? "warn" : "fail";
 
-function SolutionCard({ card, entry, foe, mine, moveLabel, current, natures, canApply, onApply }: {
+/** One side's build for the library dock, by member id; null when the id no longer exists. */
+export type DragMemberOf = (side: "mine" | "foe", id: string) => (() => TeamMemberDoc | null) | null;
+
+function SolutionCard({ card, entry, foe, mine, moveLabel, current, natures, canApply, onApply, dragOf }: {
   card: TuneCardDto;
   entry: SolveEntry;
   foe: DexIndexEntry | undefined;
@@ -68,8 +73,9 @@ function SolutionCard({ card, entry, foe, mine, moveLabel, current, natures, can
   natures: NatureDto[];
   canApply: boolean;
   onApply: (spread: Spread, nature: string) => void;
+  dragOf: DragMemberOf;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   const [open, setOpen] = useState(false);
   const lanes = lanesOf(card, entry.base.sps);
@@ -109,12 +115,12 @@ function SolutionCard({ card, entry, foe, mine, moveLabel, current, natures, can
   const axis = lanes[0]?.kind === "def" || lanes[0]?.kind === "spd" ? lanes[0].kind : null;
   const attacker = record(card.attacker);
   const source = attacker && typeof attacker.source === "string" ? attacker.source : null;
-  const sourceKey = source ? optionalKey(`tune.source.${source}`) : null;
+  const sourceKey = source ? optionalCalcKey(`tune.source.${source}`) : null;
   const assumptions = Array.isArray(card.assumptions) ? card.assumptions : [];
   const state = record(card.member_state);
   const stateStages = record(state?.boosts);
   const stateText = [
-    ...(state && typeof state.status === "string" ? [t(`status.${state.status}` as MsgKey)] : []),
+    ...(state && typeof state.status === "string" ? [t(`status.${state.status}` as CalcMsgKey)] : []),
     ...Object.entries(stateStages ?? {}).flatMap(([stat, stage]) => {
       const value = num(stage);
       return value ? [`${statName(stat)} ${value > 0 ? "+" : ""}${value}`] : [];
@@ -133,11 +139,13 @@ function SolutionCard({ card, entry, foe, mine, moveLabel, current, natures, can
     <article className={`tw-solution ${tone(card.result)}`}>
       <header className="tw-solution-head">
         <span className="tw-matchup">
-          {foe && <GameImage assetKey={foe.key} role="dense" alt="" className="mini" />}
+          {foe && <DragMon member={dragOf("foe", entry.foeId)} name={displayName(foe, lang)}>
+            <GameImage assetKey={foe.key} role="dense" alt="" className="mini" /></DragMon>}
           <b>{foe ? displayName(foe, lang) : String(card.vs)}</b>
           <span className="tw-matchup-move">{moveLabel}</span>
           <span className="tw-arrow" aria-hidden>→</span>
-          {mine && <GameImage assetKey={mine.key} role="dense" alt="" className="mini" />}
+          {mine && <DragMon member={dragOf("mine", entry.mineId)} name={displayName(mine, lang)}>
+            <GameImage assetKey={mine.key} role="dense" alt="" className="mini" /></DragMon>}
           <b>{mine ? displayName(mine, lang) : card.member}</b>
         </span>
         <span className="tw-solution-goal">
@@ -243,7 +251,7 @@ function SolutionCard({ card, entry, foe, mine, moveLabel, current, natures, can
           {sourceKey && (
             <div>{t("tune.attackerSet")}：{t(sourceKey)}
               {card.confidence && ` · ${(() => {
-                const key = optionalKey(`conf.${card.confidence}`);
+                const key = optionalCalcKey(`conf.${card.confidence}`);
                 return key ? t(key) : card.confidence;
               })()}`}</div>
           )}
@@ -258,7 +266,7 @@ function SolutionCard({ card, entry, foe, mine, moveLabel, current, natures, can
 }
 
 export function TargetsPanel({ rows, onRemove, onFocus, onClear, solve, run, stale, preset, natures,
-  memberOf, entryOf, moveLabelOf, onApply }: {
+  memberOf, entryOf, moveLabelOf, onApply, dragOf }: {
   rows: TargetRow[];
   onRemove: (id: string) => void;
   onFocus: (goal: Goal) => void;
@@ -281,8 +289,10 @@ export function TargetsPanel({ rows, onRemove, onFocus, onClear, solve, run, sta
   entryOf: (side: "mine" | "foe", id: string, fallback: string) => DexIndexEntry | undefined;
   moveLabelOf: (move: string) => string;
   onApply: (mineId: string, spread: Spread, nature: string) => void;
+  /** Either side of a pinned target, for dragging its avatar into the library dock. */
+  dragOf: DragMemberOf;
 }) {
-  const t = useT();
+  const t = useCalcT();
   const { lang } = useLang();
   // A newly pinned target joins at the end of the strip; bring it into view by scrolling the strip
   // itself — never the page, which would move whatever the reader is working on.
@@ -321,10 +331,12 @@ export function TargetsPanel({ rows, onRemove, onFocus, onClear, solve, run, sta
             <span key={goal.id} className={`tw-chip${focused ? " on" : ""} ${tone}`}>
               <button type="button" className="tw-chip-main" onClick={() => onFocus(goal)}
                 title={`${pair} · ${t("tune.ws.focusHint")}`}>
-                {foe && <GameImage assetKey={foe.key} role="dense" alt="" className="mini" />}
+                {foe && <DragMon member={dragOf("foe", goal.foeId)} name={displayName(foe, lang)}>
+                  <GameImage assetKey={foe.key} role="dense" alt="" className="mini" /></DragMon>}
                 <b>{moveLabel}</b>
                 <span className="tw-arrow" aria-hidden>→</span>
-                {mine && <GameImage assetKey={mine.key} role="dense" alt="" className="mini" />}
+                {mine && <DragMon member={dragOf("mine", goal.mineId)} name={displayName(mine, lang)}>
+                  <GameImage assetKey={mine.key} role="dense" alt="" className="mini" /></DragMon>}
                 <span className="tw-chip-goal">
                   {t(goal.hits === 1 ? "tune.h1" : "tune.h2")} {TARGET_SHORT[goal.target]}
                 </span>
@@ -367,7 +379,7 @@ export function TargetsPanel({ rows, onRemove, onFocus, onClear, solve, run, sta
                 moveLabel={moveLabelOf(entry.move)}
                 current={memberOf(entry.mineId)}
                 canApply={!stale && !!memberOf(entry.mineId)}
-                onApply={(spread, nature) => onApply(entry.mineId, spread, nature)} />
+                onApply={(spread, nature) => onApply(entry.mineId, spread, nature)} dragOf={dragOf} />
             );
           })}
         </div>

@@ -18,7 +18,8 @@ import { CategoryBadge, TypeBadge } from "../components/TypeBadge.tsx";
 import {
   useAbilitiesByName, useAsync, useDexIndex, useLearners, usePokemonCard, useRanking,
 } from "../hooks.ts";
-import { displayName, effectText, useLang, useT, type MsgKey } from "../i18n.ts";
+import { displayName, effectText, useLang } from "../i18n.ts";
+import { useDexT, type DexMsgKey } from "./dex/messages.ts";
 import { actualStat } from "../lib/stats.ts";
 import { defensiveProfile, offensiveProfile } from "../lib/typechart.ts";
 import { loadLearnset } from "../runtime/projection.ts";
@@ -29,7 +30,7 @@ import { SP_MAX } from "../lib/battle.ts";
 
 /** The hero's right column: each ability with what it does. */
 function Abilities({ mon }: { mon: PokemonCardDto }) {
-  const t = useT();
+  const t = useDexT();
   const { lang } = useLang();
   const byName = useAbilitiesByName();
   return (
@@ -53,7 +54,7 @@ function Abilities({ mon }: { mon: PokemonCardDto }) {
 /** Lv.50 values: each stat from its floor (0 SP, a lowering nature) to its ceiling (32 SP, a raising
  * one), the neutral span darker inside it, and the four numbers beside. HP takes no nature. */
 function ActualStats({ mon }: { mon: PokemonCardDto }) {
-  const t = useT();
+  const t = useDexT();
   const rows = STAT_KEYS.map((key: StatKey) => {
     const base = mon.stats[key];
     const hp = key === "hp";
@@ -81,7 +82,7 @@ function ActualStats({ mon }: { mon: PokemonCardDto }) {
       </div>
       {rows.map(({ key, hp, low, zero, full, high }) => (
         <div key={key} className="dx-actual-row">
-          <span className="dx-actual-k">{t(`stat.${key}` as MsgKey)}</span>
+          <span className="dx-actual-k">{t(`stat.${key}` as DexMsgKey)}</span>
           <span className="dx-range" aria-hidden>
             <i className="span" style={{ left: pct(low), width: `calc(${pct(high)} - ${pct(low)})` } as CSSProperties} />
             <i className="core" style={{ left: pct(zero), width: `calc(${pct(full)} - ${pct(zero)})` } as CSSProperties} />
@@ -96,8 +97,8 @@ function ActualStats({ mon }: { mon: PokemonCardDto }) {
   );
 }
 
-function TypeGroups({ groups }: { groups: Array<[MsgKey, TypeName[]]> }) {
-  const t = useT();
+function TypeGroups({ groups }: { groups: Array<[DexMsgKey, TypeName[]]> }) {
+  const t = useDexT();
   return (
     <div className="dx-mgroups">
       {groups.map(([key, list]) => (
@@ -116,7 +117,7 @@ function TypeGroups({ groups }: { groups: Array<[MsgKey, TypeName[]]> }) {
 
 /** What hits this Pokémon how hard, and what its own-type moves hit. */
 function Matchups({ types }: { types: TypeName[] }) {
-  const t = useT();
+  const t = useDexT();
   const def = defensiveProfile(types);
   const off = offensiveProfile(types);
   return (
@@ -142,7 +143,7 @@ function Matchups({ types }: { types: TypeName[] }) {
 type CategoryFilter = "all" | MoveCategory;
 
 function Learnset({ slug }: { slug: string }) {
-  const t = useT();
+  const t = useDexT();
   const { lang } = useLang();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
@@ -171,7 +172,7 @@ function Learnset({ slug }: { slug: string }) {
         <SegmentedControl kind="radio" value={category} onChange={setCategory} className="seg"
           ariaLabel={t("dex.category")}
           items={[{ id: "all" as CategoryFilter, label: t("dx.all") },
-            ...MOVE_CATEGORIES.map((id) => ({ id: id as CategoryFilter, label: t(`category.${id}` as MsgKey) }))]} />
+            ...MOVE_CATEGORIES.map((id) => ({ id: id as CategoryFilter, label: t(`category.${id}` as DexMsgKey) }))]} />
         <span className="dx-learn-legend" aria-hidden>{t("dex.power")}<i>·</i>{t("dex.accuracy")}</span>
       </div>
       {learnset.status === "loading" && <div className="spinner">{t("state.loading")}</div>}
@@ -204,7 +205,7 @@ export function PokemonPage() {
   const { lang } = useLang();
   const singleRanking = useRanking("single");
   const doubleRanking = useRanking("double");
-  const t = useT();
+  const t = useDexT();
 
   // The same browse rail the dex page carries, so reading one Pokemon and going to the next is a
   // single click instead of a trip back to the grid.

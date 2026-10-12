@@ -14,7 +14,8 @@ import { RailHandle, useSideRail } from "../components/SideRail.tsx";
 import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import { useAsync, useDexByName, useDexIndex, useOppSets } from "../hooks.ts";
 import { parseTeamInput } from "../lib/parseTeamInput.ts";
-import { displayName, useLang, useT } from "../i18n.ts";
+import { displayName, useLang } from "../i18n.ts";
+import { useMatchupT } from "./matchup/messages.ts";
 import { koTone } from "../lib/ko.ts";
 import {
   readTeamMembers, stashDamageFill, takeMatchupFill, type TeamMemberish,
@@ -121,7 +122,7 @@ function teamFromMembers(format: FormatId, members: DraftMember[]) {
 /** 导入队伍: one of the reader's kept teams of this format replaces the builds. A page that works on
  * one whole team takes it straight from here; the dock stays the way for a single Pokémon. */
 function TeamImport({ format, onPick }: { format: FormatId; onPick: (doc: TeamDoc) => void }) {
-  const t = useT();
+  const t = useMatchupT();
   const pop = usePopover();
   const list = useRef<HTMLDivElement>(null);
   useFocusOnOpen(pop.open, list, "[role=menuitem]");
@@ -159,7 +160,7 @@ function MemberEditor({ member, index, count, format, onChange, onRemove }: {
   member: DraftMember; index: number; count: number; format: FormatId;
   onChange: (next: DraftMember) => void; onRemove: () => void;
 }) {
-  const t = useT();
+  const t = useMatchupT();
   return (
     <article className="actual-member-card">
       <header className="actual-member-head">
@@ -192,7 +193,7 @@ function DetailMon({ name, lang }: { name: string; lang: string }) {
 }
 
 function Elapsed() {
-  const t = useT();
+  const t = useMatchupT();
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     const started = Date.now();
@@ -254,7 +255,7 @@ function koTurns(fact: ActualDamageFactDto | null): { turns: number | null; cert
 function ActualResult({ response, format, sourceTeam }: {
   response: ActualMatchupResponseDto; format: FormatId; sourceTeam: unknown;
 }) {
-  const t = useT();
+  const t = useMatchupT();
   const { lang } = useLang();
   const navigate = useNavigate();
   const dex = useDexByName();
@@ -502,7 +503,7 @@ function ActualResult({ response, format, sourceTeam }: {
 export function ActualMatchupWorkspace({ format, onFormatChange }: {
   format: FormatId; onFormatChange: (format: FormatId) => void;
 }) {
-  const t = useT();
+  const t = useMatchupT();
   const { adapter } = useRuntime();
   const dexIndex = useDexIndex();
   const species = dexIndex.status === "ready" ? dexIndex.data : [];

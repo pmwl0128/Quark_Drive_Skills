@@ -3,21 +3,6 @@
    renders them at desktop width even when it is made on a phone. Colours come from theme tokens
    only, so a card follows whichever `data-theme` element encloses it (page root or share frame). */
 
-/* Tabular numerals subset (frontend/assets/fonts/pc-numerals/README.md). unicode-range hands only
-   digits and a few symbols to it; every other character falls through to the UI font. */
-@font-face { font-family: "PC Numerals"; font-weight: 500; font-display: swap;
-  src: url("../../assets/fonts/pc-numerals/pc-numerals-500.woff2") format("woff2");
-  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
-@font-face { font-family: "PC Numerals"; font-weight: 600; font-display: swap;
-  src: url("../../assets/fonts/pc-numerals/pc-numerals-600.woff2") format("woff2");
-  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
-@font-face { font-family: "PC Numerals"; font-weight: 700; font-display: swap;
-  src: url("../../assets/fonts/pc-numerals/pc-numerals-700.woff2") format("woff2");
-  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
-@font-face { font-family: "PC Numerals"; font-weight: 800; font-display: swap;
-  src: url("../../assets/fonts/pc-numerals/pc-numerals-800.woff2") format("woff2");
-  unicode-range: U+0020, U+0023, U+0025, U+002B-003A, U+00B7, U+00D7, U+2013, U+2212; }
-
 .mc-page { display: grid; gap: 18px; }
 
 .mc-card {
@@ -216,8 +201,10 @@
 /* ── KO card ──────────────────────────────────────────────────────────── */
 .mc-ko-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 14px 24px 12px 26px; border-bottom: 1px solid var(--line); }
 .mc-ko-head h2 { margin: 0; font-size: 15px; }
-.mc-ko-note { color: var(--sub); font-size: 11.5px; }
-.mc-ko-stamp { margin-left: auto; color: var(--sub); font-size: 12px; white-space: nowrap; }
+.mc-ko-note { margin-left: auto; color: var(--sub); font-size: 11.5px; }
+.mc-ko-reused { margin: 0; padding: 8px 24px 0 26px; color: var(--warning); font-size: 12px; }
+/* A direction retained from an earlier capture names its source under the direction's title. */
+.mc-ko-stamp { margin: 2px 0 6px; color: var(--sub); font-size: 12px; }
 .mc-ko-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); }
 .mc-ko-side { min-width: 0; padding: 14px 22px 18px; background: var(--panel); }
 .mc-ko-side.out { --bar: var(--build-a); }
@@ -241,7 +228,7 @@
   .mc-side { grid-column: 1 / -1; border-left: 0 !important; border-top: 1px solid var(--line); }
   .mc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "moves items" "natures partners" "spreads spreads"; }
   .mc-ko-sides { grid-template-columns: minmax(0, 1fr); }
-  .mc-ko-stamp { margin-left: 0; }
+  .mc-ko-note { margin-left: 0; }
 }
 @container mc-card (max-width: 680px) {
   .mc-hero { grid-template-columns: minmax(0, 1fr); }
@@ -265,7 +252,6 @@
   .mc-tile { padding-inline: 2px; }
   .mc-tile-img { width: 48px; height: 48px; }
   .mc-ko-absent { height: calc(var(--mc-row) * 3); }
-  .mc-ko-stamp { white-space: normal; }
 }
 
 /* ── share dialog ─────────────────────────────────────────────────────── */

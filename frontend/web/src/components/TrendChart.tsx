@@ -13,7 +13,8 @@ import type { TrendDto } from "@pokemon-champions/protocol";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDexIndex } from "../hooks.ts";
-import { displayName, optionalKey, useLang, useT, type Lang } from "../i18n.ts";
+import { displayName, useLang, type Lang } from "../i18n.ts";
+import { useSharedT, optionalSharedKey } from "./messages.ts";
 import { dexLookup } from "../lib/lookup.ts";
 import type { DexIndexEntry } from "../runtime/adapter.ts";
 
@@ -157,7 +158,7 @@ const STAT_ROW: ReadonlyArray<[string, keyof DexIndexEntry["stats"]]> = [
 export default function TrendChart({ trend }: { trend: TrendDto }) {
   const ref = useRef<HTMLDivElement>(null);
   const { lang } = useLang();
-  const t = useT();
+  const t = useSharedT();
   const navigate = useNavigate();
   const dex = useDexIndex();
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -227,7 +228,7 @@ export default function TrendChart({ trend }: { trend: TrendDto }) {
   const tipRank = tipLine?.ranks[tip!.index];
   const tipEntry = tipLine && dex.status === "ready" ? dexLookup(dex.data).bySlug.get(tipLine.slug) : undefined;
   const typeLabel = (tp: string) => {
-    const key = optionalKey(`type.${tp}`);
+    const key = optionalSharedKey(`type.${tp}`);
     return key ? t(key) : tp;
   };
 

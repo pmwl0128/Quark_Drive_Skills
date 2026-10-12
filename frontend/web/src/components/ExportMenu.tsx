@@ -1,7 +1,7 @@
 /** "导出": a panel as text on the clipboard, or as a PNG of the panel at three sizes (its own width at
  * 1x, 2x and 3x). The team card and the matchup inspector both export through this one menu. */
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { useT } from "../i18n.ts";
+import { useSharedT } from "./messages.ts";
 import { copyText, saveBlob } from "../lib/download.ts";
 import { roveFocus, useFocusOnOpen, usePopover } from "../lib/popover.ts";
 
@@ -38,7 +38,7 @@ export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, cla
   extra?: ExtraExport;
   className?: string;
 }) {
-  const t = useT();
+  const t = useSharedT();
   const pop = usePopover<HTMLSpanElement>();
   const list = useRef<HTMLDivElement>(null);
   useFocusOnOpen(pop.open, list, "button");

@@ -9,7 +9,8 @@
 import type { LearnsetDto } from "@pokemon-champions/protocol";
 import { useEffect, useState } from "react";
 import { GameImage } from "../../../components/GameImage.tsx";
-import { displayName, useLang, useT, type MsgKey } from "../../../i18n.ts";
+import { displayName, useLang } from "../../../i18n.ts";
+import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import { BOOST_KEYS, boostLabel } from "../../../components/build/inputs.tsx";
 import { useMetaUsage } from "../../../lib/metaUsage.ts";
@@ -51,13 +52,13 @@ function RangeBar({ prior, posterior, scale }: {
 
 /** The frame a record froze, in words: weather, terrain, each side's conditions, stages and status. */
 export function useFrameText(stat: (key: SpKey | "spe") => string): (observation: Observation) => string[] {
-  const t = useT();
+  const t = useCalcT();
   const ti = useInferT();
   return (observation) => {
     const { field } = observation;
     const out: string[] = [];
-    if (field.weather) out.push(t(`weather.${field.weather}` as MsgKey));
-    if (field.terrain) out.push(t(`terrain.${field.terrain}` as MsgKey));
+    if (field.weather) out.push(t(`weather.${field.weather}` as CalcMsgKey));
+    if (field.terrain) out.push(t(`terrain.${field.terrain}` as CalcMsgKey));
     const sides = [
       { who: ti("infer.side.mine"), flags: field.sides.a ?? {}, boosts: observation.mineBoosts,
         status: observation.mineStatus },
@@ -67,14 +68,14 @@ export function useFrameText(stat: (key: SpKey | "spe") => string): (observation
     for (const { who, flags, boosts, status } of sides) {
       for (const flag of SIDE_FLAGS) {
         if (flags[flag.key] && !(flag.doublesOnly && field.format === "single")) {
-          out.push(`${who}${t(flag.label as MsgKey)}`);
+          out.push(`${who}${t(flag.label as CalcMsgKey)}`);
         }
       }
       for (const key of BOOST_KEYS) {
         const stage = boosts[key] ?? 0;
         if (stage) out.push(`${who}${stat(key)}${boostLabel(stage)}`);
       }
-      if (status) out.push(`${who}${t(`status.${status}` as MsgKey)}`);
+      if (status) out.push(`${who}${t(`status.${status}` as CalcMsgKey)}`);
     }
     return out;
   };
