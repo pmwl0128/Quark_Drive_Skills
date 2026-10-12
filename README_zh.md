@@ -1,4 +1,4 @@
-<h1 align="center">Pokémon Champions Skills</h1>
+<h1 align="center">Turn Zero Skills</h1>
 
 <p align="center">
   <b>帮助 AI 助手用本地事实、当前环境数据和精确计算查询图鉴、计算对位、诊断队伍并完成建队</b>
@@ -24,7 +24,7 @@
 
 ---
 
-这是一套供 AI 助手使用的《宝可梦冠军》本地技能包，包含四个可独立调用的 Agent Skill：
+Turn Zero Skills 是供 AI 助手使用的《宝可梦冠军》本地技能集合，包含四个可独立调用的 Agent Skill。配套浏览器界面称为 **Turn Zero Web**，两者在同一仓库交付。技能支持：
 
 - 查确定事实的对战图鉴；
 - 查询当前或历史环境分布；
@@ -46,14 +46,14 @@
 
 脚本负责事实、计算和确定性检查；AI 负责理解你的目标、设计候选、权衡利弊并解释最终建议。这个分工是整套项目最重要的边界。
 
-### 可选的可视化界面
+### Turn Zero Web：可选浏览器界面
 
-四个技能通过agent-cli即可完整使用。为了方便用户更直观的看到数据、配置信息和生成过程，项目提供一套可选的配套浏览器前端界面，用图形化方式浏览图鉴、环境快照，并辅助用户完成对位、伤害、速度、调校和队伍诊断等操作：
+四个技能可通过支持工具调用的 AI 助手完整使用。Turn Zero Web 提供浏览器工作台，方便查看图鉴、环境、配置与建队进度，并进行伤害、速度、对位、耐久调校和队伍诊断：
 
 - **在线使用：**打开 [champion.mpan.top](https://champion.mpan.top)，无需安装。注意在线端因资源限制，功能与本地版相比有所简化。
-- **本地使用：**从 [`data-latest` Release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest) 下载 [`pokemon-champions-ui.zip`](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/pokemon-champions-ui.zip)。预构建包不需要 Node.js，也不需要账号或模型 API Key。
+- **本地使用：**从 [`data-latest` Release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest) 下载 [`Turn_Zero_Web.zip`](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/Turn_Zero_Web.zip)。预构建包需要 Python 3.10+ 和包内运行时依赖；普通浏览与计算不需要 Node.js、账号或模型 API Key。
 
-界面不是技能的前置依赖，也不会代替 AI 助手完成完整的本地协作流程。功能差异、安装依赖和使用方法见[可视化界面](#可视化界面)。
+界面不是技能的前置依赖，也不会代替 AI 助手完成完整的本地协作流程。功能差异、安装依赖和使用方法见[Turn Zero Web](#turn-zero-web)。
 
 > [!NOTE]
 > **数据范围仅限《宝可梦冠军》。**
@@ -114,7 +114,7 @@ Mega 巨金怪在单打和双打的常用招式有什么差别？
 双打里常见的顺风手都有谁？通常和谁一起出现？
 ```
 
-最新的三份单语环境工作簿（`workbook_{zh,ja,en}.xlsx`，含单打、双打完整环境表和事实性更新报告）以固定文件名发布在 [data-latest Release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest)，随每次发行滚动覆盖；无需运行脚本即可浏览，使用率请以页首快照日期为准。
+最新的三份单语环境工作簿（`workbook_{zh,ja,en}.xlsx`，含单打、双打完整环境表和事实性更新报告）以固定文件名发布在 [data-latest Release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)，随每次发行滚动覆盖；无需运行脚本即可浏览，使用率请以页首快照日期为准。
 
 ## `ncp-damage-calculator`
 
@@ -170,7 +170,7 @@ AI 会先用 dex 解析所有宝可梦、招式、道具、特性和性格，再
 
 | 能力 | team 技能实际做什么 |
 |---|---|
-| **输入与合法性** | 读取自由文本、Showdown 或 JSON，规范名称与形态，并检查可用名单、学习集、特性、道具、同种/同道具限制、队伍规模、SP 和 Mega 关系；结果区分 `valid / invalid / unknown`。 |
+| **输入与合法性** | AI 将自然语言、截图和文件整理为结构化队伍输入；脚本解析 Showdown 或 JSON，检查名称、可用名单、学习集、特性、道具、同种／同道具限制、队伍规模、SP 与 Mega 关系。结果区分 `valid / invalid / unknown`。 |
 | **队伍诊断** | 从防守属性、进攻覆盖、速度结构、速度控制和功能信号等维度列出事实与缺口，不给一个综合分。 |
 | **对位与选出** | 针对当前环境前 K 名计算双方伤害、速度和 KO 关系；分析单打 6 选 3、双打 6 选 4 与每场只能进行一次 Mega 进化等选出约束，不替用户宣布“最佳选出”。 |
 | **SP 调校** | 把“扛住 X、快过 Y、确一／确二 Z”变成明确的对位目标，计算跨过离散阈值所需的最小 SP 及其代价，而不是搜索一套所谓的“最优努力值”。 |
@@ -186,7 +186,7 @@ team 技能内部使用一套流程化约束来减少“先凭印象生成，再
 3. **比较候选**：生成一个或多个方向，使用同一套合法性、结构、对位和置信度检查，说明每个选择解决了什么、又付出了什么。
 4. **验证后交付**：对需要的伤害、速度、选出和 SP 线做精确计算，复核最终文字中的数字、假设与取舍，再把结果交给用户继续判断和迭代。
 
-流程保证的是依据可查、约束不容易丢、数字可以复算；它不会判断某种对战哲学一定正确，也不会把一支队认证为客观最优。
+按流程执行可以记录依据、检查约束并复算关键数字；AI 仍须遵守各个门槛并准确说明检查结果。它不会判断某种对战哲学一定正确，也不会把一支队认证为客观最优。
 
 ### 三种常见使用路径
 
@@ -205,7 +205,7 @@ team 技能内部使用一套流程化约束来减少“先凭印象生成，再
 - 战绩、名次、rating 和样本数不会被归一化成强度分；
 - 单打和双打不混合，不同规则不会偷偷进入当前证据池；
 - 只有物种列表的样本可用于共现分析，但不能冒充完整的代表配置；
-- 标准配置缓存始终是低置信参考，用户自己的队伍仍按实际配置现算；
+- 标准配置缓存属于低置信参考；以环境分布补充的 SP 属于估计配分，用户自己的队伍按实际配置重新计算；
 - AI 可以阅读整队作为证据，但不能静默把库中某队原样回显成“推荐”；确实决定原样采用时，必须说明样本重叠事实、为什么适合，以及考虑过哪些修改。
 
 ### 怎样阅读 team 输出
@@ -253,7 +253,7 @@ team 技能内部使用一套流程化约束来减少“先凭印象生成，再
 
 例如，“以超级巨金怪为核心组一支双打队，并保证它能承受常见生命宝珠烈咬陆鲨的地震”会用到名称与规则校验、当前环境、实战队伍结构、候选评估和伤害阈值计算。若只问“环境中常见的超级巨金怪用子弹拳能否确一常见配置的阿罗拉九尾”，则只需调用 dex、meta 和 calculator，不会进入建队流程。
 
-## 可视化界面
+## Turn Zero Web
 
 配套前端的目标是把四个技能已经提供的事实与计算变成便于浏览、对照和复核的工作台。它适合快速查看环境、研究某只宝可梦、批量比较伤害与速度、检查标准或自定义配置的对位，以及把队伍分析结果继续送入其他页面验证；中／英／日名称只在展示边界本地化。页面右上角会显示当前 season、rule 和快照日期；涉及环境的判断应以这里的版本信息为准。
 
@@ -265,12 +265,12 @@ team 技能内部使用一套流程化约束来减少“先凭印象生成，再
 |---|---|---|
 | 单打／双打排名、详情、KO 面板及分别采集的使用率／KO 历史 | 支持 | 支持 |
 | 宝可梦、招式、道具、特性图鉴与中／英／日名称检索 | 支持 | 支持 |
-| 伤害批量计算、完整乱数、击倒线与速度线 | 浏览器本地计算 | 本地 bridge 计算 |
+| 伤害批量计算、完整乱数、击倒线与速度线 | 浏览器本地计算 | 浏览器本地计算 |
 | 计算页搜索筛选抽屉、真实配置、Meta 回填与空白自定义配置 | 支持 | 支持 |
 | 环境标准配置对位矩阵、自定义队伍 KO／CHECK 表 | 支持 | 支持 |
 | 快速耐久试算 | 支持 | 支持 |
-| 精确 `team.tune` 耐久调校 | 按部署 capability 与工作量额度开放 | 支持 |
-| 单次事实问答、简化建队向导、队伍诊断与可选 AI 解读 | 按在线部署和每日额度开放 | 以本地agent的完整流程代替 |
+| 精确 `team.tune` 耐久调校 | 按当前开放功能与服务工作量额度提供 | 支持 |
+| 单次事实问答、简化建队向导、队伍诊断与可选 AI 解读 | 按在线部署和每日额度开放 | 由本地 AI 助手运行完整流程 |
 | UEP 会话与 artifact 面板 | 不支持 | 支持，与正在工作的本地 AI 助手协作 |
 
 在线建队向导是固定表单驱动的简化入口，只返回一次经过规则检查的结果，没有自由连续对话、候选来回比较或长期历史。需要完整的提问澄清、候选比较、改队迭代和本地文件协作时，仍应在安装了四个技能的 AI 助手中完成。
@@ -279,7 +279,7 @@ team 技能内部使用一套流程化约束来减少“先凭印象生成，再
 
 ### 直接使用在线版
 
-访问 [https://champion.mpan.top](https://champion.mpan.top) 即可。环境、图鉴、趋势、对位和浏览器计算不需要账号；事实问答、建队与 AI 解读是否显示，以及可用次数，由当前在线部署的 capability 和额度决定。
+访问 [https://champion.mpan.top](https://champion.mpan.top) 即可。环境、图鉴、趋势、对位和浏览器计算不需要账号；事实问答、建队与 AI 解读是否显示，以及可用次数，由当前在线开放的功能与额度决定。
 
 建议按以下顺序使用：
 
@@ -297,7 +297,7 @@ team 技能内部使用一套流程化约束来减少“先凭印象生成，再
 
 如果项目目录里已经有可命令行调用的 AI 助手（即你用前面的方法 A 安装了技能，或已把本仓库的 `AGENTS.md` / `CLAUDE.md` 放进项目目录），直接对它说：
 
-> 从 `pmwl0128/pokemon_champion_agent` 的 `data-latest` release 下载预构建的本地前端，安装 `requirements-runtime.txt`，并启动它。然后把本地访问地址给我。
+> 从 `pmwl0128/Turn_Zero_Skills` 的 `data-latest` release 下载预构建的本地前端，安装 `requirements-runtime.txt`，并启动它。然后把本地访问地址给我。
 
 助手会代为下载压缩包、解压、安装运行时依赖、启动对应平台的启动脚本，并返回一次性地址 `http://127.0.0.1:<port>/#bootstrap=...`。完整步骤它已在 `AGENTS.md` / `CLAUDE.md` 的「Local Visual Interface」一节中持有，你无需记命令。
 
@@ -335,8 +335,8 @@ PCUI_LOCAL_PORT=1025
 Windows PowerShell：
 
 ```powershell
-git clone https://github.com/pmwl0128/pokemon_champion_agent.git
-Set-Location .\pokemon_champion_agent
+git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+Set-Location .\Turn_Zero_Skills
 python -m pip install -r frontend/requirements-ui.txt
 .\frontend\build-ui.ps1
 .\frontend\start-ui.ps1
@@ -345,8 +345,8 @@ python -m pip install -r frontend/requirements-ui.txt
 Linux / macOS：
 
 ```bash
-git clone https://github.com/pmwl0128/pokemon_champion_agent.git
-cd pokemon_champion_agent
+git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+cd Turn_Zero_Skills
 python3 -m pip install -r frontend/requirements-ui.txt
 chmod +x frontend/build-ui.sh frontend/start-ui.sh
 ./frontend/build-ui.sh
@@ -364,7 +364,7 @@ chmod +x frontend/build-ui.sh frontend/start-ui.sh
 
 ### 更新本地界面
 
-`pokemon-champions-ui.zip` 使用固定文件名，在 `data-latest` Release 中随发行滚动替换。更新预构建版时，请重新下载整个压缩包并解压到新目录，确认新版本可启动后再删除旧目录；不要只覆盖其中几个子目录。
+`Turn_Zero_Web.zip` 使用固定文件名，在 `data-latest` Release 中随发行滚动替换。更新预构建版时，请重新下载整个压缩包并解压到新目录，确认新版本可启动后再删除旧目录；不要只覆盖其中几个子目录。
 
 源码版更新后运行：
 
@@ -382,17 +382,17 @@ git pull
 
 把下面这段交给有 shell 权限的 AI 助手：
 
-> 全局安装 https://github.com/pmwl0128/pokemon_champion_agent 中的四个技能。同时安装依赖 `quickjs-ng>=0.15`；如果当前环境无法安装，则确认 Node.js 回退可用。最后确认四个 `SKILL.md` 都能被发现，并实际运行一次计算器的 `schema` 命令。
+> 全局安装 https://github.com/pmwl0128/Turn_Zero_Skills 中的四个技能。同时安装依赖 `quickjs-ng>=0.15`；如果当前环境无法安装，则确认 Node.js 回退可用。最后确认四个 `SKILL.md` 都能被发现，并实际运行一次计算器的 `schema` 命令。
 
 这是默认推荐方式：AI 助手可以识别当前宿主、选择正确目录、处理运行依赖，并在复制后直接验证，而不需要用户手工判断路径或链接方式。
 
 ### 方法 B：Claude Code 插件市场
 
-在 Claude Code 对话框中输入：
+在 Claude Code 中输入。若已安装旧插件，先运行 `/plugin uninstall pokemon-champions@pmwl`：
 
 ```text
-/plugin marketplace add pmwl0128/pokemon_champion_agent
-/plugin install pokemon-champions@pmwl
+/plugin marketplace add pmwl0128/Turn_Zero_Skills
+/plugin install turn-zero-skills@turn-zero
 ```
 
 ### 方法 C：一行命令
@@ -400,13 +400,13 @@ git pull
 先安装 [Node.js](https://nodejs.org/)，然后在项目目录运行：
 
 ```bash
-npx skills add pmwl0128/pokemon_champion_agent
+npx skills add pmwl0128/Turn_Zero_Skills
 ```
 
 全局安装到所有项目：
 
 ```bash
-npx skills add pmwl0128/pokemon_champion_agent -g
+npx skills add pmwl0128/Turn_Zero_Skills -g
 ```
 
 安装器来自 [vercel-labs/skills](https://github.com/vercel-labs/skills)，会提示你选择 AI 助手和安装范围。当前版本在 Windows 上使用链接方式可能失败；遇到此问题时，请改用复制方式或手动创建链接。
@@ -414,9 +414,10 @@ npx skills add pmwl0128/pokemon_champion_agent -g
 ### 方法 D：手动复制
 
 ```bash
-git clone https://github.com/pmwl0128/pokemon_champion_agent.git
-cp -r pokemon_champion_agent/.claude/skills/* ~/.claude/skills/   # Claude Code
-cp -r pokemon_champion_agent/.agents/skills/* ~/.agents/skills/   # Codex
+git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+mkdir -p ~/.claude/skills ~/.agents/skills
+cp -r Turn_Zero_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
+cp -r Turn_Zero_Skills/.agents/skills/* ~/.agents/skills/   # Codex
 ```
 
 仓库中的 `.agents/skills/` 与 `.claude/skills/` 是逐字节一致的镜像，只需使用你的 AI 助手会扫描的那一份。
@@ -473,7 +474,7 @@ cd my-champions
 
 启动对应的 AI 助手后，直接发送下面这段话：
 
-> 从 https://github.com/pmwl0128/pokemon_champion_agent 将四个技能安装到当前项目，并把仓库中的 `CLAUDE.md` 和 `AGENTS.md` 放到项目目录。同时安装 `quickjs-ng>=0.15`；如果当前环境无法安装，请确认 Node.js 回退可用。最后确认四个 `SKILL.md` 均可识别，并实际运行一次计算器的 `schema` 命令。
+> 从 https://github.com/pmwl0128/Turn_Zero_Skills 将四个技能安装到当前项目，并把仓库中的 `CLAUDE.md` 和 `AGENTS.md` 放到项目目录。同时安装 `quickjs-ng>=0.15`；如果当前环境无法安装，请确认 Node.js 回退可用。最后确认四个 `SKILL.md` 均可识别，并实际运行一次计算器的 `schema` 命令。
 
 也可以使用上面的其他 [安装方式](#安装)。
 
@@ -528,11 +529,11 @@ my-champions/
 
 ## 环境工作簿
 
-每次正式发行会从完整的单打、双打快照与更新报告重新生成三份工作簿，并以固定文件名发布到 [data-latest Release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest)（滚动覆盖，只保留最新一期；git 树不携带二进制文件，克隆保持轻量）：
+每次正式发行会从完整的单打、双打快照与更新报告重新生成三份工作簿，并以固定文件名发布到 [data-latest Release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)（滚动覆盖，只保留最新一期；git 树不携带二进制文件，克隆保持轻量）：
 
-- [workbook_zh.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_zh.xlsx)（中文）
-- [workbook_ja.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_ja.xlsx)（日文）
-- [workbook_en.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_en.xlsx)（英文）
+- [workbook_zh.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_zh.xlsx)（中文）
+- [workbook_ja.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_ja.xlsx)（日文）
+- [workbook_en.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_en.xlsx)（英文）
 
 每份文件只使用一种主语言；中、日版附英文规范名，便于交叉检索。主要工作表包括：
 
@@ -545,9 +546,9 @@ my-champions/
 
 排名趋势折线图 `trend_{single,double}_{zh,ja,en}.png`（单打 / 双打 × 三种语言）发布在同一 Release。它们滚动展示最近至多 10 期（每期对应一次数据刷新）的排名走势：任意一期进入过 Top30 的宝可梦全程追踪，另收录进过前 60 名的大幅变动；纵轴 1–30 名等距、30 名以后压缩，上升 / 下降 / 稳定折线以颜色区分，线两端直接标注宝可梦名。
 
-![单打排名趋势](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/trend_single_zh.png)
+![单打排名趋势](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_single_zh.png)
 
-![双打排名趋势](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/trend_double_zh.png)
+![双打排名趋势](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_double_zh.png)
 
 ## 数据时效与诚实边界
 
@@ -568,7 +569,7 @@ my-champions/
 | [Silph Scope](https://silph-scope.com/) | 主数据源：环境排名，招式、道具、特性、性格、SP、队友详情，以及 KO 关系列表（谁能击倒谁） |
 | [GameWith](https://gamewith.jp/) Pokémon Champions | 独立环境 feed 与交叉验证 |
 | [PokeChamp DB](https://pokechamdb.com/) | 独立环境 feed 与交叉验证 |
-| [MetaRoll](https://metaroll.app/ladder) | 双打排位天梯的 KO 招式占比。Usage data from MetaRoll (metaroll.app) |
+| [MetaRoll](https://metaroll.app/ladder) | 双打击倒／被击倒招式占比的备用源。Usage data from MetaRoll (metaroll.app) |
 
 ### 对战图鉴与名称
 
@@ -600,12 +601,12 @@ my-champions/
 
 特别感谢 [PokeChamp DB](https://pokechamdb.com/) 在技能开发期间提供的协助。
 
-## TODO
+## 后续方向
 
-- **建队流程提速** — 完整建队流程目前需多轮 skill 调用与上下文审计往返，整体耗时偏长。计划在不改变事实层契约的前提下合并步骤、削减冗余调用，使 agent 从意图到最终队伍的全过程明显缩短。
-- **回合模拟器接入** — 当前对位表与 KO 预测基于单回合伤害外推，回复循环、状态进度、PP、入场触发、慢节奏招式与分支选择都不能沿回合演化，多回合结论可能与真实对局偏离。计划引入 Pokémon Showdown 作为底层引擎，替换现有计算器外推的对位表，使真正的多回合模拟成为可选路径。
-- **本地前端 MCP 化** — 本地前端目前由 bridge CLI 托管，agent 通过会话与产物文件间接协作。计划将本地 bridge 暴露为 MCP server，把 skill 调用、会话读写和建队流程操作统一为协议原生动作，使更广泛的 agent 客户端可以直接编排。
-- **在线服务扩容与额度调优** — 在线前端目前运行在单台 VPS 上，静态资源与文档随仓库发布。计划将静态资源迁至对象存储并接入 CDN，降低服务器负载；上线后再按实际用量观察调高 AI 调用额度，放开更多需要计算的入口（问答、建队、调校）。
+- **流程效率与兼容性：**减少重复工具调用，实测各类 AI 助手能否完整执行建队流程。
+- **回合模拟研究：**在独立实验管线中研究多回合行为。已发布的技能和 Web 仍按各自契约进行伤害、速度与对位计算。
+- **本地 MCP 接入：**探索通过协议调用本地 bridge 已有的技能、会话和产物。
+- **在线服务容量：**改善资源交付与响应延迟，依据实际工作量调整服务额度。
 
 ## 许可
 

@@ -1,4 +1,4 @@
-<h1 align="center">Pokémon Champions Skills</h1>
+<h1 align="center">Turn Zero Skills</h1>
 
 <p align="center">
   <b>Help your AI agent use local facts, current metagame data, and exact calculations to look up the dex, calculate matchups, review teams, and build them</b>
@@ -23,7 +23,7 @@
 
 ---
 
-This repository packages four Agent Skills for Pokémon Champions. Together they let an AI agent:
+Turn Zero Skills packages four Agent Skills for Pokémon Champions. The optional browser interface is called **Turn Zero Web**; both are delivered from this repository. Together they let an AI agent:
 
 - look up canonical battle-dex facts;
 - inspect current and historical metagame distributions;
@@ -45,14 +45,14 @@ Queries read the data shipped with the package. The goal is not to manufacture a
 
 Scripts own facts, arithmetic, and deterministic checks. The model interprets your goal, designs candidates, weighs trade-offs, and explains the recommendation. That division of responsibility is the core design of the project.
 
-### Optional visual interface
+### Turn Zero Web: optional browser interface
 
 All four skills are fully usable through an agent CLI. To make the data, configurations, and generation process easier to inspect, the project also provides an optional companion browser front end. It lets you browse the dex and metagame snapshots visually and assists with matchup, damage, Speed, tuning, and team-diagnosis work:
 
 - **Online:** open [champion.mpan.top](https://champion.mpan.top) with no installation required. Because the online edition has limited resources, some features are simplified compared with the local edition.
-- **Local:** download [`pokemon-champions-ui.zip`](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/pokemon-champions-ui.zip) from the [`data-latest` release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest). The prebuilt bundle requires neither Node.js nor an account or model API key.
+- **Local:** download [`Turn_Zero_Web.zip`](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/Turn_Zero_Web.zip) from the [`data-latest` release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest). The prebuilt bundle requires Python 3.10+ and its runtime dependencies; it needs no Node.js, account, or model API key for ordinary browsing and calculations.
 
-The interface is not a prerequisite for the skills and does not replace the complete local collaboration workflow with an AI assistant. See [Optional Visual Interface](#optional-visual-interface) for feature differences, dependencies, and usage instructions.
+The interface is not a prerequisite for the skills and does not replace the complete local collaboration workflow with an AI assistant. See [Turn Zero Web](#turn-zero-web) for feature differences, dependencies, and usage instructions.
 
 > [!NOTE]
 > **The supported data domain is Pokémon Champions only.**
@@ -113,7 +113,7 @@ Which Pokémon rose or fell this update, and which item distributions changed?
 Which partners commonly appear around Tailwind setters in Doubles?
 ```
 
-The latest three single-language workbooks (`workbook_{zh,ja,en}.xlsx`, containing the complete Singles and Doubles tables plus a factual update report) are published under fixed names on the [data-latest release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest), replaced on every release. They can be read without running any script; check the snapshot date in the sheet header.
+The latest three single-language workbooks (`workbook_{zh,ja,en}.xlsx`, containing the complete Singles and Doubles tables plus a factual update report) are published under fixed names on the [data-latest release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest), replaced on every release. They can be read without running any script; check the snapshot date in the sheet header.
 
 ## `ncp-damage-calculator`
 
@@ -169,7 +169,7 @@ The agent resolves every Pokémon, move, item, ability, and nature through the d
 
 | Capability | What the team skill actually does |
 |---|---|
-| **Input and legality** | Reads prose, Showdown, or JSON; normalizes names and forms; checks the available roster, learnsets, abilities, items, Species/Item Clause, team size, SP limits, and Mega relationships. Results distinguish `valid`, `invalid`, and `unknown`. |
+| **Input and legality** | The agent converts prose, screenshots, and files into structured team input. Scripts parse Showdown or JSON and check names, available Pokémon, learnsets, abilities, items, Species/Item Clause, team size, SP limits, and Mega relationships. Results distinguish `valid`, `invalid`, and `unknown`. |
 | **Team diagnosis** | Surfaces defensive typing, offensive coverage, Speed structure, speed control, and functional signals without collapsing them into one score. |
 | **Matchups and selection** | Computes both directions of damage, Speed, and KO relationships against the current meta top-K; analyzes Singles 6-pick-3, Doubles 6-pick-4, and one-Mega-per-battle constraints without naming an objectively best selection. |
 | **SP tuning** | Turns “survive X,” “outspeed Y,” or “OHKO/2HKO Z” into explicit matchup targets and finds the minimum SP needed to cross each discrete threshold, including the opportunity cost. It does not search for one globally optimal spread. |
@@ -185,7 +185,7 @@ Internally, the skill uses a structured workflow to avoid “generate from intui
 3. **Compare candidates:** develop one or more directions, run the same legality, structure, matchup, and confidence checks, and explain what each change fixes and what it gives up.
 4. **Validate before delivery:** calculate the relevant damage, Speed, selection, and SP thresholds, then recheck the final prose, numbers, assumptions, and trade-offs before presenting the result for your judgment and iteration.
 
-The workflow guarantees traceable evidence, retained constraints, and reproducible numbers. It cannot determine that one battle philosophy is universally correct or certify a team as objectively optimal.
+Following the workflow records evidence, checks constraints, and makes quantitative conclusions reproducible. The agent must still follow the gates and report their results accurately. It cannot determine that one battle philosophy is universally correct or certify a team as objectively optimal.
 
 ### Common Ways to Use It
 
@@ -204,7 +204,7 @@ The library is not a leaderboard:
 - records, placings, ratings, and sample counts are never normalized into a strength score;
 - Singles and Doubles remain separate, and old regulations do not silently enter the current evidence pool;
 - species-only rows can support co-occurrence facts but cannot masquerade as complete representative sets;
-- standard-set caches are always low-confidence references, while the user's actual team is recalculated from its real set;
+- standard-set caches are low-confidence references; SP filled from metagame data is an estimate rather than an observed spread, while the user's actual team is recalculated from its own set;
 - the model may study complete observed teams, but it must not silently return one as “the recommendation.” A verbatim adoption must disclose the sample overlap, why it fits, and which modifications were considered.
 
 ### Reading Team Results
@@ -252,7 +252,7 @@ free-form user request
 
 For example, “build a Doubles team around Mega Metagross and make it survive Earthquake from a common Life Orb Garchomp” needs name and legality facts, current usage, real-team structures, candidate evaluation, and an exact survival threshold. “Can Bullet Punch from the current metagame's standard Mega Metagross set OHKO a common Alolan Ninetales set?” combines the dex, meta, and calculator skills but does not enter the team workflow.
 
-## Optional Visual Interface
+## Turn Zero Web
 
 The companion front end turns the facts and calculations supplied by the four skills into a workspace
 that is easier to browse, compare, and verify. It is useful for quickly surveying the metagame,
@@ -269,12 +269,12 @@ follows the instructions in `AGENTS.md` / `CLAUDE.md` under "Local Visual Interf
 |---|---|---|
 | Singles/Doubles rankings, details, KO panels, and separate usage/KO histories | Yes | Yes |
 | Pokémon, move, item, and ability dex with zh/en/ja search | Yes | Yes |
-| Batch damage, rolls, KO ranges, and Speed lines | In-browser | Local bridge |
+| Batch damage, rolls, KO ranges, and Speed lines | In-browser | In-browser |
 | Calculator search/filter drawer with observed builds, Meta fallback, and a blank Custom option | Yes | Yes |
 | Standard-set matrix and actual-team KO/CHECK grid | Yes | Yes |
 | Quick survival calculation | Yes | Yes |
-| Exact `team.tune` cliff analysis | Deployment capability and workload quota | Yes |
-| One-shot Q&A, simplified builder, diagnosis, optional AI explanation | Deployment capabilities and daily quotas | Replaced by the complete local-agent workflow |
+| Exact `team.tune` cliff analysis | Enabled features and service workload limits | Yes |
+| One-shot Q&A, simplified builder, diagnosis, optional AI explanation | Enabled AI features and daily limits | Replaced by the complete local-agent workflow |
 | UEP session/artifact panel | Not supported | Yes, for collaboration with a local AI assistant already working on the task |
 
 The online builder is a fixed-form, single-result workflow. It does not replace the full local UEP
@@ -290,24 +290,24 @@ coverage can differ from usage history; an uncollected axis is shown as a data g
 
 Open [https://champion.mpan.top](https://champion.mpan.top). Static environment and dex
 browsing plus browser calculations require no account. Q&A, builder, diagnosis, and AI explanation are
-shown only when the deployment advertises those capabilities; quota status comes from the service.
+shown only when the corresponding features are enabled; quota status comes from the service.
 Standard-set matchup pages are low-confidence references. Paste or enter the actual set when judging
 your own team, and carry generated/diagnosed teams into the calculator for verification.
 
 ### Download the prebuilt local edition
 
-Download `pokemon-champions-ui.zip` from the
-[`data-latest` release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest).
+Download `Turn_Zero_Web.zip` from the
+[`data-latest` release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest).
 The bundle binds one SPA, projection, bridge, four skills, runtime configuration, and manifest. It
 requires Python 3.10+ and the locked `requirements-runtime.txt`, but not Node.js.
 
 #### Method A — Ask an Agent to Set It Up (Recommended)
 
 If an agent with shell access is already in this project (because you installed the skills with the
-agent-assisted Method A above, or you placed this repo's `AGENTS.md` / `CLAUDE.md` in the project
+agent-assisted installation method, or you placed this repo's `AGENTS.md` / `CLAUDE.md` in the project
 directory), just ask it directly:
 
-> Download the prebuilt local visual interface from the `data-latest` release of `pmwl0128/pokemon_champion_agent`, install its `requirements-runtime.txt`, and start it. Then give me the local URL.
+> Download the prebuilt local visual interface from the `data-latest` release of `pmwl0128/Turn_Zero_Skills`, install its `requirements-runtime.txt`, and start it. Then give me the local URL.
 
 The agent fetches the zip, extracts it, installs the runtime deps, launches the platform start script,
 and returns the one-time `http://127.0.0.1:<port>/#bootstrap=...` URL. The full step list it follows is
@@ -344,8 +344,8 @@ performs one Vite build; the matching `start-ui` script launches it. Do not comb
 bridge, or skill trees from different snapshots—the identity checks reject that assembly.
 
 ```powershell
-git clone https://github.com/pmwl0128/pokemon_champion_agent.git
-Set-Location .\pokemon_champion_agent
+git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+Set-Location .\Turn_Zero_Skills
 python -m pip install -r frontend/requirements-ui.txt
 .\frontend\build-ui.ps1
 .\frontend\start-ui.ps1
@@ -372,17 +372,17 @@ All four skills are installed together. No command registration is required afte
 
 Give the following request to an agent with shell access:
 
-> Globally install all four skills from https://github.com/pmwl0128/pokemon_champion_agent. Also install the `quickjs-ng>=0.15` dependency; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
+> Globally install all four skills from https://github.com/pmwl0128/Turn_Zero_Skills. Also install the `quickjs-ng>=0.15` dependency; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
 
 This is the recommended default: the agent can identify the host, choose the correct directory, handle the runtime dependency, and verify the copied skills without asking the user to reason about paths or link behavior.
 
 ### Method B: Claude Code Plugin Marketplace
 
-Enter these commands inside Claude Code:
+Enter these commands inside Claude Code. If you installed the old plugin, uninstall it first with `/plugin uninstall pokemon-champions@pmwl`:
 
 ```text
-/plugin marketplace add pmwl0128/pokemon_champion_agent
-/plugin install pokemon-champions@pmwl
+/plugin marketplace add pmwl0128/Turn_Zero_Skills
+/plugin install turn-zero-skills@turn-zero
 ```
 
 ### Method C: One Command
@@ -390,13 +390,13 @@ Enter these commands inside Claude Code:
 Install [Node.js](https://nodejs.org/) first, then run this in your project directory:
 
 ```bash
-npx skills add pmwl0128/pokemon_champion_agent
+npx skills add pmwl0128/Turn_Zero_Skills
 ```
 
 For a global installation available to every project:
 
 ```bash
-npx skills add pmwl0128/pokemon_champion_agent -g
+npx skills add pmwl0128/Turn_Zero_Skills -g
 ```
 
 The installer is provided by [vercel-labs/skills](https://github.com/vercel-labs/skills) and prompts for the target agent and scope. The current link-based installation path may fail on Windows; choose its copy-install option instead, or create the links manually.
@@ -404,9 +404,10 @@ The installer is provided by [vercel-labs/skills](https://github.com/vercel-labs
 ### Method D: Manual Copy
 
 ```bash
-git clone https://github.com/pmwl0128/pokemon_champion_agent.git
-cp -r pokemon_champion_agent/.claude/skills/* ~/.claude/skills/   # Claude Code
-cp -r pokemon_champion_agent/.agents/skills/* ~/.agents/skills/   # Codex
+git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+mkdir -p ~/.claude/skills ~/.agents/skills
+cp -r Turn_Zero_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
+cp -r Turn_Zero_Skills/.agents/skills/* ~/.agents/skills/   # Codex
 ```
 
 The `.agents/skills/` and `.claude/skills/` trees are byte-identical mirrors. Use the one discovered by your agent.
@@ -463,7 +464,7 @@ Any directory name is fine. Open it directly in an IDE-based agent, or change in
 
 After starting the appropriate AI agent, tell your agent:
 
-> Install all four skills from https://github.com/pmwl0128/pokemon_champion_agent into the current project, and copy the bundled `CLAUDE.md` and `AGENTS.md` into the project directory. Also install `quickjs-ng>=0.15`; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
+> Install all four skills from https://github.com/pmwl0128/Turn_Zero_Skills into the current project, and copy the bundled `CLAUDE.md` and `AGENTS.md` into the project directory. Also install `quickjs-ng>=0.15`; if that cannot be installed in this environment, confirm that the Node.js fallback works. Finally, confirm that all four `SKILL.md` files are discoverable and run the calculator's `schema` command once.
 
 You can also use any other [installation method](#installation) above.
 
@@ -518,11 +519,11 @@ Using the bundled `CLAUDE.md` or `AGENTS.md` as project instructions also improv
 
 ## Metagame Workbooks
 
-Each release regenerates three workbooks from the complete Singles and Doubles snapshots and update reports, published under fixed names on the [data-latest release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest) (rolling: only the newest snapshot is kept; the git tree carries no binaries, so clones stay lean):
+Each release regenerates three workbooks from the complete Singles and Doubles snapshots and update reports, published under fixed names on the [data-latest release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest) (rolling: only the newest snapshot is kept; the git tree carries no binaries, so clones stay lean):
 
-- [workbook_en.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_en.xlsx) (English)
-- [workbook_zh.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_zh.xlsx) (Chinese)
-- [workbook_ja.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_ja.xlsx) (Japanese)
+- [workbook_en.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_en.xlsx) (English)
+- [workbook_zh.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_zh.xlsx) (Chinese)
+- [workbook_ja.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_ja.xlsx) (Japanese)
 
 Each workbook uses one primary language; the Chinese and Japanese versions include canonical English names for cross-reference. Main sheets include:
 
@@ -535,9 +536,9 @@ The workbooks are facts-only reports and contain no AI interpretation of the met
 
 Rank-trend line charts `trend_{single,double}_{zh,ja,en}.png` (Singles / Doubles × three languages) ship on the same release. They cover the last up to 10 refreshes on a rolling basis: any Pokémon that entered the Top 30 in any period is tracked across the whole window, plus big movers that reached the top 60. The axis keeps ranks 1–30 uniform and compresses everything deeper; rising / falling / stable lines are color-coded with Pokémon names labeled at both ends.
 
-![Singles rank trend](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/trend_single_en.png)
+![Singles rank trend](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_single_en.png)
 
-![Doubles rank trend](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/trend_double_en.png)
+![Doubles rank trend](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_double_en.png)
 
 ## Freshness and Honest Limits
 
@@ -558,7 +559,7 @@ The release contains transformed, validated query data and scrubbed facts-only p
 | [Silph Scope](https://silph-scope.com/) | Primary metagame source: rankings, move/item/ability/nature/SP/partner details, and the KO relation lists (who knocks out whom) |
 | [GameWith](https://gamewith.jp/) Pokémon Champions | Independent metagame feed and cross-check |
 | [PokeChamp DB](https://pokechamdb.com/) | Independent metagame feed and cross-check |
-| [MetaRoll](https://metaroll.app/ladder) | Doubles ranked-ladder KO move shares. Usage data from MetaRoll (metaroll.app) |
+| [MetaRoll](https://metaroll.app/ladder) | Fallback source for doubles KO move shares. Usage data from MetaRoll (metaroll.app) |
 
 ### Battle Dex and Names
 
@@ -590,12 +591,12 @@ Thank you to the projects, sites, tournament organizers, and community contribut
 
 Special thanks to [PokeChamp DB](https://pokechamdb.com/) for its strong support during skill development.
 
-## TODO
+## Planned improvements
 
-- **Faster team-building flow** — The full team-building workflow does several rounds of skill calls and context-audit round trips, which is slow end-to-end. We plan to collapse steps and cut redundant calls without changing the facts-layer contract, so the agent's path from intent to a finished team is noticeably shorter.
-- **Turn simulator** — Matchup tables and KO predictions today extrapolate from single-turn damage; recovery loops, status progression, PP, switch-in triggers, stalling, and branching choices don't evolve across turns, so multi-turn conclusions can diverge from real play. We plan to adopt Pokémon Showdown as the underlying engine, replacing the calculator-extrapolated matchup tables and making true multi-turn simulation an available path.
-- **Local frontend as an MCP server** — The local frontend is currently hosted by a bridge CLI, with agents collaborating indirectly through session and artifact files. We plan to expose the bridge as an MCP server, turning skill calls, session reads/writes, and team-building workflow actions into protocol-native actions that any agent client can orchestrate directly.
-- **Online service expansion and quota tuning** — The online frontend runs on a single VPS with static assets and docs shipped from the repo. We plan to move static assets to object storage behind a CDN to shed server load, and then raise the AI call quota based on observed usage so more compute-heavy routes (QA, team-building, tuning) open up.
+- **Workflow speed and compatibility:** reduce redundant tool calls and measure whether supported agents complete the required team workflow.
+- **Turn-simulation research:** investigate multi-turn behavior in a separate experimental pipeline. The released skills and Web continue to use their documented damage, Speed, and matchup calculations.
+- **Local MCP integration:** explore protocol access to the local bridge's existing skills, sessions, and artifacts.
+- **Online capacity:** improve delivery and response latency, and adjust service limits using observed workload.
 
 ## License
 

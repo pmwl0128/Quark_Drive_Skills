@@ -1,17 +1,25 @@
 {
-  "name": "pmwl",
+  "name": "turn-zero",
   "owner": {
     "name": "pmwl",
     "email": "pmwl@outlook.com"
   },
   "plugins": [
     {
-      "name": "pokemon-champions",
+      "name": "turn-zero-skills",
       "source": "./",
-      "description": "Four trilingual Pokémon Champions skills: battle dex, metagame facts, exact damage/speed calculation, and audited single/double team building without a synthetic strength score.",
-      "homepage": "https://github.com/pmwl0128/pokemon_champion_agent",
+      "description": "Turn Zero Skills: four Pokémon Champions skills for dex and metagame facts, exact damage and Speed calculations, and audited Singles/Doubles team building.",
+      "homepage": "https://github.com/pmwl0128/Turn_Zero_Skills",
       "license": "MIT",
-      "keywords": ["pokemon", "pokemon-champions", "team-building", "agent-skills", "damage-calculator", "i18n"]
+      "keywords": [
+        "turn-zero",
+        "pokemon",
+        "pokemon-champions",
+        "team-building",
+        "agent-skills",
+        "damage-calculator",
+        "i18n"
+      ]
     }
   ]
 }

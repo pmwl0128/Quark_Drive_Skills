@@ -1,4 +1,4 @@
-<h1 align="center">Pokémon Champions Skills</h1>
+<h1 align="center">Turn Zero Skills</h1>
 
 <p align="center">
   <b>AIエージェントがローカルデータ、現行環境データ、厳密な計算を使って図鑑検索、対面計算、構築添削、構築作成を行えるよう支援します</b>
@@ -23,7 +23,7 @@
 
 ---
 
-『ポケモンチャンピオンズ』向けのAgent Skillを4つまとめたパッケージです。AIエージェントから次の作業を行えます。
+Turn Zero Skills は『ポケモンチャンピオンズ』向けの4つのAgent Skillsをまとめたパッケージです。任意で利用できるブラウザ版は **Turn Zero Web** と呼び、同じリポジトリで配布しています。AIアシスタントから次の作業を行えます。
 
 - 対戦図鑑の確定情報を調べる
 - 現在および過去シーズンの環境分布を確認する
@@ -45,14 +45,14 @@
 
 スクリプトが担当するのは事実、計算、ルールに基づく確認です。目的の解釈、候補の設計、取捨選択、最終的な説明はAIモデルが担います。この役割分担がプロジェクト全体の基本方針です。
 
-### 任意のビジュアルインターフェース
+### Turn Zero Web：ブラウザで使える補助ツール
 
-4つのスキルはagent CLIからすべて利用できます。データ、構成情報、生成過程をより直感的に確認できるよう、任意のコンパニオンブラウザ画面も用意されています。図鑑や環境スナップショットを視覚的に閲覧し、対面、ダメージ、素早さ、調整、構築診断を補助します。
+4つのスキルはAIアシスタントのCLIからすべて利用できます。データ、構成情報、生成過程をより直感的に確認できるよう、任意のコンパニオンブラウザ画面も用意されています。図鑑や環境スナップショットを視覚的に閲覧し、対面、ダメージ、素早さ、調整、構築診断を補助します。
 
 - **オンライン版：**[champion.mpan.top](https://champion.mpan.top) をインストール不要で利用できます。リソース制約のため、オンライン版の一部機能はローカル版より簡略化されています。
-- **ローカル版：**[`data-latest` Release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest) から [`pokemon-champions-ui.zip`](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/pokemon-champions-ui.zip) を取得します。ビルド済みパッケージにはNode.js、アカウント、モデルAPI Keyは不要です。
+- **ローカル版：**[`data-latest` Release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest) から [`Turn_Zero_Web.zip`](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/Turn_Zero_Web.zip) を取得します。ビルド済みパッケージにはPython 3.10+と同梱の実行時依存パッケージが必要です。通常の閲覧と計算にはNode.js、アカウント、モデルAPIキーは不要です。
 
-この画面はスキルの前提条件ではなく、AI助手との完全なローカル協調フローを置き換えるものでもありません。機能差、依存関係、使用方法は[ビジュアルインターフェース](#ビジュアルインターフェース)を参照してください。
+この画面はスキルの前提条件ではなく、AIアシスタントとの完全なローカル協調フローを置き換えるものでもありません。機能差、依存関係、使用方法は[Turn Zero Web](#turn-zero-web)を参照してください。
 
 > [!NOTE]
 > **対応データは『ポケモンチャンピオンズ』に限られます。**
@@ -113,7 +113,7 @@
 ダブルの追い風要員は誰と組まれることが多いですか？
 ```
 
-最新の3種類の単言語ワークブック（`workbook_{zh,ja,en}.xlsx`。シングル／ダブルの全表と事実ベースの更新レポートを収録）は、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest)に公開され、リリースごとに置き換えられます。スクリプトを実行せずに閲覧できます。スナップショット日付はシート冒頭で確認してください。
+最新の3種類の単言語ワークブック（`workbook_{zh,ja,en}.xlsx`。シングル／ダブルの全表と事実ベースの更新レポートを収録）は、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)に公開され、リリースごとに置き換えられます。スクリプトを実行せずに閲覧できます。スナップショット日付はシート冒頭で確認してください。
 
 ## `ncp-damage-calculator`
 
@@ -169,7 +169,7 @@
 
 | 機能 | teamスキルが行うこと |
 |---|---|
-| **入力とルール適合性** | 文章、Showdown、JSONを読み、名称とフォルムを正規化します。使用可能ポケモン、習得技、特性、道具、同種・同一道具制限、登録数、SP、メガシンカ関係を確認し、`valid` / `invalid` / `unknown` を区別します。 |
+| **入力とルール適合性** | AIが文章、画像、ファイルを構造化したチーム入力に整理します。スクリプトはShowdown形式やJSONを読み、名称、使用可能なポケモン、習得技、特性、道具、同種・同一道具制限、登録数、SP、メガシンカの対応を確認します。結果は `valid` / `invalid` / `unknown` を区別します。 |
 | **構築診断** | 防御タイプ、攻撃範囲、素早さ構造、S操作、役割に関する客観的な兆候を個別に示し、総合点へまとめません。 |
 | **対面と選出** | 現環境の上位に対する双方のダメージ、素早さ、確定数を計算し、シングル6→3、ダブル6→4、1試合1回のメガシンカなど選出時の制約を確認します。「最善選出」を自動決定しません。 |
 | **SP調整** | 「Xを耐える」「Yを抜く」「Zを確定1発／2発にする」を明示的な対面目標へ変換し、必要最小SPとその代償を調べます。唯一の最適配分を探索する機能ではありません。 |
@@ -185,7 +185,7 @@
 3. **候補を比較する：** 1つ以上の方向性を作り、同じルール適合性・構造・対面・信頼度チェックを適用します。各変更で何を改善し、何を失うかを示します。
 4. **検証して提示する：** 必要なダメージ、素早さ、選出、SPラインを計算し、最終文章の数値、前提、トレードオフを再確認してから、ユーザーが判断・反復できる形で提示します。
 
-この流れが保証するのは、根拠を追えること、条件を落としにくいこと、数値を再計算できることです。特定の対戦思想が常に正しいと判定したり、客観的な最適構築として認定したりはしません。
+手順に従うことで根拠を記録し、条件を確認し、重要な数値を再計算できます。AIには各検証段階を守り、その結果を正確に伝えることが求められます。特定の対戦思想が常に正しいと判定したり、客観的な最適構築として認定したりはしません。
 
 ### 主な使い方
 
@@ -204,7 +204,7 @@
 - 戦績、順位、レート、サンプル数を強度スコアへ変換しません
 - シングルとダブルを混ぜず、旧レギュレーションを現行証拠へ自動混入させません
 - 6体のみ判明しているデータは同時採用の参考にはなりますが、完全な代表型として扱いません
-- 標準型キャッシュは常に低信頼度の参考であり、ユーザー構築は実際の型で再計算します
+- 標準型キャッシュは低信頼度の参考です。環境分布で補ったSPは観測された配分ではなく推定値として扱い、ユーザーのチームは実際の型で再計算します
 - AIは実在する完成構築を資料として読めますが、無断で「推奨構築」として丸写ししません。そのまま採用する場合は、サンプルとの一致、採用理由、検討した変更案を開示します
 
 ### 出力の読み方
@@ -252,7 +252,7 @@ AをBへ変更した場合の防御、S操作、環境上の穴を比較して�
 
 たとえば「メガメタグロスを軸にダブル構築を作り、一般的ないのちのたま持ちガブリアスのじしんを耐えるようにしたい」という依頼では、名称とルール適合性、現行採用率、実在構築の構造、候補比較、耐久ライン計算を組み合わせます。「現環境で主流のメガメタグロスのバレットパンチは、一般的なアローラキュウコンを確定1発にできる？」なら図鑑・環境・計算の各スキルを連携させますが、構築フローには入りません。
 
-## ビジュアルインターフェース
+## Turn Zero Web
 
 付属フロントエンドは、4つのスキルが提供する事実と計算を、閲覧・比較・再確認しやすいワークスペースにまとめます。環境の素早い確認、ポケモンの調査、ダメージと素早さの一括比較、標準型またはカスタム型の対面確認、構築分析結果を別ページへ渡して検証する用途に向いています。中／英／日名は表示時にのみローカライズされます。ページ上部には現在のseason、rule、スナップショット日が表示されるため、環境情報はそのバージョンを基準に判断してください。
 
@@ -262,13 +262,13 @@ AをBへ変更した場合の防御、S操作、環境上の穴を比較して�
 |---|---|---|
 | シングル／ダブル順位、詳細、KOパネル、採集時刻を分けた採用率／KO履歴 | 対応 | 対応 |
 | ポケモン・技・道具・特性図鑑と中／英／日検索 | 対応 | 対応 |
-| 一括ダメージ、乱数、確定数、素早さライン | ブラウザ内計算 | ローカルbridge |
+| 一括ダメージ、乱数、確定数、素早さライン | ブラウザ内計算 | ブラウザ内計算 |
 | 計算ページの検索・絞り込みドロワー、実在する型、Meta補完、空のカスタム型 | 対応 | 対応 |
 | 標準型マトリクスと実構成KO／CHECK表 | 対応 | 対応 |
 | 簡易耐久計算 | 対応 | 対応 |
-| 正確な`team.tune`閾値調整 | デプロイのcapabilityとワークロード上限に従う | 対応 |
-| 単発Q&A、簡易構築、診断、任意のAI解説 | デプロイのcapabilityと1日あたりの回数制限に従う | ローカルagentの完全なフローで代替 |
-| UEP session/artifactパネル | 非対応 | 対応、作業中のローカルAI助手と協調 |
+| 正確な`team.tune`閾値調整 | 有効な機能と処理量の上限に従う | 対応 |
+| 単発Q&A、簡易構築、診断、任意のAI解説 | 有効なAI機能と1日の利用上限に従う | ローカルAIアシスタントの完全なフローで代替 |
+| UEP session/artifactパネル | 非対応 | 対応、作業中のローカルAIアシスタントと協調 |
 
 オンライン構築は固定フォームから1つの結果を返す簡易フローです。ローカルUEPの対話、候補比較、
 修正ループ、ファイル連携を置き換えるものではありません。
@@ -278,23 +278,23 @@ AをBへ変更した場合の防御、S操作、環境上の穴を比較して�
 ### オンライン版を使う
 
 [https://champion.mpan.top](https://champion.mpan.top) を開きます。環境・図鑑の閲覧と
-ブラウザ計算にはアカウント不要です。Q&A、構築、診断、AI解説は、デプロイがそのcapabilityを公開して
+ブラウザ計算にはアカウント不要です。Q&A、構築、診断、AI解説は、対応する機能が有効になって
 いる場合だけ表示され、残り回数はサービスの応答が基準です。標準型対面表は低信頼度の参考なので、
 自分の構築を判断するときは実際の型を入力して再計算してください。
 
 ### ビルド済みローカル版を取得する
 
-[`data-latest` Release](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest)
-から`pokemon-champions-ui.zip`を取得します。同一リリースのSPA、projection、bridge、4つのskill、
+[`data-latest` Release](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)
+から`Turn_Zero_Web.zip`を取得します。同一リリースのSPA、projection、bridge、4つのskill、
 runtime設定、manifestが一体化されています。必要なのはPython 3.10+と固定版
 `requirements-runtime.txt`で、Node.jsは不要です。
 
 #### 方法 A — エージェントに導入を依頼（推奨）
 
-プロジェクトにシェルを使えるエージェントが既にいる場合（上のスキル導入で方法Aを選んだ、あるいは
+プロジェクトにシェルを使えるエージェントが既にいる場合（スキルの導入をエージェントに依頼した、あるいは
 このリポジトリの `AGENTS.md` / `CLAUDE.md` をプロジェクトに置いた状態）、そのまま依頼してください。
 
-> `pmwl0128/pokemon_champion_agent` の `data-latest` リリースからビルド済みローカル版をダウンロードし、`requirements-runtime.txt` をインストールして起動してください。ローカル URL を返してください。
+> `pmwl0128/Turn_Zero_Skills` の `data-latest` リリースからビルド済みローカル版をダウンロードし、`requirements-runtime.txt` をインストールして起動してください。ローカル URL を返してください。
 
 エージェントがzip取得・展開・依存インストール・起動を代行し、一回限りの
 `http://127.0.0.1:<port>/#bootstrap=...` URLを返します。詳しい手順は `AGENTS.md` / `CLAUDE.md`
@@ -330,8 +330,8 @@ Python 3.10+と、リリース検証で使うNode.js（現在は22）を用意�
 異なるスナップショットの`dist`、projection、bridge、skillを混ぜないでください。identity検査が拒否します。
 
 ```powershell
-git clone https://github.com/pmwl0128/pokemon_champion_agent.git
-Set-Location .\pokemon_champion_agent
+git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+Set-Location .\Turn_Zero_Skills
 python -m pip install -r frontend/requirements-ui.txt
 .\frontend\build-ui.ps1
 .\frontend\start-ui.ps1
@@ -356,17 +356,17 @@ Linux/macOSでは実行権限を付けた`frontend/build-ui.sh`と`frontend/star
 
 シェルを使えるエージェントへ次のように依頼します。
 
-> https://github.com/pmwl0128/pokemon_champion_agent の4つのスキルをグローバルにインストールしてください。依存パッケージ`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
+> https://github.com/pmwl0128/Turn_Zero_Skills の4つのスキルをグローバルにインストールしてください。依存パッケージ`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
 
 これを既定の推奨方法とします。エージェントが実行環境を判定し、正しい配置先とランタイム依存を選び、コピー後の動作確認まで行えるため、ユーザーがパスやリンク方式を判断する必要がありません。
 
 ### 方法B：Claude Codeプラグインマーケット
 
-Claude Code内で次を入力します。
+Claude Code内で次を入力します。旧プラグインを導入済みなら、先に `/plugin uninstall pokemon-champions@pmwl` でアンインストールしてください。
 
 ```text
-/plugin marketplace add pmwl0128/pokemon_champion_agent
-/plugin install pokemon-champions@pmwl
+/plugin marketplace add pmwl0128/Turn_Zero_Skills
+/plugin install turn-zero-skills@turn-zero
 ```
 
 ### 方法C：1コマンド
@@ -374,13 +374,13 @@ Claude Code内で次を入力します。
 先に[Node.js](https://nodejs.org/)を導入し、プロジェクトディレクトリで実行します。
 
 ```bash
-npx skills add pmwl0128/pokemon_champion_agent
+npx skills add pmwl0128/Turn_Zero_Skills
 ```
 
 全プロジェクトから使えるグローバル導入：
 
 ```bash
-npx skills add pmwl0128/pokemon_champion_agent -g
+npx skills add pmwl0128/Turn_Zero_Skills -g
 ```
 
 インストーラーは[vercel-labs/skills](https://github.com/vercel-labs/skills)製で、対象エージェントとスコープを選択できます。現行版ではWindows上でリンク方式の導入に失敗する場合があります。その場合はコピー方式を選ぶか、手動でリンクしてください。
@@ -388,9 +388,10 @@ npx skills add pmwl0128/pokemon_champion_agent -g
 ### 方法D：手動コピー
 
 ```bash
-git clone https://github.com/pmwl0128/pokemon_champion_agent.git
-cp -r pokemon_champion_agent/.claude/skills/* ~/.claude/skills/   # Claude Code
-cp -r pokemon_champion_agent/.agents/skills/* ~/.agents/skills/   # Codex
+git clone https://github.com/pmwl0128/Turn_Zero_Skills.git
+mkdir -p ~/.claude/skills ~/.agents/skills
+cp -r Turn_Zero_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
+cp -r Turn_Zero_Skills/.agents/skills/* ~/.agents/skills/   # Codex
 ```
 
 `.agents/skills/`と`.claude/skills/`はバイト単位で同一のミラーです。使用するエージェントが認識する方を選んでください。
@@ -447,7 +448,7 @@ cd my-champions
 
 対応するAIエージェントを起動したら、エージェントへそのまま次のように依頼してください。
 
-> https://github.com/pmwl0128/pokemon_champion_agent の4つのスキルを現在のプロジェクトへインストールし、リポジトリに同梱されている`CLAUDE.md`と`AGENTS.md`もプロジェクトディレクトリへ配置してください。`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
+> https://github.com/pmwl0128/Turn_Zero_Skills の4つのスキルを現在のプロジェクトへインストールし、リポジトリに同梱されている`CLAUDE.md`と`AGENTS.md`もプロジェクトディレクトリへ配置してください。`quickjs-ng>=0.15`も導入し、この環境で導入できない場合はNode.jsフォールバックが動作することを確認してください。最後に4つの`SKILL.md`がすべて認識されることを確認し、計算機の`schema`コマンドを1回実行してください。
 
 上記の別の[インストール方法](#インストール)も利用できます。
 
@@ -502,11 +503,11 @@ matchup-notes.mdの負け筋を踏まえて変更し、固定した軸は残し�
 
 ## 環境ワークブック
 
-正式リリースごとに、シングル／ダブルの全スナップショットと更新レポートから3つのワークブックを再生成し、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/pokemon_champion_agent/releases/tag/data-latest)に公開します（ローリング方式で最新スナップショットのみ保持。gitツリーにはバイナリを含めないため、cloneは軽量なままです）。
+正式リリースごとに、シングル／ダブルの全スナップショットと更新レポートから3つのワークブックを再生成し、固定ファイル名で [data-latest リリース](https://github.com/pmwl0128/Turn_Zero_Skills/releases/tag/data-latest)に公開します（ローリング方式で最新スナップショットのみ保持。gitツリーにはバイナリを含めないため、cloneは軽量なままです）。
 
-- [workbook_ja.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_ja.xlsx)（日本語）
-- [workbook_zh.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_zh.xlsx)（中国語）
-- [workbook_en.xlsx](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/workbook_en.xlsx)（英語）
+- [workbook_ja.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_ja.xlsx)（日本語）
+- [workbook_zh.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_zh.xlsx)（中国語）
+- [workbook_en.xlsx](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/workbook_en.xlsx)（英語）
 
 各ファイルの主言語は1つです。中国語版と日本語版には照合用の正規英名列も含まれます。主なシートは次のとおりです。
 
@@ -519,9 +520,9 @@ matchup-notes.mdの負け筋を踏まえて変更し、固定した軸は残し�
 
 順位トレンドの折れ線グラフ `trend_{single,double}_{zh,ja,en}.png`（シングル／ダブル × 3言語）も同じリリースで公開します。直近最大10期（1期＝1回のデータ更新）をローリングで表示し、いずれかの期で上位30位に入ったポケモンは全期間追跡し、60位以内に入った大きな変動も収録します。縦軸は1〜30位を等間隔、30位以降を圧縮表示し、上昇／下降／安定を色分けして線の両端にポケモン名を表示します。
 
-![シングル順位トレンド](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/trend_single_ja.png)
+![シングル順位トレンド](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_single_ja.png)
 
-![ダブル順位トレンド](https://github.com/pmwl0128/pokemon_champion_agent/releases/download/data-latest/trend_double_ja.png)
+![ダブル順位トレンド](https://github.com/pmwl0128/Turn_Zero_Skills/releases/download/data-latest/trend_double_ja.png)
 
 ## データ鮮度と機能上の限界
 
@@ -542,7 +543,7 @@ matchup-notes.mdの負け筋を踏まえて変更し、固定した軸は残し�
 | [Silph Scope](https://silph-scope.com/) | 主要データソース：順位、技・道具・特性・性格・SP・相方の詳細、およびKO関係リスト（誰が誰を倒すか） |
 | [GameWith](https://gamewith.jp/) ポケモンチャンピオンズ | 独立した環境データフィードとクロスチェック |
 | [PokeChamp DB](https://pokechamdb.com/) | 独立した環境データフィードとクロスチェック |
-| [MetaRoll](https://metaroll.app/ladder) | ダブルのランクバトルにおけるKO技採用率。Usage data from MetaRoll (metaroll.app) |
+| [MetaRoll](https://metaroll.app/ladder) | ダブルの撃破・被撃破に使われた技の割合を取得する予備ソース。Usage data from MetaRoll (metaroll.app) |
 
 ### 対戦図鑑・名称
 
@@ -574,12 +575,12 @@ matchup-notes.mdの負け筋を踏まえて変更し、固定した軸は残し�
 
 スキル開発に多大な協力をいただいた[PokeChamp DB](https://pokechamdb.com/)へ、特別な感謝を申し上げます。
 
-## TODO
+## 今後の取り組み
 
-- **建隊プロセスの高速化** — 完全な建隊プロセスは複数ラウンドのスキル呼び出しとコンテキスト監査の往復を伴い、全体として時間がかかります。facts 層の契約を変えずに工程を統合し冗長な呼び出しを削って、意図から完成した構築に至るまでのエージェントの経路を体感で短くする計画です。
-- **ターンシミュレータの導入** — 現在の対面表と KO 予測は単ターン前提のダメージ外挿に基づいており、回復ループ・状態異常の進行・PP・登場トリガ・遅延技・分岐選択はターンを追って更新されないため、複数ターンの結論が実際の対戦からずれることがあります。Pokémon Showdown を基盤エンジンとして導入し、計算機の外挿による対面表を置き換え、本物の複数ターン再現を選択可能にする予定です。
-- **ローカル Web の MCP 化** — ローカル Web は現在 bridge CLI がホストし、エージェントはセッションと成果物ファイル越しに間接的に連携しています。ローカル bridge を MCP server として公開し、スキル呼び出し・セッションの読み書き・建隊プロセスの各操作をプロトコル直結のアクションにすることで、より幅広いエージェントクライアントから直接編成できるようにする計画です。
-- **オンラインサービスの拡張と割当調整** — オンライン Web は単一 VPS 上で稼働し、静的資産や文書はリポジトリ同梱です。静的資産をオブジェクトストレージに移して CDN 経由で配信しサーバ負荷を下げたのち、実運用を観察しながら AI 呼び出し枠を引き上げ、計算を要する入口（質疑応答・建隊・調整）を段階的に解放していく予定です。
+- **手順の効率と互換性：**重複するツール呼び出しを減らし、各AIアシスタントがチーム構築の全工程を実行できるか検証します。
+- **ターンシミュレーションの研究：**独立した実験用パイプラインで複数ターンの挙動を研究します。配布中のスキルとWebは、公開されている仕様に従ってダメージ・素早さ・対面を計算します。
+- **ローカルMCP連携：**ローカルbridgeの既存のスキル・セッション・成果物を、プロトコル経由で扱う方法を検討します。
+- **オンライン処理容量：**データ配信と応答速度を改善し、実際の処理量に応じて利用枠を調整します。
 
 ## ライセンス
 

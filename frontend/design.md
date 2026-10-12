@@ -1,4 +1,6 @@
-# Pokemon Champions Web - 设计摘要
+# Turn Zero Web - 设计摘要
+
+品牌：技能集合称为 Turn Zero Skills，浏览器界面称为 Turn Zero Web。
 
 本文只记录 Web 跨前后端的长期设计边界。字段、命令、部署步骤、性能数字和变更过程分别以协议 schema、代码、`dev/**/README.md`、benchmark receipt 与 Git 历史为准。章节编号保留为稳定引用锚点。
 
