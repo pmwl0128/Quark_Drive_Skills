@@ -3,6 +3,8 @@
    brand blue reserved for links/focus. Numbers everywhere -> tabular-nums is the house rule.
    The theme blocks also match any element carrying `data-theme`, so a subtree can wear the other
    theme than the page (the metagame share image renders its frame this way). */
+.more-rows { display: block; margin: 18px auto; }
+
 :root, [data-theme="light"] {
   color-scheme: light;
   --topbar-offset: 62px;
@@ -137,7 +139,7 @@ button, input, select {
 .topbar .logo img { width: 30px; height: 30px; filter: drop-shadow(0 3px 6px rgb(36 87 223 / 0.18)); }
 .topbar .logo-sub { margin-left: 5px; color: var(--sub); font-weight: 600; }
 .topbar nav { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.topbar nav a { flex-shrink: 0; white-space: nowrap; }
+.topbar nav a { flex-shrink: 0; }
 .topbar nav a {
   position: relative; padding: 9px 12px; border-radius: 7px; color: var(--sub); font-weight: 600;
   white-space: nowrap;
@@ -285,6 +287,9 @@ button, input, select {
 main.content {
   flex: 1; width: min(1240px, 100% - 48px); margin: 0 auto; padding: 28px 0 72px;
   scroll-margin-top: 72px;
+  /* At least a screen tall: the footer starts below the fold, so a page whose data arrives after its
+     first paint grows into the space instead of pushing a visible footer down (layout shift). */
+  min-height: calc(100vh - var(--topbar-offset, 62px));
 }
 main.content:focus { outline: none; }
 .site-footer { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 65%, var(--bg)); }
@@ -353,6 +358,16 @@ main.content:focus { outline: none; }
 .page-heading-row .page-title { flex: 1; min-width: 160px; margin: 0; }
 .page-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .page-header .page-lead { margin: 2px 0 0; }
+/* A tool page whose tabs stay at hand while its long results scroll (the simulation and assist
+   pages): the title row sticks under the top bar, ruled off from the page; the lead below it
+   scrolls away with the page (components/PageHeader.tsx `sticky`). */
+.page-header-sticky {
+  position: sticky; top: var(--topbar-offset); z-index: 8; margin: -8px -10px 14px; padding: 8px 10px 9px;
+  background: color-mix(in srgb, var(--bg) 91%, transparent); border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+}
+.page-header-sticky:has(+ .page-lead-detached) { margin-bottom: 10px; }
+.page-lead-detached { margin: 0 0 16px; }
 .page-tabs { min-height: 36px; }
 .seg.page-tabs button { min-height: 34px; padding-top: 5px; padding-bottom: 5px; }
 .subtabs.page-tabs .subtab { min-height: 32px; padding-top: 4px; padding-bottom: 4px; }
@@ -390,18 +405,6 @@ main.content:focus { outline: none; }
 .data-table tbody tr { cursor: pointer; }
 .data-table tbody tr:hover { background: var(--panel-2); }
 .data-table .rank { font-family: var(--font-mono); color: var(--sub); width: 44px; }
-.mon-cell { display: flex; align-items: center; gap: 10px; }
-.mon-cell img.sprite { width: 36px; height: 36px; image-rendering: auto; }
-.mon-cell .names { display: flex; flex-direction: column; line-height: 1.25; }
-.mon-cell .names .primary { font-weight: 600; }
-.mon-cell .names .secondary { font-size: 12px; color: var(--sub); }
-
-.usage-bar { display: flex; align-items: center; gap: 8px; min-width: 130px; }
-.usage-bar .track {
-  flex: 1; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden;
-}
-.usage-bar .fill { height: 100%; border-radius: 3px; }
-.usage-bar .val { font-family: var(--font-mono); font-size: 12.5px; min-width: 46px; text-align: right; }
 
 /* ---- pokemon detail ---------------------------------------------------------- */
 
@@ -413,17 +416,9 @@ main.content:focus { outline: none; }
 .p-row { display: flex; align-items: center; gap: 10px; padding: 6px 16px; font-size: 14px; }
 .p-row .p-rank { font-family: var(--font-mono); color: var(--sub); width: 20px; font-size: 12px; }
 .p-row .p-name { flex: 1; display: flex; align-items: center; gap: 7px; }
-.p-row .p-sub { color: var(--sub); font-size: 12px; }
-.p-row .p-pct { font-family: var(--font-mono); font-size: 12.5px; color: var(--sub); min-width: 48px; text-align: right; }
 .p-row img.mini { width: 22px; height: 22px; image-rendering: auto; }
 
 /* stat bars */
-.stat-rows { padding: 10px 16px 14px; display: grid; gap: 6px; }
-.stat-row { display: grid; grid-template-columns: 42px 34px 1fr; align-items: center; gap: 10px; }
-.stat-row .k { font-size: 12px; color: var(--sub); text-transform: uppercase; font-family: var(--font-mono); }
-.stat-row .v { font-family: var(--font-mono); font-size: 13px; text-align: right; }
-.stat-row .track { height: 7px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
-.stat-row .fill { height: 100%; border-radius: 4px; }
 
 /* ---- dex grid ----------------------------------------------------------------- */
 .dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -447,7 +442,7 @@ main.content:focus { outline: none; }
 .dex-card .types { display: flex; gap: 4px; }
 .rank-badge {
   position: absolute; top: 6px; left: 8px; font-family: var(--font-mono); font-size: 12px;
-  color: var(--sub); background: var(--panel-2); border-radius: 6px; padding: 1px 7px;
+  color: var(--sub); background: var(--panel-2); padding: 1px 7px;
 }
 .rank-badge.top { background: var(--brand); color: #fff; font-weight: 700; }
 /* graduated usage-tier fill (S 1-10 … D 101+): distinct HUES per tier for at-a-glance separation
@@ -461,39 +456,24 @@ main.content:focus { outline: none; }
 /* hero ability chips + rank links */
 
 /* matchup chips */
-.matchup-rows { padding: 10px 16px 14px; display: grid; gap: 8px; }
-.matchup-row { display: flex; align-items: baseline; gap: 8px; }
-.matchup-row .lbl { font-size: 12px; color: var(--sub); min-width: 72px; }
-.matchup-row .chips { display: flex; gap: 5px; flex-wrap: wrap; }
 
 /* stat range column */
-.stat-row.with-range { grid-template-columns: 42px 34px 1fr 96px; }
-.stat-row .range { font-family: var(--font-mono); font-size: 12px; color: var(--sub); text-align: right; }
 
 /* calc form */
-.side-grid { display: grid; gap: 10px; }
 .mon-picker { display: flex; gap: 8px; align-items: center; }
 .mon-picker-slot { width: 64px; height: 64px; flex: none; display: flex; align-items: center; justify-content: center; }
 .mon-picker-slot > img[aria-hidden] { opacity: 0.35; }
 .mon-picker-img { width: 64px; height: 64px; flex: none; object-fit: contain; image-rendering: auto; }
-.sp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-.sp-grid label { font-size: 10.5px; text-transform: uppercase; font-family: var(--font-mono); }
-.sp-grid input { padding: 5px 3px; text-align: center; min-width: 0; }
 /* Drop the native number spinner — its ~16px arrows hid the 2-digit value in the tight SP/boost grid. */
 input[type="number"].num { -moz-appearance: textfield; appearance: textfield; }
 input[type="number"].num::-webkit-outer-spin-button,
 input[type="number"].num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.field-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
 /* The controls (format tabs + weather/terrain/screens/auras clusters) wrap AMONG THEMSELVES here,
    while the compute button stays a fixed-width sibling — so a wide row (doubles + long JA labels)
    reflows the controls onto a second line instead of bumping the button off to its own line. */
-.field-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; flex: 1 1 auto; min-width: 0; }
-.field-row label { font-size: 12px; color: var(--sub); display: grid; gap: 4px; }
 /* Field clusters (weather+terrain / screens / other-effects) are set apart by a thin left rule
    instead of text headings. Each checkbox is a vertical cell: caption on the label row, checkbox in a
    select-height box below, so the boxes bottom-align with the selects in the align-items:end row. */
-.field-row .fld-group { align-self: end; display: flex; gap: 12px; align-items: end; flex-wrap: wrap;
-  padding-left: 12px; border-left: 1px solid var(--line); }
 .fld-chk { align-self: end; display: grid; gap: 4px; justify-items: center;
   font-size: 12px; color: var(--sub); cursor: pointer; }
 .fld-chk .cap { white-space: nowrap; }
@@ -502,16 +482,13 @@ input[type="number"].num::-webkit-inner-spin-button { -webkit-appearance: none; 
 .rolls { font-family: var(--font-mono); font-size: 11.5px; color: var(--sub); word-break: break-all; }
 
 /* ---- calc ----------------------------------------------------------------------- */
-.calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media (max-width: 760px) { .calc-grid { grid-template-columns: 1fr; } }
 .form-panel { padding: 16px; display: grid; gap: 10px; }
 .form-panel label { font-size: 12px; color: var(--sub); display: grid; gap: 4px; }
 .form-panel input:not([type="checkbox"]):not([type="radio"]), .form-panel select {
   padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
   width: 100%;
 }
-.primary-btn {
-  background: var(--action); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px;
+.primary-btn { color: #fff; border: 0; border-radius: 8px; padding: 10px 18px;
   font-weight: 600; cursor: pointer;
 }
 .primary-btn:disabled { opacity: 0.5; cursor: default; }
@@ -528,9 +505,6 @@ input[type="number"].num::-webkit-inner-spin-button { -webkit-appearance: none; 
 }
 .error-box h1 { font-size: 18px; margin: 0 0 8px; }
 .error-box ul { color: var(--sub); }
-
-.footnote { margin-top: 26px; font-size: 12px; color: var(--sub); }
-
 
 /* ---- shared KO / grade cell tones (calc matrix + matchup grid) ------------------- */
 .ko-ohkoG { background: #b3261e; color: #fff; }
@@ -562,27 +536,16 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
 .mini-x:disabled, .mini-x:disabled:hover { opacity: .35; color: var(--sub); cursor: default; }
 .mini-x.swap:hover { color: var(--brand); }
 /* boost-stage dropdown: as compact as the SP number cells it sits beside in the boosts grid. */
-.boost-sel { padding: 5px 2px; text-align: center; min-width: 0; }
 /* SP budget readout: a thin divider between the "SP spread" label and the n/66 count, which is
    coloured by how it sits against the 66-point budget — under-spent (grey) / exactly full (green) /
    illegal over (red). Shared by configuration editors (.sp-sum) and tune headings (.sp-total). */
-.sp-sep { color: var(--line); margin: 0 5px; }
 .sp-sum.under { color: var(--sub); }
 .sp-sum.full { color: #2b7a2b; font-weight: 700; }
 .sp-sum.over { color: #b3261e; font-weight: 700; }
 .chk { display: flex; gap: 5px; align-items: center; font-size: 13px; }
-.move-picker { margin-top: 14px; padding-bottom: 12px; }
-.move-chips { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 16px; }
-.move-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line);
-  background: var(--panel); color: var(--sub); border-radius: 18px; padding: 4px 12px 4px 8px;
-  cursor: pointer; font-size: 13px; }
-.move-chip.on { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, var(--panel));
-  color: var(--ink); font-weight: 600; }
-.defenders-head { display: flex; align-items: center; gap: 12px; margin: 18px 0 8px; }
 .ghost-btn { border: 1px dashed var(--line); background: transparent; color: var(--brand);
   border-radius: 8px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
 .ghost-btn:hover { border-color: var(--brand); }
-.matrix-wrap { padding: 0 16px 16px; scroll-margin-top: 76px; }
 .matrix-guide {
   display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 9px 12px;
   color: var(--sub); font-size: 12.5px; background: color-mix(in srgb, var(--panel-2) 72%, var(--panel));
@@ -594,8 +557,6 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
   display: grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%;
   color: var(--brand-strong); background: color-mix(in srgb, var(--brand) 12%, var(--panel)); font-weight: 800;
 }
-.matrix-wrap > .matrix-guide { margin: 0 -16px 12px; border-width: 0 0 1px; border-radius: 12px 12px 0 0;
-  padding: 11px 16px; }
 .matrix-scroll { overflow-x: auto; }
 .calc-matrix { border-collapse: separate; border-spacing: 4px; }
 .calc-matrix th { font-size: 12px; color: var(--sub); font-weight: 600; padding: 4px 6px; text-align: left; }
@@ -617,11 +578,6 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
   background: var(--panel); box-shadow: var(--shadow);
 }
 .result-inspector:focus { outline: none; }
-.result-inspector-head { display: flex; align-items: end; justify-content: space-between; gap: 12px;
-  padding-bottom: 11px; border-bottom: 1px solid var(--line); }
-.result-kicker { color: var(--sub); font-size: 13px; line-height: 1.5; }
-.result-move { color: var(--ink); font-weight: 650; }
-.result-band { color: var(--ink); font-size: clamp(21px, 3vw, 28px); line-height: 1; white-space: nowrap; }
 .result-summary { font-size: 13px; color: var(--sub); }
 .result-verdict { width: fit-content; padding: 5px 10px; border-radius: 999px; color: var(--brand-strong);
   background: var(--brand-soft); font-size: 12.5px; font-weight: 700; }
@@ -636,32 +592,16 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
 /* ---- calc: per-side status + boosts + doubles auras ---------------------------- */
 /* boosts are 5 stats (no HP) — give them their own 5-col track so the selects fill the width and the
    last one lines up with the right edge (the status select above) instead of leaving a 6th gap. */
-.sp-grid.boosts { grid-template-columns: repeat(5, 1fr); }
-.sp-grid.boosts label { color: var(--sub); }
 
 /* ---- calc sub-tabs (伤害 / 速度 / 耐久) ---------------------------------------- */
 .subtabs { display: inline-flex; gap: 4px; background: var(--panel-2); border-radius: 9px; padding: 3px; }
 .subtab { border: 0; background: transparent; color: var(--sub); font-size: 13px; font-weight: 600;
-  padding: 6px 14px; border-radius: 7px; cursor: pointer; }
+  padding: 6px 14px; cursor: pointer; }
 .subtab.on { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
 .subtab:hover:not(.on):not(:disabled) { color: var(--ink); }
 .subtab:disabled { opacity: 0.48; cursor: not-allowed; }
-.disabled-tab-tip { position: relative; display: inline-flex; border-radius: 7px; outline: none; }
-.disabled-tab-tip::after {
-  content: attr(data-tooltip); position: absolute; z-index: 30; top: calc(100% + 8px); left: 50%;
-  width: max-content; max-width: min(360px, 80vw); padding: 8px 10px; border-radius: 7px;
-  background: var(--ink); color: var(--panel); box-shadow: var(--shadow); font-size: 12px;
-  font-weight: 400; line-height: 1.5; text-align: left; transform: translate(-50%, -3px);
-  opacity: 0; visibility: hidden; pointer-events: none;
-  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
-}
-.disabled-tab-tip:hover::after, .disabled-tab-tip:focus-visible::after,
-.disabled-tab-tip:focus-within::after {
-  opacity: 1; visibility: visible; transform: translate(-50%, 0);
-}
 
 /* ---- speed line: presets + ladder --------------------------------------------- */
-.mon-config { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand) inset; }
 .speed-presets { display: flex; gap: 6px; flex-wrap: wrap; }
 .speed-presets button { border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
   font-size: 11.5px; padding: 3px 10px; border-radius: 7px; cursor: pointer; }
@@ -819,8 +759,6 @@ button.speed-row-marker:active:not(:disabled) { transform: translateY(-50%); opa
 .uep-form textarea { min-height: 126px; line-height: 1.6; }
 .uep-form textarea:focus { border-color: var(--brand); outline: 3px solid var(--brand-soft); }
 .uep-form-actions { display: flex; justify-content: flex-end; margin-top: -2px; }
-.uep-form-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 10px; align-items: center; }
-.uep-form-row .primary-btn { min-height: 38px; }
 .sessions-index { display: block; min-width: 0; overflow: hidden; padding: 0; }
 .sessions-section-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
@@ -836,13 +774,13 @@ button.speed-row-marker:active:not(:disabled) { transform: translateY(-50%); opa
   padding: 10px 22px; background: var(--panel-2); color: var(--sub);
   font-size: 11px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase;
 }
-.session-list { display: grid; gap: 0; }
+.session-list { display: grid; }
 .session-card {
   min-height: 72px; padding: 13px 22px; color: var(--ink); background: var(--panel);
   border: 0; border-top: 1px solid var(--line); border-radius: 0;
 }
 .session-card:first-child { border-top: 0; }
-.sessions-index .session-card:hover { text-decoration: none; background: var(--brand-soft); box-shadow: none; transform: none; }
+.sessions-index .session-card:hover { text-decoration: none; background: var(--brand-soft); transform: none; }
 .sessions-index .session-card:active { transform: none; }
 .session-status { min-width: 0; }
 .session-card-head { display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap; font-size: 13px; }
@@ -1131,14 +1069,13 @@ button.speed-row-marker:active:not(:disabled) { transform: translateY(-50%); opa
    auto-disabled under prefers-reduced-motion (the !important reset above wins). */
 
 /* smooth state changes on every interactive surface */
-a, button, .topbar nav a, .seg button, .subtab, .move-chip, .speed-presets button, .session-card, .dex-card, .data-table tbody tr, .uep-species-chip, .party-card, .type-badge, .uep-chip, .uep-kind, .grade-pill, .vchip {
+a, button, .topbar nav a, .seg button, .subtab, .speed-presets button, .session-card, .dex-card, .data-table tbody tr, .uep-species-chip, .party-card, .type-badge, .uep-chip, .uep-kind, .grade-pill, .vchip {
   transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease,
     box-shadow 150ms ease, transform 150ms cubic-bezier(0.22, 1, 0.36, 1), opacity 130ms ease;
 }
 
 /* hover HIGHLIGHT — the pointed element steps out of the page a touch */
 .topbar nav a:hover:not(.active) { background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
-.primary-btn:hover:not(:disabled) { background: var(--action-hover); }
 .ghost-btn:hover { background: color-mix(in srgb, var(--brand) 8%, transparent); }
 .session-card:hover, .dex-card:hover {
   box-shadow: 0 4px 16px rgb(16 24 32 / 0.11); transform: translateY(-2px);
@@ -1150,7 +1087,7 @@ a, button, .topbar nav a, .seg button, .subtab, .move-chip, .speed-presets butto
 .data-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
 .uep-species-chip:hover { background: var(--panel-2); transform: translateY(-1px); }
 .type-badge:hover { transform: scale(1.12); }
-.uep-chip:hover, .uep-kind:hover, .move-chip:hover, .vchip:hover, .grade-pill:hover {
+.uep-chip:hover, .uep-kind:hover, .vchip:hover, .grade-pill:hover {
   transform: translateY(-1px);
 }
 /* clickable data cells: a clear POP on the swept cell. The damage matrix has 4px gaps + no
@@ -1180,9 +1117,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 
 /* reveal — usage / stat bars sweep in on first paint (scaleX is width-agnostic + GPU-cheap) */
 @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.usage-bar .fill, .stat-row .fill {
-  transform-origin: left; animation: barGrow 480ms cubic-bezier(0.22, 1, 0.36, 1);
-}
 /* the mon hover-card eases in instead of snapping into place */
 @keyframes hoverPop { from { opacity: 0; transform: translateY(5px) scale(0.98); } to { opacity: 1; transform: none; } }
 .mon-hover { animation: hoverPop 140ms ease-out; }
@@ -1191,11 +1125,8 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
    would still snap the element into a new position. Drop the positional movement entirely for
    these users — the non-moving highlights (shadow / background / outline) stay, the shifts go. */
 @media (prefers-reduced-motion: reduce) {
-  .session-card:hover, .dex-card:hover, .party-card:hover, .uep-species-chip:hover,
-  .type-badge:hover, .uep-chip:hover, .uep-kind:hover, .move-chip:hover, .vchip:hover,
-  .grade-pill:hover, .dex-card:hover img.sprite, .calc-matrix td:not(.miss):hover,
-  button:active:not(:disabled), .session-card:active, .dex-card:active { transform: none; }
-  .usage-bar .fill, .stat-row .fill, .mon-hover { animation: none; }
+  .session-card:hover, .dex-card:hover, .party-card:hover, .uep-species-chip:hover, .type-badge:hover, .uep-chip:hover, .uep-kind:hover, .vchip:hover, .grade-pill:hover, .dex-card:hover img.sprite, .calc-matrix td:not(.miss):hover, button:active:not(:disabled), .session-card:active, .dex-card:active { transform: none; }
+  .mon-hover { animation: none; }
 }
 
 /* thin, unobtrusive scrollbars — a data tool has many scroll panes (matrix / matchup /
@@ -1204,15 +1135,8 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 * { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 /* ---- fact QA (llm.qa, online runtime) --------------------------------------------- */
-.qa-form { width: 100%; }
-.qa-form textarea {
-  width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px;
-  background: var(--panel); color: var(--ink); font: inherit; resize: vertical;
-}
 /* The ask button owns its column: when its label grows to "查询中…" it must not wrap to a line of
    its own (where it would jump to the left). The examples wrap inside their column instead. */
-.qa-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
-.qa-actions > .primary-btn { min-width: 96px; justify-self: end; }
 .qa-examples { display: flex; gap: 6px; flex-wrap: wrap; }
 .qa-example {
   border: 1px solid var(--line); background: var(--panel-2); color: var(--sub);
@@ -1236,13 +1160,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .qa-source {
   background: var(--panel-2); border-radius: 6px; padding: 2px 8px; white-space: nowrap;
 }
-.qa-quota { font-size: 12px; }
-.qa-asked { font-size: 12.5px; margin-bottom: 6px; padding-bottom: 6px;
-  border-bottom: 1px dashed var(--line); }
-.qa-history { width: 100%; margin-top: 18px; display: grid; gap: 10px; }
-.qa-history-title { font-size: 12px; }
-.qa-history .qa-answer { margin-top: 0; opacity: 0.9; }
-.qa-history .qa-answer-text { font-size: 14.5px; }
 
 /* ---- builder wizard (llm.builder, online runtime) ----------------------------------- */
 .builder-form { width: 100%; }
@@ -1301,17 +1218,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .second-btn:hover { border-color: var(--sub); }
 .second-btn:disabled { opacity: 0.5; cursor: default; }
 /* progress aligns with the result card (they stack in the done view) */
-.builder-progress { width: 100%; margin-top: 14px; padding: 16px; }
-.builder-progress h2 { font-size: 14px; margin: 0 0 10px; }
-.builder-gates { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.builder-progress.compact .builder-gates {
-  grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px;
-}
-.builder-progress.compact .builder-gates li {
-  align-content: start; border-top: 1px solid var(--line); padding-top: 8px;
-}
-.builder-gates li { display: grid; gap: 5px; font-size: 13.5px; color: var(--sub); }
-.builder-gates .gate-line { display: flex; align-items: center; gap: 9px; }
 .gate-detail { display: grid; gap: 4px; margin-left: 18px; }
 .gate-detail-row { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
   font-size: 12.5px; }
@@ -1319,15 +1225,8 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .gate-detail-chips { display: flex; gap: 4px; flex-wrap: wrap; }
 .gate-chip { background: var(--panel-2); border-radius: 6px; padding: 1px 7px;
   white-space: nowrap; color: var(--ink); }
-.builder-gates .gate-dot { width: 9px; height: 9px; border-radius: 50%;
-  background: var(--line); flex: none; }
-.builder-gates .gate-running { color: var(--ink); }
-.builder-gates .gate-running .gate-dot { background: var(--brand); animation: gate-pulse 1.2s ease-in-out infinite; }
-.builder-gates .gate-done { color: var(--ink); }
-.builder-gates .gate-done .gate-dot { background: #86bf72; }
-.builder-gates .gate-failed .gate-dot { background: #cc6a63; }
 @keyframes gate-pulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .builder-gates .gate-running .gate-dot { animation: none; } }
+
 .builder-result { width: 100%; margin-top: 14px; }
 .builder-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .badge-ok, .badge-note {
@@ -1336,11 +1235,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .badge-ok { background: color-mix(in srgb, #86bf72 22%, var(--panel)); color: var(--ink);
   border: 1px solid color-mix(in srgb, #86bf72 55%, var(--line)); }
 .badge-note { background: var(--panel-2); color: var(--sub); border: 1px solid var(--line); }
-.builder-scope { margin: 10px 0 0; font-size: 12.5px; }
-.builder-assumptions { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px;
-  font-size: 12.5px; }
-.builder-assumptions ul { margin: 6px 0 10px; padding-left: 18px; color: var(--sub);
-  line-height: 1.65; }
 
 /* ---- team diagnose (team.validate, online runtime) ----------------------------------- */
 .badge-err { border-radius: 999px; padding: 3px 11px; font-size: 12.5px; font-weight: 600;
@@ -1361,7 +1255,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
    weight without turning a situational absence into a hard requirement. */
 .diag-missing-priority { background: color-mix(in srgb, #cc6a63 9%, transparent); }
 .diag-missing-situational { background: color-mix(in srgb, #d99a5e 11%, transparent); }
-.diag-soft-note { font-size: 11.5px; }
 /* label carrying a hover tooltip of its semantics — signal it's hoverable */
 .diag-label-info { cursor: help; border-bottom: 1px dotted var(--line); }
 /* Per-format role attention chip. */
@@ -1382,7 +1275,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .diag-unconfirmed { margin-bottom: 12px; font-size: 12.5px;
   border-left: 3px solid #cc6a63; }
 .diag-mode-options { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.builder-thinking-options { justify-content: flex-end; }
 .form-panel .diag-explain-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
   color: var(--sub); cursor: pointer; user-select: none; margin-right: auto; }
 .diag-explain-opt input[type="checkbox"] {
@@ -1391,24 +1283,8 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .diag-explain .qa-answer-text { line-height: 1.7; font-size: 14px; }
 .diag-prefilled { margin: 8px 0 0; font-size: 12.5px; }
 .diag-progress { display: grid; gap: 12px; scroll-margin-top: 76px; }
-.diag-progress-head { display: flex; align-items: baseline; justify-content: space-between;
-  gap: 12px; }
-.diag-progress-head h2 { margin: 0; }
-.diag-progress-scope { margin: -4px 0 0; color: var(--sub); font-size: 12.5px; }
-.diag-progress-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
-.diag-progress-steps li { border-top: 1px solid var(--line); padding-top: 8px; }
-.diag-progress-steps li:not(.gate-running):not(.gate-done) .gate-dot {
-  background: color-mix(in srgb, var(--brand) 30%, var(--line));
-}
-.diag-progress-preview { border-top: 1px solid var(--line); padding-top: 12px; }
-.diag-progress-preview h3 { margin: 0 0 8px; font-size: 13px; }
-.diag-progress-preview .party-copy-row { display: none; }
-.diag-progress-note { border-top: 1px solid var(--line); padding-top: 10px; margin: 0;
-  font-size: 12.5px; }
 @media (max-width: 640px) {
   .diag-progress { scroll-margin-top: 150px; }
-  .diag-progress-head { align-items: flex-start; }
-  .diag-progress-steps { grid-template-columns: 1fr; }
 }
 .diag-grade { border-radius: 6px; padding: 1px 9px; font-weight: 700; font-size: 12.5px; }
 .diag-grade-C2 { background: #86bf72; color: #16240f; }
@@ -1642,7 +1518,7 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .diag-table td { font-size: 13px; }
 .diag-section .gate-chip { font-size: 12.5px; }
 .diag-signals .gate-detail-row { font-size: 12.5px; }
-.diag-fragile, .diag-soft-note { font-size: 12px; }
+.diag-fragile { font-size: 12px; }
 
 /* the dotted hover underline sat ON the text descenders (dex learnset report) */
 .ehover { padding-bottom: 1px; }
@@ -1662,10 +1538,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .p-row .ehover { border-bottom: none; }
 
 /* quick-solve per-move breakdown: each move's own minimum; ← marks the binding one */
-.tp-permove { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px;
-  font-size: 12.5px; }
-.tp-permove li.binding { font-weight: 600; }
-.tp-bind { color: var(--brand); }
 
 /* dex item groups + move priority accents */
 .dex-item-group { margin-top: 14px; }
@@ -1674,8 +1546,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .prio-minus { color: #b3261e; }
 
 /* matchup cell detail: the sets both sides were computed with */
-.md-sets { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px; margin-top: 8px; }
 .md-set { background: var(--panel-2); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; }
 .md-set .ms-head { font-weight: 600; margin-bottom: 3px; display: flex; gap: 6px; align-items: center; }
 .md-set .ms-line { color: var(--sub); }
@@ -1686,7 +1556,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .threat-calc { font-size: 13px; padding: 0 3px; cursor: pointer; background: none;
   border: 0; color: var(--sub); }
 .threat-calc:hover { color: var(--ink); }
-.diag-opp-set { margin-bottom: 4px; }
 
 /* per-gate processed-artifact JSON (collapsed by default) */
 .gate-raw { margin: 4px 0 2px 21px; font-size: 12px; }
@@ -1742,7 +1611,7 @@ input:focus, select:focus, textarea:focus {
   .adaptive-listbox.rich button { min-height: 30px; padding: 4px 10px; font-size: 13px; }
   .adaptive-listbox.rich button small { font-size: 11.5px; }
 }
-.form-panel input:not([type="checkbox"]):not([type="radio"]), .form-panel select, .builder-field > input, .builder-field > textarea, .qa-form textarea, .uep-form textarea, .uep-checkpoint textarea {
+.form-panel input:not([type="checkbox"]):not([type="radio"]), .form-panel select, .builder-field > input, .builder-field > textarea, .uep-form textarea, .uep-checkpoint textarea {
   min-height: 38px; border-radius: var(--radius-sm); border-color: var(--line);
   background: color-mix(in srgb, var(--panel) 97%, var(--bg));
 }
@@ -1878,26 +1747,7 @@ input:focus, select:focus, textarea:focus {
 
 /* configuration tools */
 .form-panel { padding: 18px; gap: 12px; }
-.mon-config {
-  border-color: color-mix(in srgb, var(--brand) 82%, var(--line));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 72%, transparent), var(--shadow);
-  transition: transform 170ms var(--ease-out), box-shadow 170ms ease, border-color 140ms ease;
-}
-.mon-config:hover, .side-grid:focus-within .mon-config {
-  border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand), 0 12px 30px color-mix(in srgb, var(--brand) 11%, transparent);
-}
-.move-picker { border-radius: 12px; overflow: hidden; }
-.move-chips { gap: 8px; padding: 12px 16px 15px; }
-.move-chip { min-height: 32px; border-radius: 999px; }
-.move-chip:hover { border-color: var(--brand); color: var(--ink); background: var(--brand-soft);
-  box-shadow: 0 5px 12px rgb(25 39 68 / 0.08); transform: translateY(-2px); }
-.move-chip.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-strong);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 28%, transparent); }
-.field-row { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px;
-  background: var(--panel); box-shadow: var(--shadow); }
-.defenders-head { margin-top: 22px; }
-.defenders-grid { gap: 14px; }
-.speed-tier-wrap, .matrix-wrap { border-radius: 12px; }
+.speed-tier-wrap { border-radius: 12px; }
 .speed-tier tbody tr, .tune-card, .party-card {
   transition: transform 160ms var(--ease-out), box-shadow 160ms ease, background-color 140ms ease;
 }
@@ -1905,18 +1755,12 @@ input:focus, select:focus, textarea:focus {
 .tune-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-raised); }
 
 /* online AI workflows + local sessions */
-.qa-form, .builder-form, .builder-progress, .builder-result, .diag-section, .uep-create {
+.builder-form, .builder-result, .diag-section, .uep-create {
   border-radius: 13px; box-shadow: var(--shadow);
 }
-.qa-form { padding: 16px; }
-.qa-form textarea { min-height: 86px; font-size: 14.5px; line-height: 1.65; }
 .qa-example, .builder-tactics label { min-height: 30px; display: inline-flex; align-items: center; }
 .qa-example:hover, .builder-tactics label:hover { transform: translateY(-1px); box-shadow: 0 5px 12px rgb(25 39 68 / 0.07); }
 .builder-tactics label.on { color: var(--brand-strong); border-color: var(--brand); background: var(--brand-soft); }
-.builder-progress { border-left: 3px solid var(--brand); }
-.builder-gates li { padding: 6px 8px; border-radius: 8px; transition: background-color 140ms ease, transform 140ms var(--ease-out); }
-.builder-gates li:hover { background: var(--brand-soft); transform: translateX(2px); }
-.gate-dot { box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 8%, transparent); }
 .party-card { border: 1px solid var(--line); background: color-mix(in srgb, var(--panel-2) 64%, var(--panel)); }
 .party-card:hover { border-color: color-mix(in srgb, var(--brand) 52%, var(--line)); box-shadow: var(--shadow-raised); }
 .party-card:hover .party-sprite { transform: translateY(-2px) scale(1.045); }
@@ -1951,13 +1795,8 @@ input:focus, select:focus, textarea:focus {
   .dex-grid.dense { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .dex-card { min-height: 126px; padding: 16px 6px 11px; }
   .dex-card img.sprite { width: 54px; height: 54px; }
-  .field-row { padding: 12px; }
-  .result-inspector-head { align-items: start; flex-direction: column; }
-  .result-band { white-space: normal; }
-  .qa-form, .form-panel { padding: 14px; }
-  .builder-progress.compact .builder-gates { grid-template-columns: 1fr; }
+  .form-panel { padding: 14px; }
   .sessions-layout { grid-template-columns: 1fr; }
-  .uep-form-row { grid-template-columns: 1fr; }
   .session-table-head { display: none; }
   .sessions-index .session-card {
     grid-template-columns: auto minmax(0, 1fr); gap: 8px 14px; padding: 14px 16px;
@@ -2009,7 +1848,7 @@ input:focus, select:focus, textarea:focus {
 @media (prefers-reduced-motion: reduce) {
   .spinner::before { animation: none; border-top-color: var(--line); }
   .page-header { animation: none; }
-  .p-row:hover, .builder-gates li:hover, .diag-table tbody tr.diag-row-click:hover, .primary-btn:hover:not(:disabled), .move-chip:hover, .tune-card:hover, .dex-card:hover, .dex-item-card:hover, .qa-example:hover, .builder-tactics label:hover { transform: none; }
+  .p-row:hover, .diag-table tbody tr.diag-row-click:hover, .primary-btn:hover:not(:disabled), .tune-card:hover, .dex-card:hover, .dex-item-card:hover, .qa-example:hover, .builder-tactics label:hover { transform: none; }
   .p-row:hover .mini, .p-row:hover .type-badge { transform: none; }
   .p-row::after { display: none; }
   .party-card:hover .party-sprite { transform: none; }
@@ -2193,21 +2032,18 @@ input:focus, select:focus, textarea:focus {
 /* -- HP bar ------------------------------------------------------------------------ */
 .hp-bar-sprite { width: 40px; height: 40px; flex: none; object-fit: contain; }
 .hp-bar-sprite.placeholder { border-radius: 8px; background: var(--panel-2); }
-.hp-bar-track {
-  position: relative; height: 34px; border-radius: 9px; overflow: hidden;
-  background: var(--panel-3); border: 1px solid var(--line);
+.hp-bar-track { height: 34px; border-radius: 9px;
 }
 .hp-bar-fill { position: absolute; inset: 0 auto 0 0; transition: width 180ms var(--ease-out); }
 .hp-bar-fill.ok { background: color-mix(in srgb, var(--success) 62%, transparent); }
 .hp-bar-fill.warn { background: color-mix(in srgb, var(--warning) 62%, transparent); }
 .hp-bar-fill.low { background: color-mix(in srgb, var(--danger) 62%, transparent); }
 .hp-bar-fill.out { background: transparent; }
-.hp-bar-read {
-  position: absolute; inset: 0; display: flex; align-items: baseline; justify-content: flex-end;
-  gap: 2px; padding: 0 11px; font-weight: 800;
+.hp-bar-read { align-items: baseline;
+  gap: 2px; padding: 0 11px;
 }
 .hp-bar-read strong { font-size: 19px; line-height: 34px; }
-.hp-bar-max { font-size: 12px; color: var(--sub); line-height: 34px; }
+.hp-bar-max { line-height: 34px; }
 
 /* -- rolls and one-line result ------------------------------------------------------ */
 .duel-rolls { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
@@ -2256,11 +2092,6 @@ input:focus, select:focus, textarea:focus {
 .paste-note { color: var(--sub); }
 .paste-note.warn { color: var(--warning); }
 
-.duel-toast {
-  justify-self: center; padding: 6px 14px; border-radius: 999px; font-size: 12.5px;
-  background: var(--brand-soft); color: var(--brand-strong);
-}
-
 /* -- per-mon editor ----------------------------------------------------------------- */
 .mon-editor { display: grid; gap: 11px; padding: 16px; min-width: 0; }
 .mon-editor-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
@@ -2277,7 +2108,7 @@ input:focus, select:focus, textarea:focus {
 /* Base | SP | boost | final on one row per stat: the number the calc used sits beside the number
    you typed, so a benchmark never has to be re-derived off-page. */
 .stat-table { display: grid; gap: 3px; }
-.stat-table-head, .stat-table-row, .stat-table-foot {
+.stat-table-head, .stat-table-row {
   display: grid; grid-template-columns: 42px 44px 1fr 1fr 54px; gap: 6px; align-items: center;
 }
 .stat-table-head { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase;
@@ -2286,35 +2117,21 @@ input:focus, select:focus, textarea:focus {
 .stat-name { font-size: 11px; font-weight: 700; color: var(--sub); font-family: var(--font-mono); }
 .stat-table-row input[type="number"] { padding: 4px 6px; text-align: center; min-width: 0;
   border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); color: var(--ink); }
-.stat-table-row .boost-sel { padding: 4px 2px; border: 1px solid var(--line); border-radius: 6px;
-  background: var(--panel-2); color: var(--ink); }
-.stat-noboost { text-align: center; color: var(--line-strong); }
 .stat-final { font-weight: 700; }
-.stat-table-foot { grid-template-columns: 1fr auto; padding-top: 4px; font-size: 12px;
-  color: var(--sub); border-top: 1px solid var(--line); }
 
 .hp-field { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
-.hp-field-cap { font-size: 12px; color: var(--sub); }
-.hp-field-nums { display: inline-flex; align-items: baseline; gap: 6px; font-size: 12.5px; }
-.hp-field-nums input { width: 68px; padding: 4px 6px; text-align: center;
-  border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); color: var(--ink); }
-.hp-range { grid-column: 1 / -1; width: 100%; accent-color: var(--brand); cursor: pointer; }
 
 .move-slot { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: center; }
 .move-slot-mark { display: grid; place-items: center; }
 .move-slot-dot { display: block; width: 9px; height: 9px; border-radius: 50%;
   background: var(--panel-3); }
-.move-slot input { width: 100%; }
 
 /* -- all-pairs grid -------------------------------------------------------------------- */
 .all-matchups { padding: 16px; display: grid; gap: 12px; }
-.all-matchups-head { display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 14px; flex-wrap: wrap; }
+.all-matchups-head { align-items: flex-start; justify-content: space-between;
+  gap: 14px; }
 .all-matchups-head h2 { margin: 0 0 3px; font-size: 14px; }
-.all-matchups-head p { margin: 0; font-size: 12.5px; max-width: 62ch; }
-.all-matchups-dir { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.dir-read { font-size: 12.5px; color: var(--sub); }
-.dir-read strong { color: var(--ink); }
+.all-matchups-head p { font-size: 12.5px; max-width: 62ch; }
 .all-grid.busy { opacity: 0.55; }
 .all-grid th.grid-attacker { text-align: center; border-bottom: 1px solid var(--line);
   padding-bottom: 5px; }
@@ -2333,8 +2150,6 @@ input:focus, select:focus, textarea:focus {
 /* The duel panels are not `.form-panel`s (they carry their own grids), so they opt into the same
    control shell explicitly rather than inheriting a layout meant for a different card. */
 .mon-editor label { font-size: 12px; color: var(--sub); display: grid; gap: 4px; }
-.mon-editor .mini-fields select,
-.mon-editor .mini-fields input:not([type="checkbox"]):not([type="radio"]),
 .mon-editor-namerow select,
 .mon-editor-namerow input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%; min-height: 38px; padding: 7px 10px;
@@ -2347,9 +2162,6 @@ input:focus, select:focus, textarea:focus {
    a second, DIFFERENT sprite of the same mon (base vs. activated Mega) sitting next to it. */
 .mon-editor-namerow .mon-picker-slot { display: none; }
 .mon-editor-namerow .mon-picker { display: block; }
-.mega-note { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.mega-note .mega-name { font-size: 12px; color: var(--sub); overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; }
 /* Five columns that have to stay readable at a card width: the two numeric ends are fixed, the two
    inputs share the rest, and a long header is clipped rather than pushing a column off its cells. */
 .stat-table-head, .stat-table-row {
@@ -2368,19 +2180,11 @@ input:focus, select:focus, textarea:focus {
 
 .all-matchups-head p { max-width: 78ch; }
 
-/* ==== calc workspace, second pass ================================================= */
-
 /* -- move list: the row is the click target, so the name is plain text -------------- */
 
 /* -- an emptied HP bar has to say so ------------------------------------------------ */
 
 /* -- caveats sit under BOTH cards, so neither column stretches ---------------------- */
-.duel-caveats { display: grid; gap: 6px; }
-.duel-caveats .result-caveat { margin: 0; }
-.caveat-side {
-  display: inline-block; margin-right: 8px; padding: 1px 7px; border-radius: 999px;
-  font-size: 10.5px; font-weight: 700; color: var(--sub); background: var(--panel-2);
-}
 
 /* -- species + forme on one row ----------------------------------------------------- */
 .mon-editor-namerow { display: grid; gap: 8px; }
@@ -2395,8 +2199,8 @@ input:focus, select:focus, textarea:focus {
 .stat-table-head, .stat-table-row {
   grid-template-columns: 36px 42px minmax(52px, 1fr) minmax(98px, 1.4fr) 58px;
 }
-.boost-slider { display: grid; grid-template-columns: 1fr 26px; align-items: center; gap: 5px; }
-.boost-slider input[type="range"] { width: 100%; margin: 0; cursor: pointer; accent-color: var(--sub); }
+.boost-slider { display: grid; align-items: center; gap: 5px; }
+.boost-slider input[type="range"] { accent-color: var(--sub); }
 .boost-slider.up input[type="range"] { accent-color: var(--success); }
 .boost-slider.down input[type="range"] { accent-color: var(--danger); }
 .boost-read {
@@ -2431,10 +2235,6 @@ input:focus, select:focus, textarea:focus {
 .all-grid th.grid-move { font-size: 11px; padding: 3px 5px; max-width: 90px; }
 .all-grid th.grid-move .col-move { overflow: hidden; text-overflow: ellipsis; display: block; }
 .all-grid th.row-mon { min-width: 108px; }
-.all-matchups .matrix-detail .duel-band { margin-bottom: 2px; }
-.all-matchups .matrix-detail .duel-band strong { font-size: 17px; }
-
-/* ==== calc workspace, third pass ================================================== */
 
 /* -- 1. the two cards are one row, so they end at the same line ---------------------
    Line counts differ between sides (a two-line English verdict, a wrapped summary), and a card
@@ -2487,14 +2287,13 @@ input:focus, select:focus, textarea:focus {
 
 /* -- 6. grid detail: verdict, band and sentence on one aligned line ------------------- */
 .all-matchups .matrix-detail { display: grid; gap: 7px; }
-.detail-head {
-  display: grid; grid-template-columns: 104px 124px 1fr; gap: 10px; align-items: baseline;
+.detail-head { grid-template-columns: 104px 124px 1fr; gap: 10px; align-items: baseline;
 }
 /* The verdict cell keeps its width even when there is no verdict (a 0% hit has none), so the
    band under it never slides left and the rows stop lining up. */
-.detail-head > .result-verdict { justify-self: start; margin: 0; }
-.detail-head > .detail-band { font-size: 14px; font-weight: 700; white-space: nowrap; }
-.detail-head > .result-summary { font-size: 13px; min-width: 0; }
+.detail-head > .result-verdict { justify-self: start; }
+.detail-head > .detail-band { font-size: 14px; font-weight: 700; }
+.detail-head > .result-summary { font-size: 13px; }
 @media (max-width: 760px) {
   .detail-head { grid-template-columns: 1fr; gap: 5px; }
 }
@@ -2508,7 +2307,7 @@ img.hp-bar-sprite[alt=""] { opacity: 0.5; }
    height change is prose that wraps differently between the two sides. Clamp both text rows: the
    full string is in the tooltip, and the copy button always hands over the whole line. */
 .duel-summary {
-  min-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-height: 20px; text-overflow: ellipsis; white-space: nowrap;
 }
 .duel-line { min-height: 54px; align-items: center; }
 .duel-line-text {
@@ -2531,8 +2330,6 @@ img.hp-bar-sprite[alt=""] { opacity: 0.5; }
   .duel-rolls { flex-wrap: wrap; }
 }
 
-/* ==== calc workspace, fourth pass ================================================= */
-
 /* -- 3. HP's row carries its own current value: slider, percentage, editable number --- */
 .stat-table-head, .stat-table-row {
   grid-template-columns: 36px 42px minmax(52px, 1fr) minmax(98px, 1.4fr) 62px;
@@ -2546,18 +2343,16 @@ img.hp-bar-sprite[alt=""] { opacity: 0.5; }
 .boost-slider.hp input[type="range"]::-moz-range-thumb { border-color: var(--brand); }
 .boost-slider.hp .boost-read { color: var(--sub); }
 input.stat-cur.hp-cur {
-  width: 100%; min-width: 0; padding: 3px 4px; text-align: right; font-weight: 700;
+  width: 100%; min-width: 0; padding: 3px 4px;
   border: 1px solid var(--line); border-radius: 6px;
   background: color-mix(in srgb, var(--panel) 97%, var(--bg)); color: var(--ink);
 }
 
 /* -- 4. the grid's hint shares the title's line; the reading sits right -------------- */
-.all-matchups-head {
-  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+.all-matchups-head { gap: 12px;
 }
-.all-matchups-head h2 { margin: 0; flex: none; }
-.all-matchups-head p { margin: 0; flex: 1; min-width: 200px; }
-.all-matchups-head .ghost-btn { flex: none; align-self: center; }
+.all-matchups-head h2 { margin: 0; }
+.all-matchups-head p { flex: 1; min-width: 200px; }
 
 .detail-head {
   display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
@@ -2575,8 +2370,6 @@ input.stat-cur.hp-cur {
 
 /* -- 5. the stat table's header labels centre over their columns ---------------------- */
 .stat-table-head > span { text-align: center; }
-
-/* ==== calc workspace, fifth pass ================================================== */
 
 /* -- 2. HP's editable cell is the same box as the other stats' printed one ----------- */
 .stat-table-row > .stat-final, .stat-table-row > .stat-cur {
@@ -2604,7 +2397,7 @@ input.stat-cur.hp-cur {
   color: var(--sub); background: var(--panel-2); cursor: default;
 }
 /* The item field is a combobox wrapper, so the height has to reach the input inside it. */
-.mon-build-row .adaptive-combobox, .mon-build-row .mon-picker { display: block; width: 100%; }
+.mon-build-row .mon-picker { display: block; width: 100%; }
 
 /* -- 4. the header band owns the rule, and the hint hugs the title -------------------- */
 .all-matchups > h2 { border-bottom: 0; }
@@ -2615,8 +2408,6 @@ input.stat-cur.hp-cur {
 .all-matchups-head h2 { border-bottom: 0; padding: 0; flex: none; }
 .all-matchups-head p { flex: 0 1 auto; margin: 0; max-width: none; }
 .all-matchups-head .ghost-btn { flex: none; margin-left: auto; align-self: center; }
-
-/* ==== calc workspace, sixth pass ================================================== */
 
 /* -- 1. the SP budget rides on the column header it measures ------------------------- */
 .stat-head-sp { display: inline-flex; align-items: baseline; gap: 6px; justify-content: center; }
@@ -2646,8 +2437,6 @@ input.stat-cur.hp-cur {
   box-shadow: inset 0 0 0 1px var(--panel);
 }
 
-/* ==== calc workspace, seventh pass ================================================ */
-
 /* -- the four slots live in the card, as a 2x2 of BUTTONS ---------------------------
    Type colour is reserved for the SELECTED slot. Four coloured cells tell the reader which types
    the mon carries — a fact the move names already carry — while hiding the one thing the card has
@@ -2659,9 +2448,6 @@ input.stat-cur.hp-cur {
 .duel-move-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 6px; }
 
 /* -- summary and its copy control share a line ------------------------------------- */
-.duel-summary-row { display: flex; align-items: center; gap: 10px; }
-.duel-summary-row .duel-summary { flex: 1; min-width: 0; }
-.duel-summary-row .ghost-btn { flex: none; }
 .duel-line { min-height: 46px; }
 
 /* The dex flyout holds one scrolling column of filter sections, not the metagame rail's
@@ -2672,6 +2458,11 @@ input.stat-cur.hp-cur {
 .filter-flyout:has(.dex-flyout-body) { flex-basis: 400px; }
 /* The rail list reuses the ranking rows, so a dex number sits where a rank does. */
 .rail-body.rank-list .rank-row .n { min-width: 34px; }
+/* The search rail lists every Pokémon (or every ranked one), hundreds of rows with a sprite each:
+   rows outside the list's view are skipped by layout and paint until scrolled near, so opening the
+   rail lays out a screenful instead of the whole list. Each row is one line, 36px tall: a 26px
+   sprite inside 5px of padding (the intrinsic size is the content box's). */
+.rail-body.rank-list .rank-row { content-visibility: auto; contain-intrinsic-height: auto 26px; }
 
 /* ==== dex detail: one Pokemon, one colour ========================================== */
 
@@ -2691,8 +2482,6 @@ input.stat-cur.hp-cur {
 
 /* -- the dex hero's rank column ---------------------------------------------------------- */
 
-/* ==== calc workspace, eighth pass ================================================== */
-
 /* -- 1. the roll is a slider, and the buttons close the row from the right ------------
    The engine hands back all sixteen rolls with every result, so picking one costs nothing and any
    of them is a legitimate question. The slider is therefore the control and the three buttons are
@@ -2700,12 +2489,11 @@ input.stat-cur.hp-cur {
    reading (value, then position) runs left to right, and the pressing is a separate act. */
 .duel-rolls { gap: 6px; }
 .duel-roll-read {
-  flex: none; display: inline-flex; align-items: baseline; gap: 4px; min-width: 0;
+  flex: none; display: inline-flex; gap: 4px; min-width: 0;
 }
 .duel-roll-read strong { font-size: 15px; font-weight: 750; }
 .duel-roll-read .muted { font-size: 11px; }
 .duel-roll-lane { flex: 0 1 31%; width: 31%; max-width: 31%; min-width: 70px; }
-.duel-roll-mod { flex: none; min-width: 22px; color: var(--sub); font-size: 11.5px; text-align: center; }
 .boost-slider.roll { grid-template-columns: 1fr; }
 /* No neutral centre on a roll: zero damage is one end of the scale, not its middle. */
 .boost-slider.roll .boost-track::before { display: none; }
@@ -2762,7 +2550,6 @@ input.stat-cur.hp-cur { text-align: center; }
 @media (max-width: 720px) {
   .duel-rolls { flex-wrap: wrap; }
   .duel-roll-lane { flex-basis: 66%; width: 66%; max-width: 66%; order: 3; }
-  .duel-roll-mod { order: 3; }
   .duel-roll-btns { margin-left: auto; }
 }
 
@@ -2963,23 +2750,6 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 
 /* One frame, not a form panel around another framed command row. The labels sit beside their
    controls, so format, fields and the calculate buttons share one compact horizontal baseline. */
-.calc-command-bar { margin: 14px 0 0; align-items: center; padding: 9px 12px; }
-.calc-command-bar .field-controls { align-items: center; gap: 10px; }
-.calc-command-bar label, .calc-command-bar .fld-chk {
-  display: inline-flex; align-items: center; gap: 6px; align-self: center;
-  white-space: nowrap; color: var(--sub); font-size: 12px;
-}
-.calc-command-bar .fld-chk .box { height: auto; padding: 0; }
-.calc-command-bar select {
-  width: auto; min-width: 70px; height: 34px; padding: 5px 28px 5px 9px;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink);
-  font: 600 12px/1.2 var(--font-ui);
-}
-.calc-command-bar .fld-group { align-self: center; align-items: center; gap: 10px; }
-.calc-command-bar .primary-btn {
-  align-self: center; margin-left: auto;
-}
-.tune-command > .tune-note, .tune-command > .tune-proposal { margin-top: 10px; }
 
 .build-card.on {
   border-color: var(--brand); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 24%, transparent);
@@ -3100,8 +2870,7 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   padding: 0 2px; border-radius: 0; background: none;
 }
 .duel-summary-verdict:empty { visibility: hidden; }
-.duel-summary-row .duel-summary { white-space: nowrap; text-overflow: ellipsis; }
-.duel-move-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 8px; }
+.duel-move-grid { row-gap: 8px; }
 .duel-result { gap: 6px; padding: 7px 14px 11px; }
 .duel-line {
   height: 49px; min-height: 49px; max-height: 49px;
@@ -3544,12 +3313,7 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 
 @media (max-width: 520px) {
   .hp-warning::after { max-width: min(260px, 70vw); }
-  .duel-summary-row {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 6px;
-  }
-  .duel-summary-row .duel-summary { grid-column: 1 / -1; }
   .duel-summary-verdict { grid-column: 1; grid-row: 2; justify-self: start; }
-  .duel-summary-row .ghost-btn { grid-column: 2; grid-row: 2; }
 }
 
 /* ==== calc workspace: rosters → results → builds ======================================= */
@@ -3568,9 +3332,6 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 }
 .duel-result { gap: 8px; }
 /* The caveat glyph sits right after the sentence it qualifies; the verdict keeps the far end. */
-.duel-summary-row .duel-summary { flex: 0 1 auto; }
-.duel-summary-row .hp-warning { flex: none; }
-.duel-summary-row .duel-summary-verdict { margin-left: auto; }
 
 /* -- headline: who, and what the selected hit does ------------------------------------- */
 .duel-head {
@@ -3606,8 +3367,6 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 .duel-dmg-pct { font-size: 22px; line-height: 1.05; font-weight: 800; letter-spacing: -.02em; }
 .duel-dmg-pct small { margin-left: 1px; font-size: 13px; font-weight: 700; }
 .duel-dmg-pct.ko-text-none { color: var(--sub); }
-.duel-dmg-hp { font-size: 12px; font-weight: 650; color: var(--sub); }
-.duel-dmg-hp small { font-size: 10.5px; font-weight: 600; }
 /* Under the percent: the KO verdict, with this matchup's caveat glyph just before it. */
 .duel-verdict-line { display: inline-flex; align-items: center; gap: 6px; min-height: 18px; }
 .duel-verdict-line .duel-summary-verdict { height: 18px; padding: 0; font-size: 12.5px; }
@@ -4213,10 +3972,7 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 /* Beside the environment-build button of an editor, where the row already spaces its controls. */
 .mon-editor-actions .keep-mon { margin-left: 0; vertical-align: middle; }
 @media (pointer: coarse) {
-  .modal-close, .keep-mon, .ghost-btn.tiny, .second-btn.tiny, .lib-box-rename,
-  .team-export-btn, .mon-build-btn, .mon-form-toggle, .topbar .topbar-tool,
-  .theme-toggle button, .topbar select, .primary-btn, .second-btn, .ghost-btn,
-  .seg button, .seg.page-tabs button, .field-format.seg button, .subtabs button {
+  .modal-close, .keep-mon, .ghost-btn.tiny, .second-btn.tiny, .lib-box-rename, .team-export-btn, .topbar .topbar-tool, .theme-toggle button, .topbar select, .primary-btn, .second-btn, .ghost-btn, .seg button, .seg.page-tabs button, .field-format.seg button, .subtabs button {
     min-width: 44px; min-height: 44px;
   }
   .topbar nav a { min-height: 44px; display: inline-flex; align-items: center; }
@@ -4236,3 +3992,12 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   .topbar .library-entry { position: static; }
   .library-discovery-hint { top: calc(100% + 8px); right: 10px; }
 }
+
+/* A run record's team (components/TeamDots.tsx): type dots, or six small faces. */
+.aw-dots { display: inline-flex; gap: 3px; }
+.aw-dots i { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%);
+  box-shadow: inset 0 -1.5px 0 rgb(0 0 0 / 0.18); }
+.aw-sprites { display: grid; grid-template-columns: repeat(6, 26px); gap: 3px; }
+.aw-sprites i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--panel-2); }
+.aw-sprites i.empty { border: 1px dashed var(--line); background: transparent; }
+.aw-sprites img { width: 26px; height: 26px; object-fit: contain; }

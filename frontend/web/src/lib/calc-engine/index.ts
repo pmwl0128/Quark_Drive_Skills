@@ -1,6 +1,6 @@
 /** Main-thread client for the calc-engine worker (frontend/design.md §7.1).
  *
- * Lazily spins up a worker per lane (interactive / inference; the engine chunk loads only when the calc page
+ * Lazily spins up workers per lane (interactive / inference; the engine chunk loads only when the calc page
  * actually computes), pairs requests to replies by id, and maps the vendored wrapper's raw output to
  * the Web DTO shapes — the browser twin of the bridge's mappers.map_damage / map_speedline, so the
  * OnlineAdapter returns byte-identical DTOs to what `pcui serve` would. */
@@ -11,11 +11,25 @@ interface Client {
   worker: Worker;
   pending: Map<number, { resolve: (value: EngineReply) => void; reject: (error: Error) => void }>;
 }
-const clients = new Map<EngineLane, Client>();
+/** Workers a lane may hold. Interactive work is one calc at a time, so one engine serves it; the
+ * inference sweep sends thousands of requests in batches, and runs them on up to three engines at
+ * once, leaving a core for the page and one for the other workers. Each engine is a full copy of
+ * the calculator (about 1 MB of script to load), so a lane opens another only while every engine it
+ * has is busy. */
+const LANE_WIDTH: Record<EngineLane, number> = {
+  interactive: 1,
+  inference: Math.min(3, Math.max(1, (globalThis.navigator?.hardwareConcurrency ?? 2) - 2)),
+};
+const lanes = new Map<EngineLane, Client[]>();
 let seq = 0;
 function ensureClient(lane: EngineLane): Client {
-  const existing = clients.get(lane);
-  if (existing) return existing;
+  const pool = lanes.get(lane) ?? [];
+  lanes.set(lane, pool);
+  const idle = pool.find((client) => client.pending.size === 0);
+  if (idle) return idle;
+  if (pool.length >= LANE_WIDTH[lane]) {
+    return pool.reduce((least, client) => client.pending.size < least.pending.size ? client : least);
+  }
   const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
   const client: Client = { worker, pending: new Map() };
   worker.onmessage = (event: MessageEvent<{ id: number; result?: EngineReply; error?: string }>) => {
@@ -30,9 +44,10 @@ function ensureClient(lane: EngineLane): Client {
     for (const request of client.pending.values()) request.reject(new Error(event.message));
     client.pending.clear();
     worker.terminate();
-    clients.delete(lane);
+    const at = pool.indexOf(client);
+    if (at >= 0) pool.splice(at, 1);
   };
-  clients.set(lane, client);
+  pool.push(client);
   return client;
 }
 function call(engine: "calc" | "speed", command: string, input: unknown, kind?: string,
@@ -40,7 +55,12 @@ function call(engine: "calc" | "speed", command: string, input: unknown, kind?: 
   const client = ensureClient(lane), id = ++seq;
   return new Promise((resolve, reject) => {
     client.pending.set(id, { resolve, reject });
-    client.worker.postMessage({ id, engine, command, inputJson: JSON.stringify(input), kind });
+    try {
+      client.worker.postMessage({ id, engine, command, inputJson: JSON.stringify(input), kind });
+    } catch (error) {
+      client.pending.delete(id);
+      reject(error instanceof Error ? error : new Error(String(error)));
+    }
   });
 }
 
@@ -118,8 +138,8 @@ export async function engineDamageBatch(items: unknown[], lane: EngineLane = "in
   return output.map((r) => (isErr(r) ? r : mapDamage(r)));
 }
 
-export async function engineSpeedBatch(items: unknown[]): Promise<unknown[]> {
-  const { output } = await call("speed", "batch", items);
+export async function engineSpeedBatch(items: unknown[], lane: EngineLane = "interactive"): Promise<unknown[]> {
+  const { output } = await call("speed", "batch", items, undefined, lane);
   if (!Array.isArray(output)) throw new Error("speed batch produced a non-array");
   return output.map((r) => (isErr(r) ? r : mapSpeedline(r)));
 }

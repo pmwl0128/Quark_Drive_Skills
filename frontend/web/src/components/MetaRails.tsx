@@ -19,7 +19,7 @@
  * that point there is no gutter left to borrow.
  */
 import type { FormatId, MetaFacetsDto, RankingDto } from "@pokemon-champions/protocol";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { GameImage } from "./GameImage.tsx";
 import { FALLBACK_KIND, RailLayer, useRailEscape, useSideRail, type RailState } from "./SideRail.tsx";
@@ -237,13 +237,15 @@ export function MetaRail({ state, format, ranking, activeSlug = "", onAllowed, h
 
   useEffect(() => { onAllowed(allowed); }, [allowed, onAllowed]);
 
-  const rows = ranking.status === "ready" ? ranking.data.rows : [];
   const needle = q.trim().toLowerCase();
-  const shown = rows.filter((r) => {
+  const shown = useMemo(() => (ranking.status === "ready" ? ranking.data.rows : []).filter((r) => {
     if (allowed && !allowed.has(r.slug)) return false;
     if (!needle) return true;
     return [r.name, r.nameZh, r.nameJa, r.slug].some((v) => (v ?? "").toLowerCase().includes(needle));
-  });
+  }), [ranking, allowed, needle]);
+  // The list follows a beat behind the rail and each keystroke, and is emptied while the rail is
+  // closed (as in DexRail.tsx).
+  const listed = useDeferredValue(state.open ? shown : null, null);
 
   const toggle = (facet: FacetKey, value: string) => {
     setPicks((prev) => {
@@ -281,8 +283,8 @@ export function MetaRail({ state, format, ranking, activeSlug = "", onAllowed, h
       <ActiveChips picks={picks} label={facetLabel} onToggle={toggle}
                    onClear={() => setPicks({})} />
       <div className="rail-body rank-list">
-        {shown.length === 0 && <p className="rail-empty">{t("rail.noMatch")}</p>}
-        {shown.map((r) => (
+        {listed?.length === 0 && <p className="rail-empty">{t("rail.noMatch")}</p>}
+        {listed?.map((r) => (
           <button type="button" key={r.slug}
                   className={`rank-row${r.slug === activeSlug ? " on" : ""}`}
                   // Navigating changes nothing about either panel: browsing the ranking is a

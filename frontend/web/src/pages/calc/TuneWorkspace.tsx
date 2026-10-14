@@ -338,8 +338,9 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
       }
     }
     if (!variants.length) return;
-    const timer = window.setTimeout(() => void store.fetchMissing(variants), 160);
-    return () => window.clearTimeout(timer);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => void store.fetchMissing(variants, controller.signal, "inference"), 160);
+    return () => { controller.abort(); window.clearTimeout(timer); };
   }, [planKey, settled]);
 
   // -- verdict & targets -------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import type {
   DiagnoseRequestDto, FormatId, LearnersDto, MetaDetailDto, MetaFacetsDto, MetaKoDto,
   OppCacheDto, OppCheckGridDto, OppKoGridDto, OppSetCatalogDto,
   PokemonCardDto,
-  OnlineQuotaDto, QaAnswerDto, QaRequestDto, RankingDto, ResolveEntryDto, SessionDto, SessionWithLedgerDto,
+  OnlineQuotaDto, QaAnswerDto, QaProgressDto, QaRequestDto, RankingDto, ResolveEntryDto, SessionDto, SessionWithLedgerDto,
   MetaKoTrendDto, SpeedBatchResultDto, SpeedInputDto, TrendDto, TuneResultDto, UsageTrendDto,
 } from "@pokemon-champions/protocol";
 import { OnlineErrorDetailSchema } from "@pokemon-champions/protocol";
@@ -80,7 +80,7 @@ export interface RuntimeAdapter {
   /** One attacker's moves × several defenders in a single fault-isolated batch (calc runtime only). */
   damageBatch(items: DamageRequestDto[], options?: { lane?: "interactive" | "inference" }): Promise<DamageBatchResultDto>;
   /** A speed ladder (my mon + opponents) in one fault-isolated batch (calc runtime only). */
-  speedBatch(items: SpeedInputDto[]): Promise<SpeedBatchResultDto>;
+  speedBatch(items: SpeedInputDto[], options?: { lane?: "interactive" | "inference" }): Promise<SpeedBatchResultDto>;
   /** Opponent standard-set KO matrix (team.matchup). Shipped STATIC cache — served by the bridge live
    * and exported to the online projection too. */
   oppCache(format: FormatId): Promise<OppCacheDto>;
@@ -100,7 +100,7 @@ export interface RuntimeAdapter {
   readonly sessions?: SessionApi;
   /** Online-only fact QA (llm.qa, design §7.2): one question, one tool-grounded answer, no
    * history. Absent on the local runtime — a local user has a real agent instead. */
-  qa?(req: QaRequestDto): Promise<QaAnswerDto>;
+  qa?(req: QaRequestDto, onProgress?: (progress: QaProgressDto) => void): Promise<QaAnswerDto>;
   /** Read-only daily usage for all public model surfaces. */
   quota?(): Promise<OnlineQuotaDto>;
   /** Online-only builder wizard (llm.builder, design §7.3). Absent on the local runtime —
@@ -234,5 +234,31 @@ export class AsyncOnce<T> {
       p.catch(() => { if (this.pending === p) this.pending = null; });
     }
     return this.pending;
+  }
+}
+
+/** Immutable facts read outside hooks (auto-fill and editors) also share pending requests. Ready
+ * entries are bounded; failures retry and pending entries stay shared until their requests settle. */
+export class AsyncFacts<T> {
+  private entries = new Map<string, { promise: Promise<T>; ready: boolean }>();
+  constructor(private readonly capacity = 128) {}
+  get(key: string, make: () => Promise<T>): Promise<T> {
+    const hit = this.entries.get(key);
+    if (hit) { this.entries.delete(key); this.entries.set(key, hit); return hit.promise; }
+    const entry: { promise: Promise<T>; ready: boolean } = { promise: Promise.resolve(null as T), ready: false };
+    entry.promise = make().then(value => {
+      entry.ready = true;
+      let ready = [...this.entries.values()].filter(row => row.ready).length;
+      for (const [id, row] of this.entries) {
+        if (ready <= this.capacity) break;
+        if (row.ready) { this.entries.delete(id); ready--; }
+      }
+      return value;
+    }, error => {
+      if (this.entries.get(key) === entry) this.entries.delete(key);
+      throw error;
+    });
+    this.entries.set(key, entry);
+    return entry.promise;
   }
 }

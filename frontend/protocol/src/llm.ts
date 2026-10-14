@@ -67,6 +67,14 @@ export const QaToolTraceEntrySchema = z.object({
 });
 export type QaToolTraceEntry = z.infer<typeof QaToolTraceEntrySchema>;
 
+/** An intermediate `report` event on a streamed question: the lookups run so far, and the model
+ * round under way. It discloses nothing the final `toolTrace` does not. */
+export const QaProgressDtoSchema = z.object({
+  toolTrace: z.array(QaToolTraceEntrySchema),
+  round: z.number().int().nonnegative(),
+});
+export type QaProgressDto = z.infer<typeof QaProgressDtoSchema>;
+
 export const QaAnswerDtoSchema = z.object({
   answer: z.string().min(1),
   toolTrace: z.array(QaToolTraceEntrySchema),

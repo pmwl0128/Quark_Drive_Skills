@@ -43,7 +43,7 @@ export function speedPlan(space: FoeSpace, inference: Inference, mine: MonState,
 export async function readSpeedProjection(adapter: Pick<RuntimeAdapter, "speedBatch">, plan: SpeedPlan): Promise<SpeedProjection> {
   const chunks: SpeedInputDto[][] = [];
   for (let at = 0; at < plan.inputs.length; at += 240) chunks.push(plan.inputs.slice(at, at + 240));
-  const results = (await Promise.all(chunks.map((inputs) => adapter.speedBatch(inputs)))).flat();
+  const results = (await Promise.all(chunks.map((inputs) => adapter.speedBatch(inputs, { lane: "inference" })))).flat();
   const speed = (index: number | null) => index === null ? null
     : results[index] && "finalSpeed" in results[index] ? results[index].finalSpeed : null;
   const ranges = new Map<string, SpeedRange>();

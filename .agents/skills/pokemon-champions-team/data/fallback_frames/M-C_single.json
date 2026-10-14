@@ -5,7 +5,7 @@
   "format": "single",
   "rule": "M-C",
   "season": "M-7",
-  "built_at": "2026-10-12T09:16:08Z"
+  "built_at": "2026-10-14T03:55:29Z"
  },
  "counts": {
   "history": 1,
@@ -33,26 +33,27 @@
   "Gourgeist-Large|": {
    "source": "partners",
    "partners": [
-    "Indeedee",
-    "Sneasler"
+    "Salamence",
+    "Snorlax",
+    "Gengar"
    ],
-   "teams": 73
+   "teams": 3
   },
   "Gourgeist-Small|": {
    "source": "partners",
    "partners": [
-    "Arcanine",
-    "Clefable"
+    "Gyarados",
+    "Empoleon"
    ],
-   "teams": 5
+   "teams": 11
   },
   "Hydrapple|": {
    "source": "partners",
    "partners": [
     "Charizard",
-    "Baxcalibur"
+    "Gyarados"
    ],
-   "teams": 43
+   "teams": 14
   },
   "Lycanroc-Dusk|": {
    "source": "history",
@@ -66,48 +67,46 @@
   "Meowstic-F|": {
    "source": "partners",
    "partners": [
-    "Hippowdon",
     "Meowscarada",
-    "Dragonite"
-   ],
-   "teams": 4
-  },
-  "Morpeko-Hangry|": {
-   "source": "partners",
-   "partners": [
-    "Gholdengo",
     "Cinderace"
    ],
-   "teams": 18
+   "teams": 17
   },
-  "Oranguru|": {
+  "Morpeko-Hangry|": {
    "source": "stand_in",
-   "species": "Farigiraf",
+   "species": "Pawmot",
    "hits": {
-    "types": 2,
+    "types": 1,
     "lean": 1,
     "speed_band": 1,
-    "roles": 3,
+    "roles": 2,
     "field": 0
    },
-   "teams": 11
+   "teams": 126
+  },
+  "Oranguru|": {
+   "source": "partners",
+   "partners": [
+    "Feraligatr",
+    "Gardevoir"
+   ],
+   "teams": 6
   },
   "Passimian|": {
    "source": "partners",
    "partners": [
     "Greninja",
-    "Sylveon"
+    "Staraptor"
    ],
-   "teams": 8
+   "teams": 6
   },
   "Squawkabilly-Yellow|": {
    "source": "partners",
    "partners": [
-    "Glimmora",
-    "Vanilluxe",
-    "Indeedee"
+    "Golisopod",
+    "Glimmora"
    ],
-   "teams": 3
+   "teams": 16
   },
   "Tauros-Paldea-Aqua|": {
    "source": "partners",
@@ -120,8 +119,8 @@
   "Tauros-Paldea-Combat|": {
    "source": "partners",
    "partners": [
-    "Gyarados",
-    "Cinderace"
+    "Cinderace",
+    "Gyarados"
    ],
    "teams": 13
   }

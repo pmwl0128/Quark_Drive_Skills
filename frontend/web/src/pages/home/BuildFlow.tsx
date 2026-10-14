@@ -7,7 +7,8 @@
  *
  * Particles ride the SVG paths (SMIL `animateMotion`, so they scale with the drawing); the labels are
  * HTML placed at the same coordinates, so they stay crisp at any width. */
-import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
+import "../../styles.flow.css";
+import { useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import {
   IconClipboardCheck, IconDatabase, IconShieldCheck, IconSitemap, IconSparkles, IconSwords,
 } from "@tabler/icons-react";
@@ -78,7 +79,19 @@ function useReducedMotion(): boolean {
 export function BuildFlow({ running }: { running: boolean }) {
   const t = useT();
   const reduced = useReducedMotion();
-  const live = running && !reduced;
+  const root = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [foreground, setForeground] = useState(() => !document.hidden);
+  useEffect(() => {
+    const change = () => setForeground(!document.hidden);
+    document.addEventListener("visibilitychange", change);
+    const observer = typeof IntersectionObserver === "undefined" ? null
+      : new IntersectionObserver(entries => setVisible(entries.some(entry => entry.isIntersecting)));
+    if (root.current && observer) observer.observe(root.current);
+    else setVisible(true);
+    return () => { observer?.disconnect(); document.removeEventListener("visibilitychange", change); };
+  }, []);
+  const live = running && !reduced && visible && foreground;
   // 0..5 = the gate being worked; 6 = the team delivered.
   const [step, setStep] = useState(0);
   useEffect(() => {
@@ -90,7 +103,7 @@ export function BuildFlow({ running }: { running: boolean }) {
   const gate = GATES[shown];
 
   return (
-    <div className="home-flowmap">
+    <div ref={root} className={`home-flowmap${live ? " live" : ""}`}>
       <ol className="sr-only">
         {GATES.map((g) => <li key={g.id}>{t(`home.flow.${g.id}` as MsgKey)}: {t(`home.flow.${g.id}.d` as MsgKey)}</li>)}
       </ol>

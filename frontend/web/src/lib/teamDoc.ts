@@ -22,11 +22,26 @@ export interface TeamVocabulary {
   moves?: Named[];
 }
 
-/** Exact dex aliases, including punctuation variants used by Showdown. No guessed names. */
+const nameKey = (name: string) => name.normalize("NFKC").toLowerCase().replace(/[\s'’‘.\-]/g, "");
+const nameIndexes = new WeakMap<readonly Named[], Map<string, Named>>();
+
+/** Exact dex aliases, including punctuation variants used by Showdown. No guessed names. The first
+ * row (in pool order) carrying a matching name wins. Each pool is indexed once: a full library reads
+ * every stored member through here, which scanning the dex and move lists per name made take seconds. */
 export function matchName<T extends Named>(pool: readonly T[], value: string): T | undefined {
-  const key = (name: string) => name.normalize("NFKC").toLowerCase().replace(/[\s'’‘.\-]/g, "");
-  const q = key(value);
-  return pool.find((row) => [row.name, row.nameZh, row.nameJa].some((name) => name && key(name) === q));
+  let index = nameIndexes.get(pool);
+  if (!index) {
+    index = new Map();
+    for (const row of pool) {
+      for (const name of [row.name, row.nameZh, row.nameJa]) {
+        if (!name) continue;
+        const key = nameKey(name);
+        if (!index.has(key)) index.set(key, row);
+      }
+    }
+    nameIndexes.set(pool, index);
+  }
+  return index.get(nameKey(value)) as T | undefined;
 }
 
 import { TEAM_SIZE as MAX_MEMBERS } from "./battle.ts";

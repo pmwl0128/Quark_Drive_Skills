@@ -5,12 +5,12 @@ import { SHARED_MESSAGES } from "../messages.ts";
 
 const LIBRARY_MESSAGES = {
   ...SHARED_MESSAGES,
-  "lib.title": { zh: "队伍", en: "Teams", ja: "チーム" },
+  "lib.title": { zh: "宝可梦存储", en: "Pokémon Storage", ja: "ポケモンボックス" },
   "lib.lead": {
     zh: "队伍和宝可梦只保存在当前浏览器里，不会上传到服务器。",
     en: "Teams and Pokémon are kept in this browser only and are never uploaded.",
     ja: "チームとポケモンはこのブラウザにだけ保存され、サーバーには送信されません。" },
-  "lib.sections": { zh: "队伍页面", en: "Teams sections", ja: "チームページ" },
+  "lib.sections": { zh: "存储页面", en: "Storage sections", ja: "ボックスページ" },
   "lib.tab.teams": { zh: "我的队伍", en: "My teams", ja: "マイチーム" },
   "lib.tab.box": { zh: "宝可梦箱", en: "Pokémon Box", ja: "ボックス" },
 
@@ -303,20 +303,20 @@ const LIBRARY_MESSAGES = {
   "dock.title": { zh: "我的队伍与宝可梦箱", en: "My teams and Pokémon Box", ja: "マイチームとボックス" },
   "dock.tab.teams": { zh: "我的队伍", en: "My teams", ja: "マイチーム" },
   "dock.tab.box": { zh: "宝可梦箱", en: "Pokémon Box", ja: "ボックス" },
-  "dock.openPage": { zh: "在队伍页打开", en: "Open the Teams page", ja: "チームページで開く" },
+  "dock.openPage": { zh: "在存储页打开", en: "Open the Storage page", ja: "ボックスページで開く" },
   "dock.expand": { zh: "展开", en: "Expand", ja: "広げる" },
   "dock.collapse": { zh: "收起", en: "Shrink", ja: "縮める" },
   "dock.noTeams": {
-    zh: "还没有{format}队伍。可以在队伍页粘贴，或从下方保存当前页面的队伍。",
-    en: "No {format} teams yet. Paste one on the Teams page, or keep this page's team below.",
-    ja: "{format}のチームはまだありません。チームページで貼り付けるか、下からこのページのチームを保存できます。" },
+    zh: "还没有{format}队伍。可以在存储页粘贴，或从下方保存当前页面的队伍。",
+    en: "No {format} teams yet. Paste one on the Storage page, or keep this page's team below.",
+    ja: "{format}のチームはまだありません。ボックスページで貼り付けるか、下からこのページのチームを保存できます。" },
   "dock.pickTeam": {
     zh: "点一支队伍，把它设为当前队伍。", en: "Pick a team to work with.",
     ja: "使うチームを選んでください。" },
   "dock.emptyBox": {
-    zh: "箱子是空的。可以在队伍页添加，或从下方保存当前页面的宝可梦。",
-    en: "The boxes are empty. Add Pokémon on the Teams page, or keep this page's below.",
-    ja: "ボックスは空です。チームページで追加するか、下からこのページのポケモンを保存できます。" },
+    zh: "箱子是空的。可以在存储页添加，或从下方保存当前页面的宝可梦。",
+    en: "The boxes are empty. Add Pokémon on the Storage page, or keep this page's below.",
+    ja: "ボックスは空です。ボックスページで追加するか、下からこのページのポケモンを保存できます。" },
   "dock.toPage": { zh: "填入当前页面", en: "Into this page", ja: "このページへ" },
   "dock.toLibrary": { zh: "从当前页面保存", en: "Keep from this page", ja: "このページから保存" },
   "dock.nothingHere": {

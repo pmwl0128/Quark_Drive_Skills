@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <b>环境快照</b> · M-7 / M-C · 截至 <b>2026-10-11</b>
+  <b>环境快照</b> · M-7 / M-C · 截至 <b>2026-10-14</b>
 </p>
 
 <p align="center">
@@ -53,7 +53,7 @@ Quark Drive Skills 是供 AI 助手使用的《宝可梦冠军》本地技能集
 四个技能可通过支持工具调用的 AI 助手完整使用。Quark Drive Web 提供浏览器工作台，方便查看图鉴、环境、配置与建队进度，并进行伤害、速度、对位、耐久调校和队伍诊断：
 
 - **在线使用：**打开 [champion.mpan.top](https://champion.mpan.top)，无需安装。注意在线端因资源限制，功能与本地版相比有所简化。
-- **本地使用：**从 [`data-latest` Release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest) 下载 [`Quark_Drive_Web.zip`](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/Quark_Drive_Web.zip)。预构建包需要 Python 3.10+ 和包内运行时依赖；普通浏览与计算不需要 Node.js、账号或模型 API Key。
+- **本地使用：**从 [`data-latest` Release](https://github.com/pmwl0128/quark_drive_skills/releases/tag/data-latest) 下载 [`Quark_Drive_Web.zip`](https://github.com/pmwl0128/quark_drive_skills/releases/download/data-latest/Quark_Drive_Web.zip)。预构建包需要 Python 3.10+ 和包内运行时依赖；普通浏览与计算不需要 Node.js、账号或模型 API Key。
 
 界面不是技能的前置依赖，也不会代替 AI 助手完成完整的本地协作流程。功能差异、安装依赖和使用方法见[Quark Drive Web](#quark-drive-web)。
 
@@ -116,7 +116,7 @@ Mega 巨金怪在单打和双打的常用招式有什么差别？
 双打里常见的顺风手都有谁？通常和谁一起出现？
 ```
 
-最新的三份单语环境工作簿（`workbook_{zh,ja,en}.xlsx`，含单打、双打完整环境表和事实性更新报告）以固定文件名发布在 [data-latest Release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest)，随每次发行滚动覆盖；无需运行脚本即可浏览，使用率请以页首快照日期为准。
+最新的三份单语环境工作簿（`workbook_{zh,ja,en}.xlsx`，含单打、双打完整环境表和事实性更新报告）以固定文件名发布在 [data-latest Release](https://github.com/pmwl0128/quark_drive_skills/releases/tag/data-latest)，随每次发行滚动覆盖；无需运行脚本即可浏览，使用率请以页首快照日期为准。
 
 ## `ncp-damage-calculator`
 
@@ -299,7 +299,7 @@ team 技能内部使用一套流程化约束来减少“先凭印象生成，再
 
 如果项目目录里已经有可命令行调用的 AI 助手（即你用前面的方法 A 安装了技能，或已把本仓库的 `AGENTS.md` / `CLAUDE.md` 放进项目目录），直接对它说：
 
-> 从 `pmwl0128/Quark_Drive_Skills` 的 `data-latest` release 下载预构建的本地前端，安装 `requirements-runtime.txt`，并启动它。然后把本地访问地址给我。
+> 从 `pmwl0128/quark_drive_skills` 的 `data-latest` release 下载预构建的本地前端，安装 `requirements-runtime.txt`，并启动它。然后把本地访问地址给我。
 
 助手会代为下载压缩包、解压、安装运行时依赖、启动对应平台的启动脚本，并返回一次性地址 `http://127.0.0.1:<port>/#bootstrap=...`。完整步骤它已在 `AGENTS.md` / `CLAUDE.md` 的「Local Visual Interface」一节中持有，你无需记命令。
 
@@ -337,8 +337,8 @@ PCUI_LOCAL_PORT=1025
 Windows PowerShell：
 
 ```powershell
-git clone https://github.com/pmwl0128/Quark_Drive_Skills.git
-Set-Location .\Quark_Drive_Skills
+git clone https://github.com/pmwl0128/quark_drive_skills.git
+Set-Location .\quark_drive_skills
 python -m pip install -r frontend/requirements-ui.txt
 .\frontend\build-ui.ps1
 .\frontend\start-ui.ps1
@@ -347,8 +347,8 @@ python -m pip install -r frontend/requirements-ui.txt
 Linux / macOS：
 
 ```bash
-git clone https://github.com/pmwl0128/Quark_Drive_Skills.git
-cd Quark_Drive_Skills
+git clone https://github.com/pmwl0128/quark_drive_skills.git
+cd quark_drive_skills
 python3 -m pip install -r frontend/requirements-ui.txt
 chmod +x frontend/build-ui.sh frontend/start-ui.sh
 ./frontend/build-ui.sh
@@ -384,7 +384,7 @@ git pull
 
 把下面这段交给有 shell 权限的 AI 助手：
 
-> 全局安装 https://github.com/pmwl0128/Quark_Drive_Skills 中的四个技能。同时安装依赖 `quickjs-ng>=0.15`；如果当前环境无法安装，则确认 Node.js 回退可用。最后确认四个 `SKILL.md` 都能被发现，并实际运行一次计算器的 `schema` 命令。
+> 全局安装 https://github.com/pmwl0128/quark_drive_skills 中的四个技能。同时安装依赖 `quickjs-ng>=0.15`；如果当前环境无法安装，则确认 Node.js 回退可用。最后确认四个 `SKILL.md` 都能被发现，并实际运行一次计算器的 `schema` 命令。
 
 这是默认推荐方式：AI 助手可以识别当前宿主、选择正确目录、处理运行依赖，并在复制后直接验证，而不需要用户手工判断路径或链接方式。
 
@@ -393,7 +393,7 @@ git pull
 在 Claude Code 中输入。若已安装旧插件，先运行 `/plugin uninstall pokemon-champions@pmwl`：
 
 ```text
-/plugin marketplace add pmwl0128/Quark_Drive_Skills
+/plugin marketplace add pmwl0128/quark_drive_skills
 /plugin install quark-drive-skills@quark-drive
 ```
 
@@ -402,13 +402,13 @@ git pull
 先安装 [Node.js](https://nodejs.org/)，然后在项目目录运行：
 
 ```bash
-npx skills add pmwl0128/Quark_Drive_Skills
+npx skills add pmwl0128/quark_drive_skills
 ```
 
 全局安装到所有项目：
 
 ```bash
-npx skills add pmwl0128/Quark_Drive_Skills -g
+npx skills add pmwl0128/quark_drive_skills -g
 ```
 
 安装器来自 [vercel-labs/skills](https://github.com/vercel-labs/skills)，会提示你选择 AI 助手和安装范围。当前版本在 Windows 上使用链接方式可能失败；遇到此问题时，请改用复制方式或手动创建链接。
@@ -416,10 +416,10 @@ npx skills add pmwl0128/Quark_Drive_Skills -g
 ### 方法 D：手动复制
 
 ```bash
-git clone https://github.com/pmwl0128/Quark_Drive_Skills.git
+git clone https://github.com/pmwl0128/quark_drive_skills.git
 mkdir -p ~/.claude/skills ~/.agents/skills
-cp -r Quark_Drive_Skills/.claude/skills/* ~/.claude/skills/   # Claude Code
-cp -r Quark_Drive_Skills/.agents/skills/* ~/.agents/skills/   # Codex
+cp -r quark_drive_skills/.claude/skills/* ~/.claude/skills/   # Claude Code
+cp -r quark_drive_skills/.agents/skills/* ~/.agents/skills/   # Codex
 ```
 
 仓库中的 `.agents/skills/` 与 `.claude/skills/` 是逐字节一致的镜像，只需使用你的 AI 助手会扫描的那一份。
@@ -476,7 +476,7 @@ cd my-champions
 
 启动对应的 AI 助手后，直接发送下面这段话：
 
-> 从 https://github.com/pmwl0128/Quark_Drive_Skills 将四个技能安装到当前项目，并把仓库中的 `CLAUDE.md` 和 `AGENTS.md` 放到项目目录。同时安装 `quickjs-ng>=0.15`；如果当前环境无法安装，请确认 Node.js 回退可用。最后确认四个 `SKILL.md` 均可识别，并实际运行一次计算器的 `schema` 命令。
+> 从 https://github.com/pmwl0128/quark_drive_skills 将四个技能安装到当前项目，并把仓库中的 `CLAUDE.md` 和 `AGENTS.md` 放到项目目录。同时安装 `quickjs-ng>=0.15`；如果当前环境无法安装，请确认 Node.js 回退可用。最后确认四个 `SKILL.md` 均可识别，并实际运行一次计算器的 `schema` 命令。
 
 也可以使用上面的其他 [安装方式](#安装)。
 
@@ -531,11 +531,11 @@ my-champions/
 
 ## 环境工作簿
 
-每次正式发行会从完整的单打、双打快照与更新报告重新生成三份工作簿，并以固定文件名发布到 [data-latest Release](https://github.com/pmwl0128/Quark_Drive_Skills/releases/tag/data-latest)（滚动覆盖，只保留最新一期；git 树不携带二进制文件，克隆保持轻量）：
+每次正式发行会从完整的单打、双打快照与更新报告重新生成三份工作簿，并以固定文件名发布到 [data-latest Release](https://github.com/pmwl0128/quark_drive_skills/releases/tag/data-latest)（滚动覆盖，只保留最新一期；git 树不携带二进制文件，克隆保持轻量）：
 
-- [workbook_zh.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_zh.xlsx)（中文）
-- [workbook_ja.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_ja.xlsx)（日文）
-- [workbook_en.xlsx](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/workbook_en.xlsx)（英文）
+- [workbook_zh.xlsx](https://github.com/pmwl0128/quark_drive_skills/releases/download/data-latest/workbook_zh.xlsx)（中文）
+- [workbook_ja.xlsx](https://github.com/pmwl0128/quark_drive_skills/releases/download/data-latest/workbook_ja.xlsx)（日文）
+- [workbook_en.xlsx](https://github.com/pmwl0128/quark_drive_skills/releases/download/data-latest/workbook_en.xlsx)（英文）
 
 每份文件只使用一种主语言；中、日版附英文规范名，便于交叉检索。主要工作表包括：
 
@@ -548,9 +548,9 @@ my-champions/
 
 排名趋势折线图 `trend_{single,double}_{zh,ja,en}.png`（单打 / 双打 × 三种语言）发布在同一 Release。它们滚动展示最近至多 10 期（每期对应一次数据刷新）的排名走势：任意一期进入过 Top30 的宝可梦全程追踪，另收录进过前 60 名的大幅变动；纵轴 1–30 名等距、30 名以后压缩，上升 / 下降 / 稳定折线以颜色区分，线两端直接标注宝可梦名。
 
-![单打排名趋势](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/trend_single_zh.png)
+![单打排名趋势](https://github.com/pmwl0128/quark_drive_skills/releases/download/data-latest/trend_single_zh.png)
 
-![双打排名趋势](https://github.com/pmwl0128/Quark_Drive_Skills/releases/download/data-latest/trend_double_zh.png)
+![双打排名趋势](https://github.com/pmwl0128/quark_drive_skills/releases/download/data-latest/trend_double_zh.png)
 
 ## 数据时效与诚实边界
 

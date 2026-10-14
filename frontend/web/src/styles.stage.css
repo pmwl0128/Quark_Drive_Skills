@@ -1,0 +1,40 @@
+/* The stage palette: the light-on-light (and one-step-raised dark) surfaces the home page's opening
+   and closing cards and its flow map are drawn on, and the assist page's runs in progress. One set of tokens for every surface that reads them: the home page (`.home`) and any
+   other container that opts in with `.stage-tokens`. */
+:is(.home, .stage-tokens) {
+  --core: radial-gradient(circle closest-side, #effdff 0 16%, #8ff0ff 21%, #6b4dff 29% 54%, #2b5cff 58% 86%, #1d3fae 89% 100%);
+  --stage-ink-2: color-mix(in srgb, var(--ink) 72%, var(--brand)); --stage-sub-strong: color-mix(in srgb, var(--ink) 66%, var(--sub));
+  --stage: var(--panel); --stage-2: #edf2fd; --stage-ink: var(--ink); --stage-sub: var(--sub);
+  --stage-line: rgb(36 87 223 / 0.09); --stage-edge: var(--line); --stage-dot: rgb(16 26 47 / 0.13);
+  --stage-fill: rgb(16 26 47 / 0.035); --stage-fill-2: rgb(16 26 47 / 0.07); --stage-fill-3: rgb(16 26 47 / 0.12);
+  --stage-hair: rgb(16 26 47 / 0.1); --stage-hair-2: rgb(16 26 47 / 0.18);
+  --stage-raised: var(--panel); --stage-node: var(--panel); --stage-mosaic: var(--panel);
+  --stage-accent: var(--brand); --stage-cta: var(--action); --stage-cta-hi: var(--action-hover);
+  --stage-glow: 36 87 223; --stage-glow-a: 0.09;
+  --stage-shadow: 0 28px 60px -42px rgb(25 39 68 / 0.5), var(--shadow);
+  --stage-card-shadow: 0 22px 44px -24px rgb(25 39 68 / 0.38);
+  --stage-art-shadow: 0 40px 70px -42px rgb(25 39 68 / 0.5);
+  --stage-track: rgb(16 26 47 / 0.08); --stage-tick: rgb(16 26 47 / 0.2);
+  --stage-code: #f3f6fb; --stage-code-ink: #1d2a44;
+  --stage-good: #148a57; --stage-good-bg: rgb(20 138 87 / 0.1); --stage-pick: var(--ink);
+  --stage-us: var(--brand); --stage-them: #e0674f; --stage-particle: var(--brand);
+  --flow-a: #18a46b; --flow-b: #d4930a; --flow-c: #e05a3c;
+}
+[data-theme="dark"] :is(.home, .stage-tokens) {
+  --stage: #131d2f; --stage-2: #19273e;
+  --stage-line: rgb(255 255 255 / 0.06); --stage-edge: rgb(255 255 255 / 0.08); --stage-dot: rgb(255 255 255 / 0.09);
+  --stage-fill: rgb(255 255 255 / 0.05); --stage-fill-2: rgb(255 255 255 / 0.09); --stage-fill-3: rgb(255 255 255 / 0.18);
+  --stage-hair: rgb(255 255 255 / 0.12); --stage-hair-2: rgb(255 255 255 / 0.24);
+  --stage-raised: #1c2a42; --stage-node: #1f2e48; --stage-mosaic: rgb(8 14 26 / 0.55);
+  --stage-accent: #9dbbff;
+  --stage-ink-2: color-mix(in srgb, var(--ink) 70%, #9dbbff); --stage-sub-strong: color-mix(in srgb, var(--ink) 72%, var(--sub));
+  --stage-glow: 93 140 255; --stage-glow-a: 0.14;
+  --stage-shadow: 0 30px 60px -36px rgb(0 0 0 / 0.7);
+  --stage-card-shadow: 0 30px 56px -24px rgb(0 0 0 / 0.75);
+  --stage-art-shadow: 0 50px 90px -40px rgb(0 0 0 / 0.75);
+  --stage-track: rgb(255 255 255 / 0.09); --stage-tick: rgb(255 255 255 / 0.22);
+  --stage-code: #0c1424; --stage-code-ink: #dfe8f8;
+  --stage-good: #8fe7b8; --stage-good-bg: rgb(143 231 184 / 0.14); --stage-pick: rgb(255 255 255 / 0.92);
+  --stage-us: #8fb2ff; --stage-them: #ff9a80; --stage-particle: #e3ecff;
+  --flow-a: #5fe3a0; --flow-b: #f5c451; --flow-c: #ff9178;
+}

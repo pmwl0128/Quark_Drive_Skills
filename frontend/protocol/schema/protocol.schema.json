@@ -3,8 +3,8 @@
   "$id": "urn:pokemon-champions:protocol:0.1.0",
   "title": "Quark Drive Web Protocol",
   "description": "Generated from @pokemon-champions/protocol Zod schemas; do not edit by hand.",
-  "x-schema-count": 105,
-  "x-export-fingerprint": "44636f55f4e519031d17cd00bca76c8ca226fa9050aca473d20d6c3f69fcb403",
+  "x-schema-count": 106,
+  "x-export-fingerprint": "c7361549da0d44ce95758ebdd24537fbbdbb4f515179dc594ce19c1bd7bf02a9",
   "$defs": {
     "AbilityDtoSchema": {
       "type": "object",
@@ -11764,6 +11764,64 @@
         "toolTrace",
         "grounded",
         "quota"
+      ],
+      "additionalProperties": false
+    },
+    "QaProgressDtoSchema": {
+      "type": "object",
+      "properties": {
+        "toolTrace": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "params": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "tool",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "round": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "toolTrace",
+        "round"
       ],
       "additionalProperties": false
     },

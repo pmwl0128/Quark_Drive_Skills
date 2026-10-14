@@ -1,19 +1,18 @@
 /** React bindings of the browser library: the live library that re-renders on any write (from this
  * tab or another), how much of it this browser may open, and the snapshot a new record carries. */
-import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRuntime } from "../../runtime/context.tsx";
 import { LIBRARY_TIERS, type LibraryAccess, type LibrarySnapshot } from "./records.ts";
-import { loadLibrary, type LibraryState } from "./repo.ts";
+import type { LibraryState } from "./repo.ts";
+import { readLibrarySnapshot, subscribeLibrary, type LiveRead } from "./live.ts";
+export type { LiveRead } from "./live.ts";
 
 /** A live read: undefined while the first read is in flight, "unavailable" when the browser refuses
  * IndexedDB to this site (private mode, blocked site data). The failure is a value rather than a
  * throw, because a thrown read would reach the app's error boundary and take the whole page down
  * for what is only "this browser can't keep a library". */
-export type LiveRead<T> = T | "unavailable" | undefined;
-
 export function useLibrary(): LiveRead<LibraryState> {
-  return useLiveQuery(() => loadLibrary().catch(() => "unavailable" as const), []);
+  return useSyncExternalStore(subscribeLibrary, readLibrarySnapshot);
 }
 
 /** Who may open more of the library. The online server says whether this browser is past visitor

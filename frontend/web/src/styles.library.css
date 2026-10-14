@@ -223,7 +223,7 @@
 }
 .lib-detail-where { font-size: 12px; }
 .lib-detail { display: grid; gap: 12px; }
-.lib-detail-teams, .lib-detail-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.lib-detail-teams { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
 .lib-detail-foot {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
   padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px;

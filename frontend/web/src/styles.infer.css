@@ -2,7 +2,6 @@
 .inf { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0;
   --inf-up: #c2503a; --inf-down: #2f62c4; }
 :root[data-theme="dark"] .inf { --inf-up: #f08a74; --inf-down: #86a8ee; }
-.inf-lead { margin: 0; font-size: 12.5px; line-height: 1.6; }
 
 /* Only the presentation changes: the shared roster remains above both columns. Results come first
    in the DOM so narrow screens see them before the full input editors. */

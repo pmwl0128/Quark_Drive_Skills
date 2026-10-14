@@ -28,6 +28,11 @@ const CHART: Partial<Record<TypeName, Partial<Record<TypeName, number>>>> = {
   Fairy: { Fire: 0.5, Fighting: 2, Poison: 0.5, Dragon: 2, Dark: 2, Steel: 0.5 },
 };
 
+/** The multiplier one attacking type gets against a (mono/dual)-typed defender. */
+export function multiplier(atk: TypeName, defTypes: TypeName[]): number {
+  return defTypes.reduce((mult, def) => mult * (CHART[atk]?.[def] ?? 1), 1);
+}
+
 export interface DefensiveProfile {
   x4: TypeName[];
   x2: TypeName[];

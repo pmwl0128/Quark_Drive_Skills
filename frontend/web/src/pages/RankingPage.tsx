@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { FormatTabs } from "../components/FormatTabs.tsx";
 import { GameImage } from "../components/GameImage.tsx";
 import { PageHeader } from "../components/PageHeader.tsx";
+import { MoreRows, useProgressiveRows } from "../components/ProgressiveRows.tsx";
 import { SegmentedControl, segmentedPanelId, segmentedTabId } from "../components/SegmentedControl.tsx";
 import { MetaRail, useMetaRails } from "../components/MetaRails.tsx";
 import { RailHandle, useRailEscape } from "../components/SideRail.tsx";
@@ -25,6 +26,7 @@ function rankTier(rank: number): "S" | "A" | "B" | "C" | "D" {
 const TrendView = lazy(() => import("../components/TrendView.tsx").then((m) => ({ default: m.TrendView })));
 
 type RankingView = "list" | "trend";
+const EMPTY_RANKING: never[] = [];
 
 /** Grid cards (same density as the dex browser): rank badge + sprite + trilingual name +
  * type icons — a full top-50 fits on one screen. The same page's other view is the rank trend
@@ -47,6 +49,7 @@ export function RankingPage() {
     setParams(updated, { replace: true });
   };
   const ranking = useRanking(format);
+  const cards = useProgressiveRows(ranking.status === "ready" ? ranking.data.rows : EMPTY_RANKING);
   const rails = useMetaRails();
   useRailEscape(rails);
   // The rail's filter scopes the RAIL'S LIST, deliberately not this page's cards: the grid is the
@@ -78,7 +81,7 @@ export function RankingPage() {
       )}
       {view === "list" && ranking.status === "ready" && (
         <div className="dex-grid dense">
-          {ranking.data.rows.map((row) => {
+          {cards.rows.map((row) => {
             const assetKey = row.key ?? `pokemon:${row.slug}`;
             return (
             <Link key={row.slug} to={`/meta/${row.slug}?format=${format}`}
@@ -97,6 +100,7 @@ export function RankingPage() {
           })}
         </div>
       )}
+      {view === "list" && <MoreRows list={cards} />}
       </div>
     </>
   );

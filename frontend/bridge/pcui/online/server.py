@@ -225,6 +225,17 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
         return StreamingResponse(gzip_ndjson(events()), media_type="application/x-ndjson",
                                  headers={**headers, "Content-Encoding": "gzip"})
 
+    def _thread_reporter(emit):
+        """A worker-thread callback that publishes each snapshot as a stream `report` event. The
+        work runs off the loop, so the event hops back onto it; with no stream there is none."""
+        if emit is None:
+            return None
+        loop = asyncio.get_running_loop()
+
+        def report(snapshot: dict) -> None:
+            asyncio.run_coroutine_threadsafe(emit({"type": "report", "report": snapshot}), loop)
+        return report
+
     def _wants_ndjson(request: Request) -> bool:
         return "application/x-ndjson" in request.headers.get("accept", "")
 
@@ -447,7 +458,7 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
             "access": "visitor",
         }
 
-    async def _execute_qa(request: Request, body: dict):
+    async def _execute_qa(request: Request, body: dict, emit=None):
         question = str(body.get("question", "")).strip()
         lang = body.get("lang")
         if lang not in ("zh", "en", "ja"):
@@ -515,7 +526,8 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
             fail_cleanup()
             raise HTTPException(429, _err("busy", "too many concurrent questions — retry"))
         try:
-            result = await _in(llm_pool, qa.answer, pool, question_provider, question, lang)
+            result = await _in(llm_pool, qa.answer, pool, question_provider, question, lang,
+                               _thread_reporter(emit))
         except LlmUnavailable as e:
             fail_cleanup(getattr(e, "tokens", 0))   # earlier rounds' spend settles truthfully
             raise HTTPException(503, _err("llm_unavailable", str(e)))
@@ -553,7 +565,7 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
         streaming path as the deterministic surfaces (see STREAM_HEARTBEAT)."""
         if not _wants_ndjson(request):
             return await _execute_qa(request, body)
-        return _ndjson_stream(lambda _emit: _execute_qa(request, body), request)
+        return _ndjson_stream(lambda emit: _execute_qa(request, body, emit), request)
 
     # -- team diagnose (deterministic report + optional reading, design §7.5) ---------------
     # Deterministic CPU work gets its own semaphore; an optional reading uses the LLM lane.

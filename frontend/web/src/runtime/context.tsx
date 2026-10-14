@@ -72,6 +72,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const cfg = await loadRuntimeConfig();
+        document.title = cfg.runtime === "online" ? "Quark Drive Web" : "Quark Drive Console";
         let adapter: RuntimeAdapter;
         if (cfg.runtime === "local") {
           const local = new LocalAdapter(cfg);

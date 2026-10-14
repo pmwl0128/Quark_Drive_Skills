@@ -1,12 +1,14 @@
 /** The home page's drawings. They are layout illustrations, not results: no damage, usage or
  * inferred set on them is presented as data, and none needs a data request or a sprite. Their colours
  * come from the site's own data language: the matchup grid's KO ramp and the type colours. */
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import type { TypeName } from "@pokemon-champions/protocol";
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-react";
 import { typeColor, typeIconUrl } from "../../assets/icons.ts";
 import { typeLabel } from "../../components/TypeBadge.tsx";
 import { useLang, useT } from "../../i18n.ts";
 import { koLabel } from "../../lib/ko.ts";
+import { multiplier } from "../../lib/typechart.ts";
 import { releasePointer, trackPointer } from "./pointer.ts";
 
 /** Two illustrative sides, one plausible type colour per member. */
@@ -111,52 +113,78 @@ export function MatrixArt() {
 
 const COLS = 11;
 const ROWS = 8;
-/** The KO buckets of the matchup grid, weighted roughly the way a real top-of-the-meta table reads. */
-const BUCKETS: Array<[string, number]> = [
-  ["ko-ohko", 22], ["ko-2hko", 34], ["ko-3hko", 16], ["ko-4hko", 10], ["ko-slow", 9], ["ko-ohkoG", 5],
-  ["ko-immune", 4],
+/** The metagame's top eleven in rank order, one plausible type each. They head the columns, and the
+ * first eight head the rows again: the same members on both axes, as in the real matchup grid. */
+const RANKED: TypeName[] = ["Dragon", "Water", "Steel", "Ground", "Fairy", "Fire", "Grass", "Dark", "Electric",
+  "Ghost", "Fighting"];
+
+/** Plausible KO buckets for a STAB hit at each type multiplier, weighted. The type chart decides the
+ * multiplier, so "no effect" appears exactly where the chart says it does. */
+const BY_MULT: Array<[number, Array<[string, number]>]> = [
+  [4, [["ko-ohkoG", 2], ["ko-ohko", 1]]],
+  [2, [["ko-ohko", 6], ["ko-ohkoG", 2], ["ko-2hko", 2]]],
+  [1, [["ko-2hko", 6], ["ko-3hko", 3], ["ko-ohko", 1.5]]],
+  [0.5, [["ko-3hko", 4], ["ko-4hko", 3.5], ["ko-slow", 2.5]]],
+  [0.25, [["ko-slow", 1]]],
+  [0, [["ko-immune", 1]]],
 ];
-const HEAD_TYPES = ["Dragon", "Water", "Steel", "Ground", "Fairy", "Fire", "Grass", "Dark", "Electric",
-  "Ghost", "Fighting", "Psychic", "Flying", "Poison", "Ice", "Bug", "Rock", "Normal", "Fire"];
 
-/** A fixed pattern (same every visit): a seeded generator, not data. */
-function mosaic(): string[] {
-  let seed = 20261011;
-  const next = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
-  const total = BUCKETS.reduce((sum, [, w]) => sum + w, 0);
-  return Array.from({ length: COLS * ROWS }, () => {
-    let roll = next() * total;
-    for (const [cls, weight] of BUCKETS) {
-      roll -= weight;
-      if (roll <= 0) return cls;
-    }
-    return "ko-2hko";
-  });
+/** Rank `a`'s STAB into rank `d`: the chart's multiplier and a bucket picked by a fixed roll per pair
+ * (same every visit; a drawing, not a calculation). */
+function hit(a: number, d: number): { mult: number; bucket: string } {
+  const mult = multiplier(RANKED[a]!, [RANKED[d]!]);
+  const weights = BY_MULT.find(([m]) => m === mult)?.[1] ?? BY_MULT[2]![1];
+  let seed = (20261014 + a * 7919 + d * 104729) & 0x7fffffff;
+  for (let i = 0; i < 3; i++) seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+  let roll = (seed / 0x7fffffff) * weights.reduce((sum, [, w]) => sum + w, 0);
+  for (const [bucket, weight] of weights) {
+    roll -= weight;
+    if (roll <= 0) return { mult, bucket };
+  }
+  return { mult, bucket: weights[0]![0] };
 }
-const CELLS = mosaic();
 
-const rowType = (r: number) => HEAD_TYPES[(r + 5) % HEAD_TYPES.length]!;
+/** Every pair's hit, once: the table and its read-out both look them up. */
+const HITS = RANKED.map((_, a) => RANKED.map((_, d) => hit(a, d)));
+
+/** The hovered cell's row and column go on the grid as attributes, set without a re-render. */
+function hover(event: ReactPointerEvent<HTMLDivElement>) {
+  const grid = event.currentTarget;
+  const cell = (event.target as HTMLElement).closest<HTMLElement>(".home-mosaic-cell");
+  if (cell) {
+    grid.dataset.hr = cell.dataset.r;
+    grid.dataset.hc = cell.dataset.c;
+  } else {
+    delete grid.dataset.hr;
+    delete grid.dataset.hc;
+  }
+}
+function unhover(event: ReactPointerEvent<HTMLDivElement>) {
+  delete event.currentTarget.dataset.hr;
+  delete event.currentTarget.dataset.hc;
+}
 
 function Mosaic({ picked, onPick }: { picked: Picked | null; onPick: (event: MouseEvent<HTMLDivElement>) => void }) {
   return (
-    <div className="home-mosaic-grid" aria-hidden="true" onClick={onPick}>
+    <div className="home-mosaic-grid" aria-hidden="true" onClick={onPick} onPointerOver={hover} onPointerLeave={unhover}
+      data-pr={picked?.r} data-pc={picked?.c}>
       <span className="home-mosaic-corner" />
-      {HEAD_TYPES.slice(0, COLS).map((type, i) => (
+      {RANKED.slice(0, COLS).map((type, i) => (
         <span key={`c${i}`} className="home-mosaic-head" data-c={i} style={{ "--tc": typeColor(type) } as CSSProperties} />
       ))}
       {Array.from({ length: ROWS }, (_, r) => [
         <span key={`r${r}`} className="home-mosaic-head row" data-r={r}
-          style={{ "--tc": typeColor(rowType(r)) } as CSSProperties} />,
-        ...CELLS.slice(r * COLS, (r + 1) * COLS).map((cls, c) => (
+          style={{ "--tc": typeColor(RANKED[r]!) } as CSSProperties} />,
+        ...Array.from({ length: COLS }, (_, c) => (
           <span key={`${r}-${c}`} data-r={r} data-c={c} style={{ "--i": r + c } as CSSProperties}
-            className={`home-mosaic-cell ${cls}${picked?.r === r && picked.c === c ? " on" : ""}`} />
+            className={`home-mosaic-cell ${HITS[r]![c]!.bucket}${picked?.r === r && picked.c === c ? " on" : ""}`} />
         )),
       ])}
     </div>
   );
 }
 
-interface Picked { r: number; c: number; bucket: string; x: number; y: number; side: "left" | "right" }
+interface Picked { r: number; c: number; x: number; y: number; side: "left" | "right" }
 
 /** Turns to KO and whether the worst roll still makes it, per KO bucket (immune has none). */
 const BUCKET_HITS: Record<string, [number, boolean]> = {
@@ -168,7 +196,6 @@ const BUCKET_BAND: Record<string, [number, number]> = {
   "ko-ohkoG": [100, 100], "ko-ohko": [84, 100], "ko-2hko": [52, 63], "ko-3hko": [35, 44],
   "ko-4hko": [26, 31], "ko-slow": [12, 17], "ko-immune": [0, 0],
 };
-const ORDER = BUCKETS.map(([cls]) => cls);
 
 function Side({ type, rank }: { type: string; rank: number }) {
   const t = useT();
@@ -181,7 +208,8 @@ function Side({ type, rank }: { type: string; rank: number }) {
   );
 }
 
-function Direction({ label, type, bucket, hp }: { label: string; type: string; bucket: string; hp?: boolean }) {
+/** One direction: the attacker's STAB (type, multiplier), its KO turns and the damage band. */
+function Direction({ label, type, mult, bucket, hp }: { label: string; type: string; mult: number; bucket: string; hp?: boolean }) {
   const t = useT();
   const { lang } = useLang();
   const hits = BUCKET_HITS[bucket];
@@ -194,8 +222,10 @@ function Direction({ label, type, bucket, hp }: { label: string; type: string; b
       <div className="home-pop-line">
         <span className="home-pop-dir-label">{label}</span>
         <span className="home-pop-move" style={{ "--tc": typeColor(type) } as CSSProperties}>
-          {icon ? <img src={icon} alt="" /> : null}{t("home.pop.move").replace("{type}", typeLabel(type, lang))}
+          {icon ? <img src={icon} alt="" /> : null}{typeLabel(type, lang)}
         </span>
+        <span className="home-pop-stab">{t("home.pop.stab")}</span>
+        <span className={`home-pop-mult num${mult > 1 ? " up" : mult < 1 ? " down" : ""}`}>×{mult}</span>
         <span className={`home-pop-ko ${bucket}`}>{ko}</span>
       </div>
       <div className="home-pop-band" style={{ "--lo": `${lo}%`, "--hi": `${hi}%` } as CSSProperties}>
@@ -210,31 +240,29 @@ function Direction({ label, type, bucket, hp }: { label: string; type: string; b
   );
 }
 
-/** A clicked cell read out the way the matchup grid's inspector reads one: the two sets (the table's
- * rows and columns are the metagame in rank order), who moves first, and both directions with their
- * best move, KO turns and damage band. It floats over the art and never moves the page. */
+/** A clicked cell read out the way the matchup grid's inspector reads one: the two members (the
+ * table's rows and columns are the metagame in rank order), who moves first, and both directions —
+ * each side's STAB with its type multiplier, KO turns and damage band. A member against itself is a
+ * speed tie. It floats over the art and never moves the page. */
 function MatchPop({ picked }: { picked: Picked }) {
   const t = useT();
-  const attacker = rowType(picked.r);
-  const defender = HEAD_TYPES[picked.c]!;
-  // The reply is the mirrored cell where the table has one, a fixed pick from the ramp where not.
-  const reply = picked.c < ROWS && picked.r < COLS
-    ? CELLS[picked.c * COLS + picked.r]!
-    : ORDER[(picked.r * 3 + picked.c * 5) % ORDER.length]!;
-  const first = (picked.r * 7 + picked.c * 3) % 2 === 0;
+  const { r, c } = picked;
+  const deals = HITS[r]![c]!;
+  const takes = HITS[c]![r]!;
+  const speed = r === c ? "tie" : (r * 7 + c * 3) % 2 === 0 ? "first" : "second";
   return (
     <div className={`home-pop ${picked.side}`} style={{ "--x": `${picked.x}px`, "--y": `${picked.y}px` } as CSSProperties}>
       <div className="home-pop-head">
-        <Side type={attacker} rank={picked.r + 1} />
+        <Side type={RANKED[r]!} rank={r + 1} />
         <span className="home-pop-vs">{t("home.pop.vs")}</span>
-        <Side type={defender} rank={picked.c + 1} />
-        <span className={`home-pop-speed${first ? " first" : ""}`}>
-          {first ? <IconChevronsUp aria-hidden="true" /> : <IconChevronsDown aria-hidden="true" />}
-          {t(first ? "home.pop.first" : "home.pop.second")}
+        <Side type={RANKED[c]!} rank={c + 1} />
+        <span className={`home-pop-speed ${speed}`}>
+          {speed === "first" ? <IconChevronsUp aria-hidden="true" /> : speed === "second" ? <IconChevronsDown aria-hidden="true" /> : null}
+          {t(`home.pop.${speed}`)}
         </span>
       </div>
-      <Direction label={t("home.pop.attack")} type={attacker} bucket={picked.bucket} hp />
-      <Direction label={t("home.pop.reply")} type={defender} bucket={reply} />
+      <Direction label={t("home.pop.deals")} type={RANKED[r]!} mult={deals.mult} bucket={deals.bucket} hp />
+      <Direction label={t("home.pop.takes")} type={RANKED[c]!} mult={takes.mult} bucket={takes.bucket} />
     </div>
   );
 }
@@ -274,8 +302,7 @@ export function WorkbenchArt() {
     const side = box.left + box.width / 2 - frame.left > frame.width / 2 ? "left" : "right";
     const y = Math.min(Math.max(box.top + box.height / 2 - frame.top, 96), frame.height - 96);
     const x = side === "left" ? box.left - frame.left - 10 : box.right - frame.left + 10;
-    const bucket = [...cell.classList].find((name) => name.startsWith("ko-")) ?? "ko-2hko";
-    setPicked({ r, c, bucket, x: Math.round(x), y: Math.round(y), side });
+    setPicked({ r, c, x: Math.round(x), y: Math.round(y), side });
   };
 
   return (

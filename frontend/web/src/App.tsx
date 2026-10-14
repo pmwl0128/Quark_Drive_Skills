@@ -1,5 +1,5 @@
 import { EscapeLayers } from "./components/EscapeLayers.tsx";
-import { Component, Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { BRAND_LOGO } from "./assets/icons.ts";
 import { PageRailProvider, SearchEntry, useSiteSearch } from "./components/SideRail.tsx";
@@ -93,11 +93,45 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { failed: bool
   }
 }
 
+/** A route change starts at the top — unless the link names a section of the page (`/#home-install`),
+ * which is then scrolled into view once it has rendered (a page may still be loading its parts). */
 function RouteScrollReset() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
+  const landing = useRef(true);
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0 });
-  }, [pathname]);
+    const first = landing.current;
+    landing.current = false;
+    const id = hash ? decodeURIComponent(hash.slice(1)) : "";
+    if (!id) {
+      // Only a move between pages resets: a fresh load already starts at the top (or where the browser
+      // restores it), and scrolling there would force the first page's layout inside the render.
+      if (!first) window.scrollTo({ top: 0, left: 0 });
+      return;
+    }
+    // Parts above the section may still be loading and push it down: align again a few times while
+    // the page settles, and stop the moment the reader scrolls on their own.
+    let frame = 0;
+    let tries = 0;
+    let stopped = false;
+    const timers: number[] = [];
+    const stop = () => { stopped = true; };
+    const align = () => { if (!stopped) document.getElementById(id)?.scrollIntoView({ block: "start" }); };
+    const seek = () => {
+      if (document.getElementById(id)) {
+        align();
+        for (const ms of [250, 600, 1200, 2000]) timers.push(window.setTimeout(align, ms));
+      } else if (tries++ < 60) frame = requestAnimationFrame(seek);
+      else window.scrollTo({ top: 0, left: 0 });
+    };
+    const events = ["wheel", "touchstart", "keydown"] as const;
+    for (const name of events) window.addEventListener(name, stop, { passive: true });
+    seek();
+    return () => {
+      cancelAnimationFrame(frame);
+      for (const timer of timers) window.clearTimeout(timer);
+      for (const name of events) window.removeEventListener(name, stop);
+    };
+  }, [pathname, hash]);
   return null;
 }
 
@@ -128,14 +162,20 @@ function LibraryDockLayer() {
 
 function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: ThemePreference) => void }) {
   const topbar = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
+  useEffect(() => {
     const node = topbar.current;
     if (!node) return;
-    const update = () => document.documentElement.style.setProperty("--topbar-offset", `${Math.ceil(node.getBoundingClientRect().height)}px`);
-    const observer = new ResizeObserver(update);
+    // The observer reports the bar's height from the browser's own layout pass, before that frame is
+    // painted, so nothing forces a layout here; the value is written only when it differs from the
+    // stylesheet's (styles.css :root), which spares the whole page a second style pass.
+    const root = document.documentElement;
+    const observer = new ResizeObserver(([entry]) => {
+      const height = entry?.borderBoxSize?.[0]?.blockSize ?? node.getBoundingClientRect().height;
+      const value = `${Math.ceil(height)}px`;
+      if (getComputedStyle(root).getPropertyValue("--topbar-offset").trim() !== value) root.style.setProperty("--topbar-offset", value);
+    });
     observer.observe(node);
-    update();
-    return () => { observer.disconnect(); document.documentElement.style.removeProperty("--topbar-offset"); };
+    return () => { observer.disconnect(); root.style.removeProperty("--topbar-offset"); };
   }, []);
   const { adapter, capabilities, can } = useRuntime();
   const t = useT();
@@ -238,11 +278,6 @@ export function App() {
   const [theme, setTheme] = useThemePreference();
   useEffect(() => {
     document.documentElement.lang = { zh: "zh-CN", en: "en", ja: "ja" }[lang];
-    document.title = {
-      zh: "夸克充能 · 宝可梦冠军Skills · Quark Drive Web",
-      en: "Quark Drive Web · Pokémon Champions battle tools",
-      ja: "クォークチャージ Web · ポケモンチャンピオンズ対戦ツール",
-    }[lang];
   }, [lang]);
   const setLang = (l: Lang) => {
     saveLang(l);

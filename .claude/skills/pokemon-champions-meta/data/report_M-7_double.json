@@ -2,7 +2,7 @@
   "season": "M-7",
   "rule": "M-C",
   "format": "double",
-  "generated_at": "2026-10-11T21:31:20+00:00",
+  "generated_at": "2026-10-14T03:31:12+00:00",
   "thresholds": {
     "tiers": [
       {
@@ -50,51 +50,56 @@
   },
   "baseline": {
     "kind": "git-HEAD",
-    "ranking_updated_at": "2026-10-10T00:16:09+00:00",
-    "details_updated_at": "2026-10-10T00:16:09+00:00"
-  },
-  "current": {
     "ranking_updated_at": "2026-10-11T21:31:20+00:00",
     "details_updated_at": "2026-10-11T21:31:20+00:00"
   },
+  "current": {
+    "ranking_updated_at": "2026-10-14T03:31:12+00:00",
+    "details_updated_at": "2026-10-14T03:31:12+00:00"
+  },
   "rank_moves": [
     {
-      "slug": "rotom-heat",
-      "name": "加热洛托姆",
-      "old": 101,
-      "new": 80,
-      "delta": 21,
-      "tier": "C"
+      "slug": "tyranitar",
+      "name": "班基拉斯",
+      "old": 25,
+      "new": 19,
+      "delta": 6,
+      "tier": "A"
+    },
+    {
+      "slug": "grimmsnarl",
+      "name": "长毛巨魔",
+      "old": 27,
+      "new": 22,
+      "delta": 5,
+      "tier": "A"
+    },
+    {
+      "slug": "metagross",
+      "name": "巨金怪",
+      "old": 21,
+      "new": 26,
+      "delta": -5,
+      "tier": "A"
+    },
+    {
+      "slug": "excadrill",
+      "name": "龙头地鼠",
+      "old": 35,
+      "new": 30,
+      "delta": 5,
+      "tier": "A"
+    },
+    {
+      "slug": "sceptile",
+      "name": "蜥蜴王",
+      "old": 74,
+      "new": 60,
+      "delta": 14,
+      "tier": "B"
     }
   ],
   "new_entries": [],
   "dropped": [],
-  "config_changes": [
-    {
-      "slug": "rotom-heat",
-      "name": "加热洛托姆",
-      "rank": 80,
-      "tier": "C",
-      "panel": "moves",
-      "item": "戏法",
-      "old_pct": 28.7,
-      "new_pct": 52.8,
-      "delta": 24.1,
-      "kind": "上升",
-      "rank_triggered": true
-    },
-    {
-      "slug": "rotom-heat",
-      "name": "加热洛托姆",
-      "rank": 80,
-      "tier": "C",
-      "panel": "moves",
-      "item": "电网",
-      "old_pct": 46.1,
-      "new_pct": 24.8,
-      "delta": -21.3,
-      "kind": "下降",
-      "rank_triggered": true
-    }
-  ]
+  "config_changes": []
 }

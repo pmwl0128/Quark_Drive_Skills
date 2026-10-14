@@ -3,6 +3,7 @@
 import { defineMessages, type ScopedKey } from "../i18n.ts";
 
 export const SHARED_MESSAGES = {
+  "results.more": { zh: "显示更多", en: "Show more", ja: "さらに表示" },
   "team.moveEarlier": { zh: "成员前移", en: "Move member earlier", ja: "メンバーを前へ" },
   "team.moveLater": { zh: "成员后移", en: "Move member later", ja: "メンバーを後ろへ" },
   "library.keep": { zh: "存入宝可梦箱", en: "Keep in a box", ja: "ボックスに保存" },

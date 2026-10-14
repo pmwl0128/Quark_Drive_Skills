@@ -5,15 +5,29 @@ import { useEffect, useState } from "react";
 import { IconBrandGithub, IconCheck, IconCopy, IconDownload } from "@tabler/icons-react";
 import { useT, type MsgKey } from "../../i18n.ts";
 import { MIRROR_URL, REPO_URL } from "./links.ts";
+import { Phrases, plainText } from "./Phrases.tsx";
+import { SectionMark } from "./SectionHead.tsx";
 import { SegmentedControl, segmentedPanelId, segmentedTabId } from "../../components/SegmentedControl.tsx";
 
 type Way = "cli" | "plugin" | "agent";
 const WAYS: Way[] = ["cli", "plugin", "agent"];
 
 const COMMANDS: Record<Exclude<Way, "agent">, string> = {
-  plugin: "/plugin marketplace add pmwl0128/Quark_Drive_Skills\n/plugin install quark-drive-skills@quark-drive",
-  cli: "npx skills add pmwl0128/Quark_Drive_Skills -g",
+  plugin: "/plugin marketplace add pmwl0128/quark_drive_skills\n/plugin install quark-drive-skills@quark-drive",
+  cli: "npx skills add pmwl0128/quark_drive_skills -g",
 };
+
+/** Where each line is typed in: a shell, or Claude Code's prompt. The agent prompt is prose. */
+const PROMPTS: Record<Way, string | null> = { cli: "$", plugin: ">", agent: null };
+/** The pane's text, one line per row so each command can open on its prompt. The copy button reads
+ * the text itself, so nothing drawn here is copied. */
+function Code({ way, text }: { way: Way; text: string }) {
+  return (
+    <pre data-prompt={PROMPTS[way] ?? undefined}>
+      {text.split("\n").map((line, i) => <span key={i} className="home-code-line">{line}</span>)}
+    </pre>
+  );
+}
 
 const ROWS: Array<[MsgKey, MsgKey]> = [
   ["home.install.online.scope", "home.install.local.scope"],
@@ -38,9 +52,12 @@ export function Install() {
   };
 
   return (
-    <section id="home-install" className="home-stage home-install" aria-labelledby="home-install-heading">
+    <section id="home-install" className="home-stage home-install" aria-labelledby="home-install-heading" data-reveal="">
       <div className="home-install-copy">
-        <h2 id="home-install-heading">{t("home.install.title")}</h2>
+        <div className="home-install-head">
+          <SectionMark kind="core" />
+          <h2 id="home-install-heading"><Phrases text={t("home.install.title")} /></h2>
+        </div>
         <p>{t("home.install.body")}</p>
         <table className="home-compare">
           <thead>
@@ -48,14 +65,14 @@ export function Install() {
           </thead>
           <tbody>
             {ROWS.map(([online, local]) => (
-              <tr key={online}><td>{t(online)}</td><td>{t(local)}</td></tr>
+              <tr key={online}><td>{t(online)}</td><td><IconCheck aria-hidden="true" />{t(local)}</td></tr>
             ))}
           </tbody>
         </table>
       </div>
       <div className="home-install-box">
         <SegmentedControl kind="tabs" idBase="home-install" value={way} onChange={setWay}
-          className="home-install-tabs" ariaLabel={t("home.install.title")}
+          className="home-install-tabs" ariaLabel={plainText(t("home.install.title"))}
           items={WAYS.map((id) => ({ id, label: t(`home.install.tab.${id}`) }))} />
         {/* All three panes share one grid cell, so switching never changes the box's height. */}
         <div className="home-install-panes">
@@ -63,7 +80,7 @@ export function Install() {
             <div key={id} role="tabpanel" id={segmentedPanelId("home-install", id)}
               aria-labelledby={segmentedTabId("home-install", id)} hidden={way !== id}>
               <div className="home-install-code">
-                <pre>{textOf(id)}</pre>
+                <Code way={id} text={textOf(id)} />
                 <button type="button" className="home-copy" onClick={() => void copy()}>
                   {copied && way === id ? <IconCheck aria-hidden="true" /> : <IconCopy aria-hidden="true" />}
                   {t(copied && way === id ? "home.install.copied" : "home.install.copy")}

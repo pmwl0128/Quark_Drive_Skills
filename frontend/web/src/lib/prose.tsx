@@ -110,6 +110,20 @@ function buildVocab(dex: DexIndexEntry[], moveList: MoveRef[], itemList: ItemRef
   return { re, mons, moves, items, abilities, natures, types: new Set(TYPE_TOKENS) };
 }
 
+type VocabLists = readonly [DexIndexEntry[], MoveRef[], ItemRef[], AbilityRef[], NatureDto[]];
+const NONE: never[] = [];
+let shared: { lists: VocabLists; vocab: Vocab } | null = null;
+
+/** One vocabulary for every renderer on the page, built when some text first needs it: the pattern
+ * over every name is costly, many renderers live on a page (each damage read-out holds one), and
+ * most never render prose before the data has finished loading. */
+function vocabFor(lists: VocabLists): Vocab {
+  if (shared && shared.lists.every((list, i) => list === lists[i])) return shared.vocab;
+  const vocab = buildVocab(...lists);
+  shared = { lists, vocab };
+  return vocab;
+}
+
 /** Lets a caller that knows which Pokémon a text is about give their names another hover — a team
  * member's build instead of its dex entry. Returning null keeps the dex hover. */
 export type ProseMonRenderer = (name: string, label: ReactNode, key: number) => ReactNode | null;
@@ -195,24 +209,25 @@ function shouldRenderEntity(vocab: Vocab, token: string, text: string, at: numbe
 }
 
 /** Render agent prose with inline entities. Returns nodes — use inside a <li>/<p>/<span>. */
-export function useProseRenderer(renderMon?: ProseMonRenderer): (text: string) => ReactNode {
+export function useProseRenderer(renderMon?: ProseMonRenderer, enabled = true): (text: string) => ReactNode {
   const { lang } = useLang();
   const t = useSharedT();
-  const dexState = useDexIndex();
-  const movesState = useMoves();
-  const itemsState = useItems();
-  const abilitiesState = useAbilities();
-  const naturesState = useNatures();
-  const vocab = useMemo(
-    () => buildVocab(
-      dexState.status === "ready" ? dexState.data : [],
-      movesState.status === "ready" ? movesState.data : [],
-      itemsState.status === "ready" ? itemsState.data : [],
-      abilitiesState.status === "ready" ? abilitiesState.data : [],
-      naturesState.status === "ready" ? naturesState.data : []),
-    [dexState, movesState, itemsState, abilitiesState, naturesState]);
+  const dexState = useDexIndex(enabled);
+  const movesState = useMoves(enabled);
+  const itemsState = useItems(enabled);
+  const abilitiesState = useAbilities(enabled);
+  const naturesState = useNatures(enabled);
+  const lists = useMemo((): VocabLists => [
+    dexState.status === "ready" ? dexState.data : NONE,
+    movesState.status === "ready" ? movesState.data : NONE,
+    itemsState.status === "ready" ? itemsState.data : NONE,
+    abilitiesState.status === "ready" ? abilitiesState.data : NONE,
+    naturesState.status === "ready" ? naturesState.data : NONE,
+  ], [dexState, movesState, itemsState, abilitiesState, naturesState]);
   return useMemo(() => (text: string): ReactNode => {
-    if (!vocab.re || !text) return text;
+    if (!text || !lists[0].length) return text;
+    const vocab = vocabFor(lists);
+    if (!vocab.re) return text;
     const parts: ReactNode[] = [];
     let last = 0;
     let k = 0;
@@ -259,5 +274,5 @@ export function useProseRenderer(renderMon?: ProseMonRenderer): (text: string) =
     }
     if (last < text.length) parts.push(text.slice(last));
     return parts.length === 1 ? parts[0] : <>{parts}</>;
-  }, [vocab, lang, t, renderMon]);
+  }, [lists, lang, t, renderMon]);
 }

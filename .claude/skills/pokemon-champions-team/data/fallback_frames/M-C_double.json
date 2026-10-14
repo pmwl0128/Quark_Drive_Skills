@@ -5,10 +5,10 @@
   "format": "double",
   "rule": "M-C",
   "season": "M-7",
-  "built_at": "2026-10-12T09:16:16Z"
+  "built_at": "2026-10-14T03:55:37Z"
  },
  "counts": {
-  "history": 9,
+  "history": 8,
   "partners": 6
  },
  "anchors": {
@@ -16,10 +16,10 @@
    "source": "partners",
    "partners": [
     "Salamence",
-    "Pelipper",
-    "Swampert"
+    "Milotic",
+    "Tyranitar"
    ],
-   "teams": 12
+   "teams": 176
   },
   "Aromatisse|": {
    "source": "history",
@@ -46,15 +46,6 @@
    ],
    "teams": 10
   },
-  "Furfrou|": {
-   "source": "history",
-   "seasons": [
-    "M-3",
-    "M-4",
-    "M-5"
-   ],
-   "teams": 5
-  },
   "Gourgeist-Large|": {
    "source": "partners",
    "partners": [
@@ -67,28 +58,28 @@
   "Gourgeist-Small|": {
    "source": "partners",
    "partners": [
-    "Kingambit",
-    "Gengar",
-    "Kommo-o"
+    "Tyranitar",
+    "Salamence",
+    "Excadrill"
    ],
-   "teams": 40
+   "teams": 423
   },
   "Morpeko-Hangry|": {
    "source": "partners",
    "partners": [
-    "Raichu",
-    "Ceruledge",
-    "Milotic"
+    "Staraptor",
+    "Milotic",
+    "Ceruledge"
    ],
-   "teams": 97
+   "teams": 85
   },
   "Palafin-Hero|": {
    "source": "partners",
    "partners": [
-    "Gengar",
-    "Salamence"
+    "Salamence",
+    "Excadrill"
    ],
-   "teams": 8
+   "teams": 425
   },
   "Qwilfish|": {
    "source": "history",
@@ -132,9 +123,9 @@
    "source": "partners",
    "partners": [
     "Farigiraf",
-    "Swampert"
+    "Blaziken"
    ],
-   "teams": 51
+   "teams": 38
   },
   "Tauros|": {
    "source": "history",

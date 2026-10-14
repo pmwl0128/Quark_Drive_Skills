@@ -23,7 +23,6 @@
     "@pokemon-champions/protocol": "*",
     "@tabler/icons-react": "^3.48.0",
     "dexie": "^4.4.6",
-    "dexie-react-hooks": "^1.1.7",
     "modern-screenshot": "^4.7.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

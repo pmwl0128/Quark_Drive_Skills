@@ -11,6 +11,7 @@ import "../styles.dex.css";
 import { Link, useSearchParams } from "react-router-dom";
 import { GameImage } from "../components/GameImage.tsx";
 import { PageHeader } from "../components/PageHeader.tsx";
+import { MoreRows, useProgressiveRows } from "../components/ProgressiveRows.tsx";
 import { SegmentedControl, segmentedPanelId, segmentedTabId }
   from "../components/SegmentedControl.tsx";
 import { CategoryBadge, TypeBadge } from "../components/TypeBadge.tsx";
@@ -26,6 +27,7 @@ import type { ItemRef, MoveRef } from "../runtime/projection.ts";
 import { ITEM_CATEGORY_ORDER, itemOrder } from "../components/build/inputs.tsx";
 
 type DexTab = "pokemon" | "moves" | "items" | "abilities";
+const EMPTY_DEX: never[] = [];
 const TABS: readonly DexTab[] = ["pokemon", "moves", "items", "abilities"];
 const asTab = (v: string | null): DexTab =>
   v === "moves" || v === "items" || v === "abilities" ? v : "pokemon";
@@ -39,7 +41,8 @@ function matches(query: string, ...names: Array<string | undefined>): boolean {
 function MovesTab({ rows, state }: { rows: MoveRef[]; state: string }) {
   const t = useDexT();
   const { lang } = useLang();
-  const filtered = rows;
+  const list = useProgressiveRows(rows);
+  const filtered = list.rows;
   if (state === "loading") return <div className="spinner">{t("state.loading")}</div>;
   if (state !== "ready") return <div className="notice">{t("state.errorDetail")}</div>;
   return (
@@ -76,6 +79,7 @@ function MovesTab({ rows, state }: { rows: MoveRef[]; state: string }) {
           ))}
         </tbody>
       </table>
+      <MoreRows list={list} />
       {filtered.length === 0 && <div className="notice">{t("dex.empty.moves")}</div>}
     </div>
   );
@@ -154,9 +158,10 @@ function AbilitiesTab({ query }: { query: string }) {
 }
 
 export function DexPage() {
-  const index = useDexIndex();
   const [params] = useSearchParams();
   const [tab, setTab] = useState<DexTab>(asTab(params.get("tab")));
+  const index = useDexIndex(tab === "pokemon");
+  const cards = useProgressiveRows(index.status === "ready" ? index.data : EMPTY_DEX);
   // Each tab keeps ITS OWN filter: switching tabs must not clear what the user typed
   // in another one (user report 2026-07-16).
   const [queries, setQueries] = useState<Record<DexTab, string>>(() => ({
@@ -173,7 +178,7 @@ export function DexPage() {
   const rail = useSideRail(360, "dex");
   // The learnset index is one lazy document: fetched when a move filter is in play, and eagerly
   // once the rail is open so its per-move learner counts are there to read.
-  const learners = useLearners(filters.pokemon.moves.length > 0 || rail.open);
+  const learners = useLearners(tab === "pokemon" && (filters.pokemon.moves.length > 0 || rail.open));
   const { lang } = useLang();
   const t = useDexT();
 
@@ -262,7 +267,7 @@ export function DexPage() {
                   // the dex itself, and quietly removing rows from it would read as a different dex
                   // rather than as a filtered view (the same rule the ranking page follows).
                   <div className="dex-grid dense">
-                    {index.data.map((e) => (
+                    {cards.rows.map((e) => (
                       <Link key={e.key} to={`/pokemon/${e.slug}`} className="panel dex-card ranked">
                         <span className="rank-badge num dex-no">#{e.nationalDex}</span>
                         <GameImage assetKey={e.key} role="card" alt={displayName(e, lang)}
@@ -276,6 +281,7 @@ export function DexPage() {
                   </div>
                 )
             )}
+            <MoreRows list={cards} />
           </>
         )}
       </div>

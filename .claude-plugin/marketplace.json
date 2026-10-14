@@ -9,7 +9,7 @@
       "name": "quark-drive-skills",
       "source": "./",
       "description": "Quark Drive Skills: four Pokémon Champions skills for dex and metagame facts, exact damage and Speed calculations, and audited Singles/Doubles team building.",
-      "homepage": "https://github.com/pmwl0128/Quark_Drive_Skills",
+      "homepage": "https://github.com/pmwl0128/quark_drive_skills",
       "license": "MIT",
       "keywords": [
         "quark-drive",

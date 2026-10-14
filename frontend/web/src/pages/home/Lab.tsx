@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useT, type MsgKey } from "../../i18n.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import { releasePointer, trackPointer } from "./pointer.ts";
+import { SectionHead } from "./SectionHead.tsx";
 import { CalcArt, MatrixArt } from "./WorkbenchArt.tsx";
 
 function TuneArt() {
@@ -64,13 +65,12 @@ export function Lab() {
   ];
   if (!tiles.length) return null;
   return (
-    <section className="home-lab" aria-labelledby="home-lab-heading">
-      <header className="home-section-head">
-        <h2 id="home-lab-heading">{t("home.lab.title")}</h2>
-      </header>
+    <section className="home-lab" aria-labelledby="home-lab-heading" data-reveal="">
+      <SectionHead id="home-lab-heading" title={t("home.lab.title")} mark="lab" />
       <div className="home-lab-grid">
-        {tiles.map((tile) => (
-          <article key={tile.id} className={`home-lab-tile ${tile.id}`} onPointerMove={trackPointer} onPointerLeave={releasePointer}>
+        {tiles.map((tile, i) => (
+          <article key={tile.id} className={`home-lab-tile ${tile.id}`} style={{ "--n": i } as CSSProperties}
+            onPointerMove={trackPointer} onPointerLeave={releasePointer}>
             <div className="home-lab-art">{tile.art}</div>
             <div className="home-lab-text">
               <h3>{t(tile.title)}</h3>

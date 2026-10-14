@@ -13,6 +13,7 @@ import {
   SegmentedControl, segmentedPanelId, segmentedTabId,
 } from "../components/SegmentedControl.tsx";
 import { useAssistT } from "./assist/messages.ts";
+import { OnlineNote } from "./assist/OnlineNote.tsx";
 import { takeDiagnoseFill } from "../lib/team.ts";
 import { takeBuilderFill, type BuilderFill } from "../lib/builderHandoff.ts";
 import { useRuntime } from "../runtime/context.tsx";
@@ -67,8 +68,8 @@ export function AssistantPage() {
   };
 
   return (
-    <div className="assistant-page assist-surface">
-      <PageHeader title={t("assistant.title")} description={t("online.aiNote")}>
+    <div className="assistant-page assist-surface stage-tokens">
+      <PageHeader sticky title={t("assistant.title")} description={<OnlineNote />}>
         {tabs.length > 1 && (
           <SegmentedControl kind="tabs" idBase="assistant-mode" value={tab} onChange={setTab}
             ariaLabel={t("a11y.assistantMode")} className="seg builder-tabs page-tabs"
@@ -76,7 +77,7 @@ export function AssistantPage() {
         )}
       </PageHeader>
 
-      {showQa && (
+      {visited.has("qa") && showQa && (
         <div role="tabpanel" id={segmentedPanelId("assistant-mode", "qa")}
           aria-labelledby={segmentedTabId("assistant-mode", "qa")} hidden={tab !== "qa"}>
           <Suspense fallback={<div className="spinner">{t("state.loading")}</div>}>

@@ -1,0 +1,65 @@
+/* The builder's flow map on the home page (pages/home/BuildFlow.tsx); it reads the stage palette
+   (styles.stage.css). */
+@import "./styles.stage.css";
+/* The flow map (BuildFlow.tsx): two rows of three gates on one line that turns at the right edge,
+   data streams joining from above and below; dashes and particles keep moving, and the gate being
+   worked is the lit one. It reads the stage tokens, so light and dark each get their own surface. */
+.home-flowmap { grid-area: flow; position: relative; isolation: isolate; display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--stage-edge); border-radius: 16px; color: var(--stage-ink);
+  background: radial-gradient(380px 240px at 60% 50%, rgb(var(--stage-glow) / var(--stage-glow-a)), transparent 70%),
+    linear-gradient(180deg, var(--stage-2), var(--stage) 80%);
+  box-shadow: var(--stage-card-shadow); }
+.home-flowmap::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background-image: radial-gradient(var(--stage-dot) 1px, transparent 1.5px); background-size: 18px 18px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 80% at 55% 50%, #000 30%, transparent 85%);
+  mask-image: radial-gradient(ellipse 85% 80% at 55% 50%, #000 30%, transparent 85%); }
+.home-flowmap-canvas { position: relative; width: calc(100% - 24px); aspect-ratio: 600 / 330; margin: 6px 12px 0; }
+.home-flowmap-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.home-flowmap .track { fill: none; stroke: var(--stage-track); stroke-width: 7; stroke-linecap: round; }
+.home-flowmap .feed .track { stroke: color-mix(in srgb, var(--c) 18%, transparent); stroke-width: 4; }
+.home-flowmap .stream { fill: none; stroke: var(--stage-accent); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1 11;
+  opacity: 0.85; animation: home-stream 1.1s linear infinite; }
+.home-flowmap .feed .stream { stroke: var(--c); stroke-width: 1.6; stroke-dasharray: 1 9; animation-duration: 0.9s; }
+@keyframes home-stream { to { stroke-dashoffset: -24; } }
+/* Behind another task tab (or under reduced motion), the dashes rest: nothing animates unseen. */
+.home-flowmap:not(.live) .stream { animation-play-state: paused; }
+.home-flowmap .particle { fill: var(--stage-particle); filter: drop-shadow(0 0 4px rgb(var(--stage-glow) / 0.8)); }
+.home-flowmap .particle.feed { fill: var(--c); filter: drop-shadow(0 0 4px var(--c)); }
+.home-fnode { position: absolute; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  translate: -50% -50%; border: 1.5px solid var(--stage-hair-2); background: var(--stage-node); color: var(--stage-sub);
+  box-shadow: 0 6px 14px -8px rgb(0 0 0 / 0.35);
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease, box-shadow 300ms ease, scale 300ms var(--ease-out); }
+.home-fnode svg { display: block; width: 18px; height: 18px; }
+.home-fnode em { position: absolute; top: calc(100% + 8px); left: 50%; translate: -50% 0; color: var(--stage-sub);
+  font-size: 12px; font-style: normal; font-weight: 650; white-space: nowrap; transition: color 300ms ease; }
+.home-fnode.lower em { top: auto; bottom: calc(100% + 8px); }
+.home-fnode.done { border-color: rgb(var(--stage-glow) / 0.55); color: var(--stage-accent); }
+.home-fnode.on { scale: 1.15; border-color: var(--stage-cta); background: var(--stage-cta); color: #fff;
+  box-shadow: 0 0 0 6px rgb(var(--stage-glow) / 0.16), 0 0 22px rgb(var(--stage-glow) / 0.5); }
+.home-fnode.on em { color: var(--stage-accent); }
+.home-fsrc { position: absolute; z-index: 1; translate: -50% -50%; display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 8px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 999px;
+  background: var(--stage-raised); color: var(--stage-sub); font-size: 11.5px; font-weight: 650; white-space: nowrap;
+  transition: border-color 300ms ease, color 300ms ease, box-shadow 300ms ease; }
+.home-fsrc em { font-style: normal; }
+.home-fsrc i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c); box-shadow: 0 0 6px var(--c); }
+.home-fsrc.on { border-color: var(--c); color: var(--stage-ink); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 40%, transparent); }
+.home-fin { position: absolute; z-index: 1; translate: -50% -50%; padding: 4px 11px; border: 1px dashed var(--stage-hair-2);
+  border-radius: 999px; background: var(--stage-raised); color: var(--stage-sub); font-size: 11.5px; font-weight: 650; white-space: nowrap; }
+.home-fout { position: absolute; z-index: 1; translate: -50% -50%; display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px 5px 8px; border: 1px solid var(--stage-hair-2); border-radius: 999px; background: var(--stage-node);
+  color: var(--stage-sub); font-size: 11.5px; font-weight: 700; white-space: nowrap;
+  transition: border-color 300ms ease, color 300ms ease, box-shadow 300ms ease; }
+.home-fout-team { display: flex; gap: 3px; }
+.home-fout em { font-style: normal; }
+.home-fout-team i { width: 8px; height: 8px; border-radius: 50%; background: var(--stage-fill-2);
+  transition: background-color 300ms ease; transition-delay: calc(var(--n) * 60ms); }
+.home-fout.on { border-color: var(--stage-accent); color: var(--stage-accent); box-shadow: 0 0 20px rgb(var(--stage-glow) / 0.35); }
+.home-fout.on .home-fout-team i { background: var(--mon); }
+.home-fcap { display: flex; align-items: baseline; gap: 10px; min-height: 44px; margin: auto 0 0; padding: 11px 16px 13px;
+  border-top: 1px solid var(--stage-hair); animation: home-cap-in 360ms var(--ease-out); }
+.home-fcap b { flex: none; color: var(--stage-accent); font-size: 15px; font-weight: 800; }
+.home-fcap small { margin-left: 2px; color: var(--stage-sub); font-size: 11px; opacity: 0.7; }
+.home-fcap-name { flex: none; color: var(--stage-ink); font-size: 13.5px; font-weight: 700; }
+.home-fcap-desc { min-width: 0; overflow: hidden; color: var(--stage-sub); font-size: 12.5px; white-space: nowrap; text-overflow: ellipsis; }
+@keyframes home-cap-in { from { opacity: 0; transform: translateY(4px); } }

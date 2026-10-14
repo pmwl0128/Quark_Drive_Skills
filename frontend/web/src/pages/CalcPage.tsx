@@ -3,7 +3,7 @@
  * The shell owns the capability gate, the shared vocab load (dex / natures / items) and the shared
  * roster (both teams and the battle frame, see calc/roster.tsx) that the tools read and edit; each tool
  * is a tab that keeps its own view state once visited (hidden, not unmounted, when you switch away). */
-import { lazy, Suspense, useCallback, useState } from "react";
+import { Activity, lazy, Suspense, useCallback, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDexIndex, useItems, useNatures } from "../hooks.ts";
 import { useCalcT } from "./calc/messages.ts";
@@ -28,6 +28,19 @@ const InferTab = lazy(() => import("./calc/InferTab.tsx")
   .then((module) => ({ default: module.InferTab })));
 
 type Tab = "damage" | "speed" | "tune" | "infer";
+
+/** Keep each tool's inputs and DOM, but release effects and queued work while it is hidden. */
+function CalcPanel({ id, selected, children }: { id: Tab; selected: Tab; children: ReactNode }) {
+  const t = useCalcT();
+  return (
+    <Activity mode={id === selected ? "visible" : "hidden"}>
+      <div role="tabpanel" id={segmentedPanelId("calc-tool", id)}
+        aria-labelledby={segmentedTabId("calc-tool", id)} hidden={id !== selected}>
+        <Suspense fallback={<div className="spinner">{t("state.loading")}</div>}>{children}</Suspense>
+      </div>
+    </Activity>
+  );
+}
 
 export function CalcPage() {
   const { can } = useRuntime();
@@ -92,39 +105,24 @@ export function CalcPage() {
       <RosterProvider dex={dex.data} items={items.data} natures={natures.data}>
       <CalcLibraryTransfers dex={dex.data} />
       {visited.has("damage") && hasDamage && (
-        <div role="tabpanel" id={segmentedPanelId("calc-tool", "damage")}
-          aria-labelledby={segmentedTabId("calc-tool", "damage")} hidden={tab !== "damage"}>
-          <Suspense fallback={<div className="spinner">{t("state.loading")}</div>}>
-            <DamageTab dex={dex.data} natures={natures.data} items={items.data}
-              onRailApi={registerDamage} />
-          </Suspense>
-        </div>
+        <CalcPanel id="damage" selected={tab}>
+          <DamageTab dex={dex.data} natures={natures.data} items={items.data} onRailApi={registerDamage} />
+        </CalcPanel>
       )}
       {visited.has("tune") && hasDamage && (
-        <div role="tabpanel" id={segmentedPanelId("calc-tool", "tune")}
-          aria-labelledby={segmentedTabId("calc-tool", "tune")} hidden={tab !== "tune"}>
-          <Suspense fallback={<div className="spinner">{t("state.loading")}</div>}>
-            <TuneWorkspace dex={dex.data} natures={natures.data} items={items.data}
-              onRailApi={registerTune} />
-          </Suspense>
-        </div>
+        <CalcPanel id="tune" selected={tab}>
+          <TuneWorkspace dex={dex.data} natures={natures.data} items={items.data} onRailApi={registerTune} />
+        </CalcPanel>
       )}
       {visited.has("speed") && hasSpeed && (
-        <div role="tabpanel" id={segmentedPanelId("calc-tool", "speed")}
-          aria-labelledby={segmentedTabId("calc-tool", "speed")} hidden={tab !== "speed"}>
-          <Suspense fallback={<div className="spinner">{t("state.loading")}</div>}>
-            <SpeedTab dex={dex.data} natures={natures.data} items={items.data} active={tab === "speed"}
-              onRailApi={registerSpeed} />
-          </Suspense>
-        </div>
+        <CalcPanel id="speed" selected={tab}>
+          <SpeedTab dex={dex.data} natures={natures.data} items={items.data} active={tab === "speed"} onRailApi={registerSpeed} />
+        </CalcPanel>
       )}
       {visited.has("infer") && hasDamage && (
-        <div role="tabpanel" id={segmentedPanelId("calc-tool", "infer")}
-          aria-labelledby={segmentedTabId("calc-tool", "infer")} hidden={tab !== "infer"}>
-          <Suspense fallback={<div className="spinner">{t("state.loading")}</div>}>
-            <InferTab visible={tab === "infer"} dex={dex.data} natures={natures.data} items={items.data} onRailApi={registerInfer} />
-          </Suspense>
-        </div>
+        <CalcPanel id="infer" selected={tab}>
+          <InferTab visible={tab === "infer"} dex={dex.data} natures={natures.data} items={items.data} onRailApi={registerInfer} />
+        </CalcPanel>
       )}
       </RosterProvider>
     </>

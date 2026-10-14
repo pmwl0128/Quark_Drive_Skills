@@ -16,7 +16,7 @@
  * the dual type, three therefore match nothing — a true answer about the roster), moves union them.
  */
 import type { DexIndexEntry } from "../runtime/adapter.ts";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { typeColor } from "../assets/icons.ts";
 import { GameImage } from "./GameImage.tsx";
@@ -433,6 +433,10 @@ export function DexRail({
 
   const picks = activeCount(tab, filters);
   const filterable = tab !== "abilities";
+  // The list follows a beat behind the rail and each keystroke: React draws those first and fills
+  // in the hundreds of rows in the background, where they no longer hold up opening or typing. The
+  // rail stays mounted while closed, so the list is emptied then and opening starts from nothing.
+  const listed = useDeferredValue(state.open ? rows : null, null);
 
   return (
     <RailLayer state={state} label={label} onClose={() => setFilterOpen(false)}
@@ -455,10 +459,10 @@ export function DexRail({
         )}
       </div>
       {status}
-      {rows && (
+      {listed && (
         <div className="rail-body rank-list">
-          {rows.length === 0 && <p className="rail-empty">{t("rail.noMatch")}</p>}
-          {rows.map((e) => {
+          {listed.length === 0 && <p className="rail-empty">{t("rail.noMatch")}</p>}
+          {listed.map((e) => {
             const expanded = e.slug === expandedSlug;
             return (
               <div className={`rail-result${expanded ? " expanded" : ""}`} key={e.key}>

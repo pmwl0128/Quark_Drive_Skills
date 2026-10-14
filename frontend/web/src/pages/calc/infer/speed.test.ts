@@ -39,7 +39,8 @@ test("speed batches respect the protocol limit, preserve indexes and combine onl
   const plan: SpeedPlan = { inputs, mine: 480, probes: [{ nature: "Adamant", lo: 0, hi: 239, spHi: 2 },
     { nature: "Adamant", lo: 240, hi: 479, spHi: 32 }] };
   const sizes: number[] = [];
-  const result = await readSpeedProjection({ speedBatch: async (batch) => {
+  const result = await readSpeedProjection({ speedBatch: async (batch, options) => {
+    expect(options?.lane).toBe("inference");
     sizes.push(batch.length); return batch.map((input) => output(input, Number(input.name)));
   } }, plan);
   expect(sizes).toEqual([240, 240, 1]);

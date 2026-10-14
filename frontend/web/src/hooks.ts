@@ -200,9 +200,12 @@ function useQuery<T>(key: string, fn: () => Promise<T>, deps: unknown[]): Async<
   return expiry !== undefined && Date.now() >= expiry ? LOADING : result;
 }
 
-export function useRanking(format: FormatId): Async<RankingDto> {
+export function useRanking(format: FormatId, enabled = true): Async<RankingDto> {
   const { adapter } = useRuntime();
-  return useQuery(`ranking:${format}`, () => adapter.ranking(format), [format, adapter]);
+  const value = useQuery(enabled ? `ranking:${format}` : `ranking:disabled:${format}`,
+    () => enabled ? adapter.ranking(format) : Promise.resolve(null as unknown as RankingDto),
+    [format, enabled, adapter]);
+  return enabled ? value : LOADING;
 }
 
 /** An empty slug means "not resolved yet": it stays loading and requests nothing. */

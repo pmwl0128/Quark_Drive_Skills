@@ -2,7 +2,7 @@
   "season": "M-7",
   "rule": "M-C",
   "format": "single",
-  "generated_at": "2026-10-11T21:30:59+00:00",
+  "generated_at": "2026-10-14T03:30:51+00:00",
   "thresholds": {
     "tiers": [
       {
@@ -50,14 +50,23 @@
   },
   "baseline": {
     "kind": "git-HEAD",
-    "ranking_updated_at": "2026-10-10T00:16:15+00:00",
-    "details_updated_at": "2026-10-10T00:16:15+00:00"
-  },
-  "current": {
     "ranking_updated_at": "2026-10-11T21:30:59+00:00",
     "details_updated_at": "2026-10-11T21:30:59+00:00"
   },
-  "rank_moves": [],
+  "current": {
+    "ranking_updated_at": "2026-10-14T03:30:51+00:00",
+    "details_updated_at": "2026-10-14T03:30:51+00:00"
+  },
+  "rank_moves": [
+    {
+      "slug": "salamence",
+      "name": "暴飞龙",
+      "old": 10,
+      "new": 13,
+      "delta": -3,
+      "tier": "S"
+    }
+  ],
   "new_entries": [],
   "dropped": [],
   "config_changes": []

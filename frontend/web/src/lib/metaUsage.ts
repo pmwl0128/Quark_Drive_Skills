@@ -66,8 +66,8 @@ export function useMetaUsage(slug: string, formats: readonly FormatId[]): MetaUs
     const entry = bySlug.get(slug);
     return entry?.isMega && entry.baseSpecies ? entry.baseSpecies : entry?.name ?? "";
   }, [slug, dex]);
-  const singles = useRanking("single");
-  const doubles = useRanking("double");
+  const singles = useRanking("single", formats.includes("single"));
+  const doubles = useRanking("double", formats.includes("double"));
   const ranked = (format: FormatId) => {
     const ranking = format === "single" ? singles : doubles;
     return base && formats.includes(format) && ranking.status === "ready" ? usageSlug(ranking.data, base) : "";

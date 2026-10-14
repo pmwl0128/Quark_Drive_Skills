@@ -19,7 +19,7 @@ import threading
 import time
 from collections import Counter, OrderedDict
 from functools import lru_cache
-from typing import Any
+from typing import Any, Callable
 
 from .provider import ChatResult, LlmProvider, LlmUnavailable
 
@@ -1876,12 +1876,17 @@ def explain_diagnose(provider: LlmProvider, report: dict, lang: str) -> tuple[st
     return text, tokens
 
 
-def answer(pool: Any, provider: LlmProvider, question: str, lang: str) -> dict:
+def answer(pool: Any, provider: LlmProvider, question: str, lang: str,
+           on_progress: Callable[[dict], None] | None = None) -> dict:
     """Run the full pipeline. Returns {"answer", "toolTrace", "grounded", "tokens"} plus the
     metric split the §9 benchmark consumes ("promptTokens"/"completionTokens"/"cacheHitTokens"/
     "llmCalls"/"toolBytes"); raises QaFailed (tokens attached) when the model never produces
     usable content. `grounded` is True only when a tool actually ran — an ungrounded reply is a
     refusal/decline, never a Champions fact (design §7.2).
+
+    `on_progress`, when given, receives {"toolTrace", "round"} as the run advances: when each
+    model round starts and after each lookup it ran. It carries only what the final payload
+    discloses anyway, so a page can show the lookups as they happen.
 
     Two hard caps make §7.2/§7.4 real, not aspirational: the wall-clock deadline is threaded
     into EVERY provider/worker call (so no single call runs past it) and re-checked between
@@ -1899,10 +1904,20 @@ def answer(pool: Any, provider: LlmProvider, question: str, lang: str) -> dict:
     answered: set[str] = set()      # name + canonical arguments of every executed call
     final_turn = corrected = False
     round_no = 0
+
+    def report() -> None:
+        if on_progress is None:
+            return
+        try:
+            on_progress({"toolTrace": [dict(entry) for entry in trace], "round": round_no})
+        except Exception:   # a progress listener must never cost the answer
+            pass
+
     while True:
         rem = deadline - time.monotonic()
         if rem <= 0:
             raise QaFailed("qa deadline exceeded", tokens)
+        report()
         # Force the closing synthesis on the last allowed round OR once the token ceiling is
         # crossed — no further tool spend, one final tool_choice=none call to answer.
         final = round_no >= QA_MAX_ROUNDS or tokens >= QA_MAX_REQUEST_TOKENS
@@ -1969,6 +1984,7 @@ def answer(pool: Any, provider: LlmProvider, question: str, lang: str) -> dict:
                 metrics["toolBytes"] += len(content.encode("utf-8"))
                 if traced is not None:
                     trace.append({"tool": traced[0], "label": traced[1], "params": traced[2]})
+                    report()
             messages.append({"role": "tool", "tool_call_id": str(tc.get("id") or ""),
                              "content": content})
         round_no += 1

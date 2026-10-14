@@ -10,7 +10,7 @@ import {
   CapabilitiesSchema, DamageBatchResultDtoSchema,
   DamageResultDtoSchema, DiagnoseReportDtoSchema, MetaDetailDtoSchema, OppCacheDtoSchema,
   OnlineQuotaDtoSchema, OppCheckGridDtoSchema, OppKoGridDtoSchema, OppSetCatalogDtoSchema,
-  QaAnswerDtoSchema, RankingDtoSchema,
+  QaAnswerDtoSchema, QaProgressDtoSchema, RankingDtoSchema,
   LearnersDtoSchema, MetaFacetsDtoSchema, MetaKoDtoSchema,
   MetaKoTrendDtoSchema, SpeedBatchResultDtoSchema, TrendDtoSchema, UsageTrendDtoSchema,
   TuneResultDtoSchema,
@@ -20,13 +20,13 @@ import {
   type DiagnoseReportDto, type DiagnoseRequestDto, type FormatId,
   type OnlineQuotaDto, type OppCacheDto, type OppCheckGridDto, type OppKoGridDto,
   type OppSetCatalogDto,
-  type PokemonCardDto, type QaAnswerDto,
+  type PokemonCardDto, type QaAnswerDto, type QaProgressDto,
   type QaRequestDto, type ResolveEntryDto, type SpeedBatchResultDto, type SpeedInputDto,
 } from "@pokemon-champions/protocol";
 import { engineDamage, engineDamageBatch, engineSpeedBatch } from "../lib/calc-engine/index.ts";
 import { loadTeamEvidence } from "./teamEvidence.ts";
 import {
-  AsyncOnce, HttpError, fetchJson, postNdjson, versionParam,
+  AsyncFacts, AsyncOnce, HttpError, fetchJson, postNdjson, versionParam,
   type BuilderApi, type DexIndexEntry, type RuntimeAdapter, type RuntimeConfig,
 } from "./adapter.ts";
 
@@ -46,6 +46,8 @@ function staticCapabilities(raw: unknown): Capabilities {
 export class OnlineAdapter implements RuntimeAdapter {
   readonly runtime = "online" as const;
   private cards = new AsyncOnce<Map<string, PokemonCardDto>>();
+  private details = new AsyncFacts<import("@pokemon-champions/protocol").MetaDetailDto>();
+  private quotaPending: Promise<OnlineQuotaDto> | null = null;
 
   constructor(private cfg: RuntimeConfig) {}
 
@@ -98,8 +100,8 @@ export class OnlineAdapter implements RuntimeAdapter {
   }
 
   async detail(format: FormatId, slug: string) {
-    return MetaDetailDtoSchema.parse(
-      await fetchJson(this.url(`/meta/detail_${format}/${slug}.json`)));
+    return this.details.get(`${format}:${slug}`, async () => MetaDetailDtoSchema.parse(
+      await fetchJson(this.url(`/meta/detail_${format}/${slug}.json`))));
   }
 
   async trend(format: FormatId) {
@@ -187,8 +189,8 @@ export class OnlineAdapter implements RuntimeAdapter {
   }
 
   /** A speed ladder resolved in one fault-isolated speedline batch, run in the worker. */
-  async speedBatch(items: SpeedInputDto[]): Promise<SpeedBatchResultDto> {
-    return SpeedBatchResultDtoSchema.parse(await engineSpeedBatch(items));
+  async speedBatch(items: SpeedInputDto[], options?: { lane?: "interactive" | "inference" }): Promise<SpeedBatchResultDto> {
+    return SpeedBatchResultDtoSchema.parse(await engineSpeedBatch(items, options?.lane));
   }
 
   /** Opponent matchup cache: the M5 KO grid is shipped static data (retained observed builds, no team,
@@ -230,8 +232,13 @@ export class OnlineAdapter implements RuntimeAdapter {
   /** Fact QA (llm.qa): needs the API backend — only reachable when the deployment
    * advertised llm.qa in its projection capabilities (the page is hidden otherwise); the
    * backend enforces its own limits regardless. */
-  async qa(req: QaRequestDto): Promise<QaAnswerDto> {
-    return QaAnswerDtoSchema.parse(await postNdjson(`${this.cfg.apiBase}/qa`, req));
+  async qa(req: QaRequestDto, onProgress?: (progress: QaProgressDto) => void): Promise<QaAnswerDto> {
+    // Each lookup the answer runs arrives as a `report` snapshot; a malformed one is just skipped.
+    return QaAnswerDtoSchema.parse(await postNdjson(`${this.cfg.apiBase}/qa`, req,
+      onProgress ? (report) => {
+        const progress = QaProgressDtoSchema.safeParse(report);
+        if (progress.success) onProgress(progress.data);
+      } : undefined));
   }
 
   async actualMatchup(req: ActualMatchupRequestDto) {
@@ -239,9 +246,11 @@ export class OnlineAdapter implements RuntimeAdapter {
       `${this.cfg.apiBase}/team/matchup`, req));
   }
 
-  async quota(): Promise<OnlineQuotaDto> {
-    return OnlineQuotaDtoSchema.parse(
-      await fetchJson(`${this.cfg.apiBase}/quota`, { cache: "no-store" }));
+  quota(): Promise<OnlineQuotaDto> {
+    // Share simultaneous reads, but never reuse a settled quota after a metered request.
+    return this.quotaPending ??= fetchJson(`${this.cfg.apiBase}/quota`, { cache: "no-store" })
+      .then(raw => OnlineQuotaDtoSchema.parse(raw))
+      .finally(() => { this.quotaPending = null; });
   }
 
   /** Team diagnose (team.validate, §7.5): deterministic backend surface — free-form team

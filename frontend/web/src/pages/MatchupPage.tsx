@@ -658,7 +658,7 @@ export function MatchupPage() {
 
   return (
     <div className="matchup-page">
-      <PageHeader className="matchup-page-header" title={t("matchup.title")} description={t("matchup.description")}>
+      <PageHeader sticky title={t("matchup.title")} description={t("matchup.description")}>
         <SegmentedControl kind="tabs" idBase="matchup-view" value={view} onChange={changeView}
           ariaLabel={t("a11y.matchupView")} className="seg page-tabs" items={[
             { id: "ko", label: t("matchup.ko") },

@@ -6,43 +6,23 @@
    tokens below. The colour in the drawings is the site's data language (the KO ramp, the type
    colours); the only accent is the site's brand blue. Between the stages the working parts stay on
    the ordinary tokens.
-   One entrance, played once: the mosaic tiles settle in and the calculator card floats up; nothing
-   loops. The page carries no explanatory small print: what a control does is its label. */
+   Entrances play once and share one motion (see "entrances" below): on load the opening copy and
+   the board settle in while the mosaic tiles in; each section further down arrives the first time it
+   scrolls into view (HomePage.tsx useReveal). The page carries no explanatory small print: what a
+   control does is its label. */
+@import "./styles.stage.css";
+/* The display face for Latin letters in the big headings (frontend/assets/fonts/qd-display); CJK
+   falls through to the UI face. */
+@font-face { font-family: "QD Display"; font-weight: 600; font-display: swap;
+  src: url("../../assets/fonts/qd-display/qd-display-600.woff2") format("woff2");
+  unicode-range: U+0020-007E, U+00C0-00FF, U+2011, U+2019; }
+@font-face { font-family: "QD Display"; font-weight: 800; font-display: swap;
+  src: url("../../assets/fonts/qd-display/qd-display-800.woff2") format("woff2");
+  unicode-range: U+0020-007E, U+00C0-00FF, U+2011, U+2019; }
 .home {
   --font-num: "PC Numerals", var(--font-ui);
-  --stage: var(--panel); --stage-2: #edf2fd; --stage-ink: var(--ink); --stage-sub: var(--sub);
-  --stage-line: rgb(36 87 223 / 0.09); --stage-edge: var(--line); --stage-dot: rgb(16 26 47 / 0.13);
-  --stage-fill: rgb(16 26 47 / 0.035); --stage-fill-2: rgb(16 26 47 / 0.07); --stage-fill-3: rgb(16 26 47 / 0.12);
-  --stage-hair: rgb(16 26 47 / 0.1); --stage-hair-2: rgb(16 26 47 / 0.18);
-  --stage-raised: var(--panel); --stage-node: var(--panel); --stage-mosaic: var(--panel);
-  --stage-accent: var(--brand); --stage-cta: var(--action); --stage-cta-hi: var(--action-hover);
-  --stage-glow: 36 87 223; --stage-glow-a: 0.09;
-  --stage-shadow: 0 28px 60px -42px rgb(25 39 68 / 0.5), var(--shadow);
-  --stage-card-shadow: 0 22px 44px -24px rgb(25 39 68 / 0.38);
-  --stage-art-shadow: 0 40px 70px -42px rgb(25 39 68 / 0.5);
-  --stage-track: rgb(16 26 47 / 0.08); --stage-tick: rgb(16 26 47 / 0.2);
-  --stage-code: #f3f6fb; --stage-code-ink: #1d2a44;
-  --stage-good: #148a57; --stage-good-bg: rgb(20 138 87 / 0.1); --stage-pick: var(--ink);
-  --stage-us: var(--brand); --stage-them: #e0674f; --stage-particle: var(--brand);
-  --flow-a: #18a46b; --flow-b: #d4930a; --flow-c: #e05a3c;
+  --font-display: "QD Display", var(--font-ui);
   display: grid; gap: 34px;
-}
-[data-theme="dark"] .home {
-  --stage: #131d2f; --stage-2: #19273e;
-  --stage-line: rgb(255 255 255 / 0.06); --stage-edge: rgb(255 255 255 / 0.08); --stage-dot: rgb(255 255 255 / 0.09);
-  --stage-fill: rgb(255 255 255 / 0.05); --stage-fill-2: rgb(255 255 255 / 0.09); --stage-fill-3: rgb(255 255 255 / 0.18);
-  --stage-hair: rgb(255 255 255 / 0.12); --stage-hair-2: rgb(255 255 255 / 0.24);
-  --stage-raised: #1c2a42; --stage-node: #1f2e48; --stage-mosaic: rgb(8 14 26 / 0.55);
-  --stage-accent: #9dbbff;
-  --stage-glow: 93 140 255; --stage-glow-a: 0.14;
-  --stage-shadow: 0 30px 60px -36px rgb(0 0 0 / 0.7);
-  --stage-card-shadow: 0 30px 56px -24px rgb(0 0 0 / 0.75);
-  --stage-art-shadow: 0 50px 90px -40px rgb(0 0 0 / 0.75);
-  --stage-track: rgb(255 255 255 / 0.09); --stage-tick: rgb(255 255 255 / 0.22);
-  --stage-code: #0c1424; --stage-code-ink: #dfe8f8;
-  --stage-good: #8fe7b8; --stage-good-bg: rgb(143 231 184 / 0.14); --stage-pick: rgb(255 255 255 / 0.92);
-  --stage-us: #8fb2ff; --stage-them: #ff9a80; --stage-particle: #e3ecff;
-  --flow-a: #5fe3a0; --flow-b: #f5c451; --flow-c: #ff9178;
 }
 /* Headings here name a cell or a section; the generic panel header strip (`.panel h2`) is not theirs. */
 .home :is(h1, h2, h3), .home .panel :is(h2, h3) {
@@ -78,19 +58,39 @@
 /* Gitee has no icon in the set: its red disc with the initial stands in. */
 .home-gitee-mark { display: inline-grid; place-items: center; flex: none; width: 14px; height: 14px; border-radius: 50%;
   background: #c71d23; color: #fff; font: 800 9px/1 var(--font-ui); }
-/* Brand and product share the headline; the supporting copy has its own quiet line. */
-.home .home-hero h1 {
-  display: grid; gap: 12px; color: var(--stage-ink); font-weight: 800; text-wrap: balance;
-  /* Break CJK at its punctuation, never inside a word; a run too long for the line still wraps. */
-  word-break: keep-all; overflow-wrap: anywhere;
+/* Display copy breaks only between the phrases its text marks (Phrases.tsx); English wraps as usual. */
+.home-phrase { white-space: nowrap; }
+.home-phrase:lang(en) { white-space: normal; }
+/* One heading in two tiers: the product it names sits above the brand as a small capsule label (the
+   DOM keeps "brand · product" for reading order), and the brand takes the display size. */
+.home .home-hero h1 { display: grid; justify-items: start; gap: 20px; color: var(--stage-ink); font-family: var(--font-display);
+  word-break: keep-all; }
+.home-hero-brand { display: block; font-size: clamp(46px, 5.6vw, 82px); font-weight: 800; line-height: 1.04; letter-spacing: -0.04em; }
+/* Eight kana against two short Latin words: a step smaller so it stays one line in the column. */
+.home-hero-brand:lang(ja) { font-size: clamp(40px, 4.9vw, 70px); letter-spacing: -0.035em; }
+.home-hero-brand .home-phrase { display: inline-block; }
+.home-hero-product {
+  order: -1; display: inline-flex; align-items: center; gap: 9px; max-width: 100%; padding: 6px 14px 6px 7px;
+  border: 1px solid var(--stage-hair); border-radius: 999px; background: color-mix(in srgb, var(--stage-raised) 72%, transparent);
+  box-shadow: 0 1px 2px rgb(16 26 47 / 0.05); color: var(--stage-sub-strong);
+  font-size: 13.5px; font-weight: 600; line-height: 1.3; letter-spacing: 0.01em;
 }
-.home-hero-name { font-size: clamp(34px, 3.7vw, 50px); line-height: 1.2; letter-spacing: -0.035em; }
-/* The Japanese title's first word alone is eleven kana: a size at which it fits the column whole. */
-.home-hero-name:lang(ja) { font-size: clamp(30px, 3.5vw, 48px); }
+/* The logo's charged core, as the label's bullet. */
+.home-hero-core { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--core);
+  box-shadow: 0 0 0 3px rgb(var(--stage-glow) / 0.12); }
+/* The brand is filled with ink deepening a little toward the brand blue at its foot. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .home-hero-brand .home-phrase {
+    background-image: linear-gradient(180deg, var(--stage-ink) 30%, var(--stage-ink-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+  }
+}
+/* The supporting line: muted, with its two key phrases in the brand blue. */
 .home-hero-accent {
-  max-width: 32em; margin: 20px 0 0; color: var(--stage-accent); font-size: clamp(18px, 1.75vw, 23px); font-weight: 650; line-height: 1.5;
-  letter-spacing: -0.02em; text-wrap: balance; word-break: keep-all; overflow-wrap: anywhere;
+  max-width: 30em; margin: 22px 0 0; color: var(--stage-sub); font-size: clamp(18px, 1.7vw, 22px); font-weight: 500; line-height: 1.6;
+  letter-spacing: -0.012em; text-wrap: balance; word-break: keep-all;
 }
+.home-hero-accent mark { background: none; color: var(--stage-accent); font-weight: 650; }
 .home-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 30px; }
 .home-cta {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px;
@@ -206,14 +206,17 @@
   transition: color 160ms ease;
 }
 .home-task-tabs button svg { width: 18px; height: 18px; flex: none; }
-.home-task-tabs button::after {
-  content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0;
-  background: var(--brand); transform: scaleX(0); transition: transform 220ms var(--ease-out);
+/* One underline slides to the chosen tab (HomePage.tsx useTabIndicator writes --tab-x/--tab-w). */
+.home-board-nav { --tab-inset: 12px; position: relative; }
+.home-board-nav::after {
+  content: ""; position: absolute; left: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--brand);
+  width: max(0px, calc(var(--tab-w, 0px) - 2 * var(--tab-inset)));
+  transform: translateX(calc(var(--tab-x, 0px) + var(--tab-inset)));
+  transition: transform 380ms var(--ease-out), width 380ms var(--ease-out);
 }
 .home-task-tabs button:hover { color: var(--ink); }
 .home-task-tabs button.on { color: var(--ink); }
 .home-task-tabs button.on svg { color: var(--brand); }
-.home-task-tabs button.on::after { transform: scaleX(1); }
 
 .home-board-panels { display: grid; }
 .home-board-panels > * { display: flex; flex-direction: column; grid-area: 1 / 1; min-width: 0; }
@@ -226,22 +229,13 @@
 .home .home-cell h2 { color: var(--ink); font-size: 19px; font-weight: 750; line-height: 1.35; letter-spacing: -0.01em; }
 .home .home-cell h2.home-cell-lead { color: color-mix(in srgb, var(--ink) 70%, var(--sub)); font-size: 14px; font-weight: 400;
   line-height: 1.6; letter-spacing: 0; text-wrap: pretty; }
-.home-cell-body { max-width: 44em; margin: 6px 0 18px; color: var(--sub); font-size: 13.5px; line-height: 1.7; text-wrap: pretty; }
-.home-cell-heading + .home-cell-body { margin-top: 2px; }
 .home-cell-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 20px; }
 /* Diagnose and build end on their action row at the panel's foot, so the main button stays put when
    the tabs switch (the panels share one height). */
 .home-diag .home-cell-actions { margin-top: auto; padding-top: 20px; }
 .home-cell .primary-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 24px;
   text-decoration: none; }
-
-.home-secondary-btn {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 18px;
-  border: 1px solid var(--line-strong); border-radius: 9px; background: var(--panel);
-  color: var(--ink); font: inherit; font-weight: 650; cursor: pointer; text-decoration: none;
-}
-.home-secondary-btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand); text-decoration: none; }
-.home-secondary-btn:disabled, .home-text-btn:disabled { opacity: 0.5; cursor: default; }
+.home-text-btn:disabled { opacity: 0.5; cursor: default; }
 .home-text-btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; margin: -5px -8px;
   border: 0; border-radius: 7px; background: transparent; color: var(--sub);
@@ -322,67 +316,6 @@ form.home-build .home-field.tactics { grid-column: 1 / -1; order: 2; }
 .home-chip.on::before { background: currentColor; opacity: 1; }
 form.home-build .home-field { gap: 9px; }
 form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin-top: 0; padding-top: 20px; }
-/* The flow map (BuildFlow.tsx): two rows of three gates on one line that turns at the right edge,
-   data streams joining from above and below; dashes and particles keep moving, and the gate being
-   worked is the lit one. It reads the stage tokens, so light and dark each get their own surface. */
-.home-flowmap { grid-area: flow; position: relative; isolation: isolate; display: flex; flex-direction: column; overflow: hidden;
-  border: 1px solid var(--stage-edge); border-radius: 16px; color: var(--stage-ink);
-  background: radial-gradient(380px 240px at 60% 50%, rgb(var(--stage-glow) / var(--stage-glow-a)), transparent 70%),
-    linear-gradient(180deg, var(--stage-2), var(--stage) 80%);
-  box-shadow: var(--stage-card-shadow); }
-.home-flowmap::before { content: ""; position: absolute; inset: 0; z-index: -1;
-  background-image: radial-gradient(var(--stage-dot) 1px, transparent 1.5px); background-size: 18px 18px;
-  -webkit-mask-image: radial-gradient(ellipse 85% 80% at 55% 50%, #000 30%, transparent 85%);
-  mask-image: radial-gradient(ellipse 85% 80% at 55% 50%, #000 30%, transparent 85%); }
-.home-flowmap-canvas { position: relative; width: calc(100% - 24px); aspect-ratio: 600 / 330; margin: 6px 12px 0; }
-.home-flowmap-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.home-flowmap .track { fill: none; stroke: var(--stage-track); stroke-width: 7; stroke-linecap: round; }
-.home-flowmap .feed .track { stroke: color-mix(in srgb, var(--c) 18%, transparent); stroke-width: 4; }
-.home-flowmap .stream { fill: none; stroke: var(--stage-accent); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1 11;
-  opacity: 0.85; animation: home-stream 1.1s linear infinite; }
-.home-flowmap .feed .stream { stroke: var(--c); stroke-width: 1.6; stroke-dasharray: 1 9; animation-duration: 0.9s; }
-@keyframes home-stream { to { stroke-dashoffset: -24; } }
-.home-flowmap .particle { fill: var(--stage-particle); filter: drop-shadow(0 0 4px rgb(var(--stage-glow) / 0.8)); }
-.home-flowmap .particle.feed { fill: var(--c); filter: drop-shadow(0 0 4px var(--c)); }
-.home-fnode { position: absolute; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
-  translate: -50% -50%; border: 1.5px solid var(--stage-hair-2); background: var(--stage-node); color: var(--stage-sub);
-  box-shadow: 0 6px 14px -8px rgb(0 0 0 / 0.35);
-  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease, box-shadow 300ms ease, scale 300ms var(--ease-out); }
-.home-fnode svg { display: block; width: 18px; height: 18px; }
-.home-fnode em { position: absolute; top: calc(100% + 8px); left: 50%; translate: -50% 0; color: var(--stage-sub);
-  font-size: 12px; font-style: normal; font-weight: 650; white-space: nowrap; transition: color 300ms ease; }
-.home-fnode.lower em { top: auto; bottom: calc(100% + 8px); }
-.home-fnode.done { border-color: rgb(var(--stage-glow) / 0.55); color: var(--stage-accent); }
-.home-fnode.on { scale: 1.15; border-color: var(--stage-cta); background: var(--stage-cta); color: #fff;
-  box-shadow: 0 0 0 6px rgb(var(--stage-glow) / 0.16), 0 0 22px rgb(var(--stage-glow) / 0.5); }
-.home-fnode.on em { color: var(--stage-accent); }
-.home-fsrc { position: absolute; z-index: 1; translate: -50% -50%; display: inline-flex; align-items: center; gap: 6px;
-  padding: 3px 10px 3px 8px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 999px;
-  background: var(--stage-raised); color: var(--stage-sub); font-size: 11.5px; font-weight: 650; white-space: nowrap;
-  transition: border-color 300ms ease, color 300ms ease, box-shadow 300ms ease; }
-.home-fsrc em { font-style: normal; }
-.home-fsrc i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c); box-shadow: 0 0 6px var(--c); }
-.home-fsrc.on { border-color: var(--c); color: var(--stage-ink); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 40%, transparent); }
-.home-fin { position: absolute; z-index: 1; translate: -50% -50%; padding: 4px 11px; border: 1px dashed var(--stage-hair-2);
-  border-radius: 999px; background: var(--stage-raised); color: var(--stage-sub); font-size: 11.5px; font-weight: 650; white-space: nowrap; }
-.home-fout { position: absolute; z-index: 1; translate: -50% -50%; display: inline-flex; align-items: center; gap: 7px;
-  padding: 5px 11px 5px 8px; border: 1px solid var(--stage-hair-2); border-radius: 999px; background: var(--stage-node);
-  color: var(--stage-sub); font-size: 11.5px; font-weight: 700; white-space: nowrap;
-  transition: border-color 300ms ease, color 300ms ease, box-shadow 300ms ease; }
-.home-fout-team { display: flex; gap: 3px; }
-.home-fout em { font-style: normal; }
-.home-fout-team i { width: 8px; height: 8px; border-radius: 50%; background: var(--stage-fill-2);
-  transition: background-color 300ms ease; transition-delay: calc(var(--n) * 60ms); }
-.home-fout.on { border-color: var(--stage-accent); color: var(--stage-accent); box-shadow: 0 0 20px rgb(var(--stage-glow) / 0.35); }
-.home-fout.on .home-fout-team i { background: var(--mon); }
-.home-fcap { display: flex; align-items: baseline; gap: 10px; min-height: 44px; margin: auto 0 0; padding: 11px 16px 13px;
-  border-top: 1px solid var(--stage-hair); animation: home-cap-in 360ms var(--ease-out); }
-.home-fcap b { flex: none; color: var(--stage-accent); font-size: 15px; font-weight: 800; }
-.home-fcap small { margin-left: 2px; color: var(--stage-sub); font-size: 11px; opacity: 0.7; }
-.home-fcap-name { flex: none; color: var(--stage-ink); font-size: 13.5px; font-weight: 700; }
-.home-fcap-desc { min-width: 0; overflow: hidden; color: var(--stage-sub); font-size: 12.5px; white-space: nowrap; text-overflow: ellipsis; }
-@keyframes home-cap-in { from { opacity: 0; transform: translateY(4px); } }
-
 /* ---- questions ------------------------------------------------------------------- */
 /* The lead and what the model can call share the first row; the box fills the panel; the examples close it. */
 .home-ask-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px;
@@ -422,17 +355,21 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
 
 .home-glance-list { margin: 0; padding: 0; list-style: none; }
 .home-glance-list li {
-  display: grid; grid-template-columns: 24px 4px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  display: grid; grid-template-columns: 28px 4px minmax(0, 1fr) auto; align-items: center; gap: 12px;
   min-height: 33px; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
 }
 .home-glance-list li:first-child { border-top: 0; }
 .home-glance-rank { color: var(--sub); font-size: 14px; font-weight: 600; text-align: right; }
-.home-glance-list li:nth-child(-n + 3) .home-glance-rank { color: var(--ink); font-weight: 800; }
+/* The top three read as a podium: the numerals at display size. */
+.home-glance-list li:nth-child(-n + 3) .home-glance-rank { color: var(--ink); font-size: 19px; font-weight: 800; letter-spacing: -0.02em; }
+.home-glance-list li:nth-child(-n + 3) .home-glance-name { font-weight: 700; }
 .home-type-tick { width: 4px; height: 16px; border-radius: 2px; background: linear-gradient(var(--t1, var(--line)) 50%, var(--t2, var(--line)) 50%); }
 .home-glance-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 14px; font-weight: 600; }
 .home-glance-name:hover { color: var(--brand); }
-.home-move { min-width: 2.6em; color: var(--sub); font: 600 12px var(--font-num); text-align: right; white-space: nowrap; }
-.home-move.new { font-family: var(--font-ui); font-size: 11.5px; font-weight: 700; color: var(--ink); }
+/* A move is a small neutral chip (a rank change is not a grade); a new entry takes the brand tint. */
+.home-move { justify-self: end; min-width: 2.6em; color: var(--sub); font: 600 12px var(--font-num); text-align: center; white-space: nowrap; }
+.home-move:not(:empty) { padding: 1px 7px; border-radius: 999px; background: var(--panel-2); }
+.home-move.new { background: var(--brand-soft); color: var(--brand-strong); font-family: var(--font-ui); font-size: 11.5px; font-weight: 700; }
 
 .home-glance-movers { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .home-glance-movers-label { display: block; margin-bottom: 6px; color: var(--sub); font-size: 12px; font-weight: 600; }
@@ -441,7 +378,11 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
 .home-glance-movers a { color: var(--ink); font-size: 13px; font-weight: 600; }
 .home-glance-movers .home-glance-rank { font-size: 12px; font-weight: 500; }
 .home-glance-movers .home-move { min-width: 0; }
-.home-glance-links { display: flex; gap: 20px; margin-top: auto; padding-top: 14px; font-size: 13px; font-weight: 600; }
+.home-glance-links { display: flex; gap: 20px; margin-top: auto; padding-top: 14px; font-size: 13px; font-weight: 700; }
+.home-glance-links a { display: inline-flex; align-items: center; gap: 4px; }
+.home-glance-links a::after { content: "→"; transition: transform 200ms var(--ease-out); }
+.home-glance-links a:hover { text-decoration: none; }
+.home-glance-links a:hover::after { transform: translateX(3px); }
 .home-glance-error { margin: 8px 0 0; color: var(--sub); font-size: 13px; }
 
 .home-glance-list.skeleton li { grid-template-columns: minmax(0, 1fr); }
@@ -450,10 +391,46 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
 .home-glance-bar.short { width: 64px; }
 
 /* ---- computed tools: one tall tile, one wide, two small ------------------------------- */
-.home-section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
-  gap: 6px 28px; margin-bottom: 16px; padding: 0 2px; }
-.home .home-section-head h2 { color: var(--ink); font-size: clamp(22px, 2.2vw, 28px); font-weight: 800; letter-spacing: -0.025em; }
+/* Each section opens on its mark (SectionHead.tsx), its title and a hairline running to the edge. */
+.home-section-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding: 0 2px; }
+.home .home-section-head h2 { flex: 0 1 auto; min-width: 0; color: var(--ink); font-family: var(--font-display);
+  font-size: clamp(24px, 2.3vw, 30px); font-weight: 800; line-height: 1.2; letter-spacing: -0.03em; word-break: keep-all; }
+.home-section-rule { flex: 1 1 24px; height: 1px; background: linear-gradient(90deg, var(--line-strong), transparent); transform-origin: left center; }
+.home-section-mark { flex: none; display: grid; }
+.home-section-mark i { display: block; }
+/* The calculators: four cells of the KO ramp. */
+.home-section-mark.lab { grid-template-columns: repeat(2, 9px); gap: 3px; }
+.home-section-mark.lab i { width: 9px; height: 9px; border-radius: 2.5px; box-shadow: inset 0 -1.5px 0 rgb(0 0 0 / 0.16); }
+/* The glance: a rank ladder in type colours. */
+.home-section-mark.glance { display: flex; align-items: flex-end; gap: 3px; height: 21px; }
+.home-section-mark.glance i { width: 5px; border-radius: 2px; background: var(--tc); }
+.home-section-mark.glance i:nth-child(1) { height: 21px; }
+.home-section-mark.glance i:nth-child(2) { height: 15px; }
+.home-section-mark.glance i:nth-child(3) { height: 10px; }
+/* The install pitch: the logo's charged core. */
+.home-section-mark.core i { width: 28px; height: 28px; border-radius: 50%;
+  background: var(--core);
+  box-shadow: 0 0 0 5px rgb(var(--stage-glow) / 0.13), 0 8px 16px -6px rgb(43 92 255 / 0.65); }
+
+/* The calculators stand on a faint grid like the stage's, fading out at every edge: the showcase
+   between the board and the plain data sheet below. */
+.home-lab { position: relative; isolation: isolate; }
+.home-lab::before {
+  content: ""; position: absolute; inset: -44px -24px -52px; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 50% 50%, rgb(var(--stage-glow) / var(--stage-glow-a)), transparent 75%),
+    linear-gradient(var(--stage-line) 1px, transparent 1px) 0 0 / 30px 30px,
+    linear-gradient(90deg, var(--stage-line) 1px, transparent 1px) 0 0 / 30px 30px;
+  -webkit-mask-image: radial-gradient(ellipse 58% 62% at 50% 55%, #000 35%, transparent 80%);
+  mask-image: radial-gradient(ellipse 58% 62% at 50% 55%, #000 35%, transparent 80%);
+}
 .home-lab-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(0, 1fr)); gap: 16px; }
+/* Below the first screen, these blocks are skipped by layout and paint until they near the viewport
+   (`auto` remembers their real size once seen). The tiles' grid keeps a margin of room inside it for
+   their hover lift and shadow, which paint containment would otherwise clip. */
+.home-lab-grid { content-visibility: auto; contain-intrinsic-size: auto 560px; margin: -16px -20px -36px; padding: 16px 20px 36px; }
+.home-glance-board { content-visibility: auto; contain-intrinsic-size: auto 600px; }
+.home-install { content-visibility: auto; contain-intrinsic-size: auto 520px; }
 .home-lab-tile {
   --acc: var(--brand); --mx: 30%; --my: 0px;
   position: relative; isolation: isolate; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
@@ -570,57 +547,38 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
   animation-delay: calc(var(--n) * 90ms); }
 @keyframes home-narrow { from { width: 100%; opacity: 0.3; } }
 
-/* the stage table: a hovered cell lights its row and column, as the matchup grid does */
+/* the stage table: a hovered cell lights its row and column, as the matchup grid does, and a clicked
+   one keeps them lit while its result is open. The grid carries the hovered (data-hr/data-hc) and
+   picked (data-pr/data-pc) row and column, written by WorkbenchArt.tsx: plain attribute matches,
+   where :has(:hover) had the browser re-test the whole table on every pointer move. */
 .home-mosaic-cell, .home-mosaic-head { transition: opacity 200ms ease, transform 200ms var(--ease-out), filter 200ms ease; }
-.home-mosaic-grid:has(.home-mosaic-cell:hover) :is(.home-mosaic-cell, .home-mosaic-head) { opacity: 0.32; }
-.home-mosaic-grid:has([data-r="0"]:hover) [data-r="0"],
-.home-mosaic-grid:has([data-r="1"]:hover) [data-r="1"],
-.home-mosaic-grid:has([data-r="2"]:hover) [data-r="2"],
-.home-mosaic-grid:has([data-r="3"]:hover) [data-r="3"],
-.home-mosaic-grid:has([data-r="4"]:hover) [data-r="4"],
-.home-mosaic-grid:has([data-r="5"]:hover) [data-r="5"],
-.home-mosaic-grid:has([data-r="6"]:hover) [data-r="6"],
-.home-mosaic-grid:has([data-r="7"]:hover) [data-r="7"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="0"]:hover) [data-c="0"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="1"]:hover) [data-c="1"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="2"]:hover) [data-c="2"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="3"]:hover) [data-c="3"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="4"]:hover) [data-c="4"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="5"]:hover) [data-c="5"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="6"]:hover) [data-c="6"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="7"]:hover) [data-c="7"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="8"]:hover) [data-c="8"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="9"]:hover) [data-c="9"],
-.home-mosaic-grid:has(.home-mosaic-cell[data-c="10"]:hover) [data-c="10"] { opacity: 1; }
+.home-mosaic-grid:is([data-hr], [data-pr]) :is(.home-mosaic-cell, .home-mosaic-head) { opacity: 0.32; }
+.home-mosaic-grid:is([data-hr="0"], [data-pr="0"]) [data-r="0"],
+.home-mosaic-grid:is([data-hr="1"], [data-pr="1"]) [data-r="1"],
+.home-mosaic-grid:is([data-hr="2"], [data-pr="2"]) [data-r="2"],
+.home-mosaic-grid:is([data-hr="3"], [data-pr="3"]) [data-r="3"],
+.home-mosaic-grid:is([data-hr="4"], [data-pr="4"]) [data-r="4"],
+.home-mosaic-grid:is([data-hr="5"], [data-pr="5"]) [data-r="5"],
+.home-mosaic-grid:is([data-hr="6"], [data-pr="6"]) [data-r="6"],
+.home-mosaic-grid:is([data-hr="7"], [data-pr="7"]) [data-r="7"],
+.home-mosaic-grid:is([data-hc="0"], [data-pc="0"]) [data-c="0"],
+.home-mosaic-grid:is([data-hc="1"], [data-pc="1"]) [data-c="1"],
+.home-mosaic-grid:is([data-hc="2"], [data-pc="2"]) [data-c="2"],
+.home-mosaic-grid:is([data-hc="3"], [data-pc="3"]) [data-c="3"],
+.home-mosaic-grid:is([data-hc="4"], [data-pc="4"]) [data-c="4"],
+.home-mosaic-grid:is([data-hc="5"], [data-pc="5"]) [data-c="5"],
+.home-mosaic-grid:is([data-hc="6"], [data-pc="6"]) [data-c="6"],
+.home-mosaic-grid:is([data-hc="7"], [data-pc="7"]) [data-c="7"],
+.home-mosaic-grid:is([data-hc="8"], [data-pc="8"]) [data-c="8"],
+.home-mosaic-grid:is([data-hc="9"], [data-pc="9"]) [data-c="9"],
+.home-mosaic-grid:is([data-hc="10"], [data-pc="10"]) [data-c="10"] { opacity: 1; }
 .home-mosaic-cell:hover { transform: translateY(-3px) scale(1.14); filter: brightness(1.15);
   box-shadow: 0 10px 18px -8px rgb(0 0 0 / 0.7), inset 0 -2px 0 rgb(0 0 0 / 0.14); }
-
-/* the stage table, clicked: the cell stays lit with its row and column, and its result opens beside it */
 .home-mosaic-cell { cursor: pointer; }
-.home-mosaic-grid:has(.on) :is(.home-mosaic-cell, .home-mosaic-head) { opacity: 0.32; }
-.home-mosaic-grid:has(.on[data-r="0"]) [data-r="0"],
-.home-mosaic-grid:has(.on[data-r="1"]) [data-r="1"],
-.home-mosaic-grid:has(.on[data-r="2"]) [data-r="2"],
-.home-mosaic-grid:has(.on[data-r="3"]) [data-r="3"],
-.home-mosaic-grid:has(.on[data-r="4"]) [data-r="4"],
-.home-mosaic-grid:has(.on[data-r="5"]) [data-r="5"],
-.home-mosaic-grid:has(.on[data-r="6"]) [data-r="6"],
-.home-mosaic-grid:has(.on[data-r="7"]) [data-r="7"],
-.home-mosaic-grid:has(.on[data-c="0"]) [data-c="0"],
-.home-mosaic-grid:has(.on[data-c="1"]) [data-c="1"],
-.home-mosaic-grid:has(.on[data-c="2"]) [data-c="2"],
-.home-mosaic-grid:has(.on[data-c="3"]) [data-c="3"],
-.home-mosaic-grid:has(.on[data-c="4"]) [data-c="4"],
-.home-mosaic-grid:has(.on[data-c="5"]) [data-c="5"],
-.home-mosaic-grid:has(.on[data-c="6"]) [data-c="6"],
-.home-mosaic-grid:has(.on[data-c="7"]) [data-c="7"],
-.home-mosaic-grid:has(.on[data-c="8"]) [data-c="8"],
-.home-mosaic-grid:has(.on[data-c="9"]) [data-c="9"],
-.home-mosaic-grid:has(.on[data-c="10"]) [data-c="10"] { opacity: 1; }
 .home-mosaic-cell.on { position: relative; z-index: 1; transform: translateY(-3px) scale(1.2); filter: brightness(1.18);
   box-shadow: 0 0 0 3px var(--stage-pick), 0 14px 24px -8px rgb(0 0 0 / 0.45); }
 .home-pop {
-  position: absolute; left: var(--x); top: var(--y); z-index: 3; width: 304px; padding: 12px 14px;
+  position: absolute; left: var(--x); top: var(--y); z-index: 3; width: 328px; padding: 12px 14px;
   border: 1px solid var(--stage-hair); border-radius: 16px; color: var(--stage-ink);
   background: var(--stage-raised);
   box-shadow: var(--stage-card-shadow);
@@ -648,6 +606,10 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
 .home-pop-move { display: inline-flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden;
   color: var(--stage-ink); font-size: 12.5px; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
 .home-pop-move img { flex: none; width: 15px; height: 15px; }
+/* After the type: that it is the attacker's own type, and what the chart multiplies it by. */
+.home-pop-stab { flex: none; color: var(--stage-sub); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.home-pop-mult { flex: none; color: var(--stage-sub); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.home-pop-mult.up { color: var(--stage-ink); font-weight: 800; }
 .home-pop-ko { flex: none; margin-left: auto; padding: 2px 9px; border-radius: 7px; font: 800 13px/1.25 var(--font-num); white-space: nowrap;
   box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.16); }
 /* The damage band on the defender's HP: solid to the low roll, hatched to the high one, quarters marked. */
@@ -708,14 +670,21 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
 .home-copy:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
 /* ---- closing stage: the install pitch --------------------------------------------------- */
-.home-install { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 32px 52px; padding: 50px 56px; }
-.home .home-install h2 { color: var(--stage-ink); font-size: clamp(25px, 2.7vw, 36px); font-weight: 800; line-height: 1.2; letter-spacing: -0.03em; }
+.home-install { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 32px 52px; padding: 50px 56px;
+  scroll-margin-top: calc(var(--topbar-offset, 62px) + 16px); }
+.home-install-head { display: flex; align-items: center; gap: 16px; }
+.home .home-install h2 { color: var(--stage-ink); font-family: var(--font-display); font-size: clamp(26px, 2.8vw, 38px); font-weight: 800;
+  line-height: 1.2; letter-spacing: -0.03em; word-break: keep-all; text-wrap: balance; }
 .home-install-copy > p { margin: 14px 0 0; color: var(--stage-sub); font-size: 14.5px; line-height: 1.85; text-wrap: pretty; }
 .home-compare { width: 100%; margin-top: 24px; border-collapse: collapse; font-size: 13.5px; }
-.home-compare th { padding: 0 12px 8px 0; color: var(--stage-sub); font-size: 12px; font-weight: 700; text-align: left; }
-.home-compare th:last-child { color: var(--stage-accent); }
+.home-compare th { padding: 9px 12px 8px 0; color: var(--stage-sub); font-size: 12px; font-weight: 700; text-align: left; }
 .home-compare td { padding: 11px 12px 11px 0; border-top: 1px solid var(--stage-hair); color: var(--stage-sub); line-height: 1.6; vertical-align: top; }
+/* The local column is the pitch: a tinted lane down the table, a check on each row. */
+.home-compare :is(th, td):last-child { position: relative; padding-left: 36px; background: rgb(var(--stage-glow) / 0.07); }
+.home-compare th:last-child { padding-left: 14px; border-radius: 10px 10px 0 0; color: var(--stage-accent); }
+.home-compare tr:last-child td:last-child { border-radius: 0 0 10px 10px; }
 .home-compare td:last-child { color: var(--stage-ink); font-weight: 600; }
+.home-compare td:last-child svg { position: absolute; left: 13px; top: 14px; width: 15px; height: 15px; color: var(--stage-accent); stroke-width: 2.6; }
 .home-install-box { align-self: start; padding: 18px; border: 1px solid var(--stage-hair); border-radius: 18px; background: var(--stage-raised);
   box-shadow: var(--stage-card-shadow); }
 .home-install-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 11px; background: var(--stage-fill-2); }
@@ -732,6 +701,15 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
   min-height: 104px; margin: 0; padding: 16px 16px 52px; border: 1px solid var(--stage-hair); border-radius: 12px;
   background: var(--stage-code); color: var(--stage-code-ink); font: 13px/1.75 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere;
 }
+/* Command lines open on their prompt (a shell's, or Claude Code's), hung in the margin so a long
+   command wraps under its own text; the prompt is not selectable, and the copy button copies the
+   text alone. */
+.home-code-line { display: block; }
+pre[data-prompt] .home-code-line { padding-left: 2ch; text-indent: -2ch; }
+pre[data-prompt] .home-code-line::before { display: inline-block; width: 2ch; text-indent: 0; color: var(--stage-accent); font-weight: 700;
+  -webkit-user-select: none; user-select: none; }
+pre[data-prompt="$"] .home-code-line::before { content: "$"; }
+pre[data-prompt=">"] .home-code-line::before { content: ">"; }
 .home-copy { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px;
   min-height: 32px; padding: 0 13px; border: 0; border-radius: 9px; background: var(--stage-cta); color: #fff;
   font: inherit; font-weight: 700; cursor: pointer; }
@@ -743,6 +721,42 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
 .home-install-links svg { width: 17px; height: 17px; }
 .home-install-links .home-gitee-mark { width: 16px; height: 16px; font-size: 10px; }
 .home-install-ui { flex: 1 1 100%; margin: 2px 0 0; color: var(--stage-sub); font-size: 12.5px; line-height: 1.65; }
+
+/* ---- rhythm: the sections below the board stand further apart than their own parts ---- */
+.home > :is(.home-lab, .home-glance, .home-install) { margin-top: 44px; }
+
+/* ---- entrances ------------------------------------------------------------------------
+   One motion for the whole page, played once: a block fades in as it settles a few pixels up, text
+   also coming into focus from a slight blur. Blocks follow one another by a short fixed step, so a
+   group reads as one arrival rather than a sequence of effects. Only opacity, transform and filter
+   move, never the layout; every keyframe runs toward the element's own resting style, so with motion
+   reduced (animations off) the page simply rests. */
+@keyframes home-enter { from { opacity: 0; transform: translateY(14px); } }
+@keyframes home-enter-text { from { opacity: 0; transform: translateY(12px); filter: blur(6px); } }
+.home { --enter: 900ms cubic-bezier(0.16, 1, 0.3, 1); --enter-step: 80ms; }
+
+/* The opening, top to bottom: the label, the brand, the supporting line and the buttons, one step
+   apart; then the board. */
+.home-hero-brand, .home-hero-product, .home-hero-accent, .home-hero-actions {
+  animation: home-enter-text var(--enter) calc(60ms + var(--k, 0) * var(--enter-step)) backwards; }
+.home-hero-product { --k: 0; }
+.home-hero-brand { --k: 1; }
+.home-hero-accent { --k: 2; }
+.home-hero-actions { --k: 3; }
+.home-hero + .home-board { animation: home-enter var(--enter) 420ms backwards; }
+
+/* Further down, a section waits (data-reveal="wait") until it first scrolls into view, then arrives
+   the same way: its heading, then its content a step behind (the calculators one tile at a time). */
+@media (prefers-reduced-motion: no-preference) {
+  .home [data-reveal="wait"] :is(.home-section-head, .home-lab-tile, .home-glance-board),
+  .home-lab[data-reveal="wait"]::before, .home-install[data-reveal="wait"] { opacity: 0; }
+}
+.home [data-reveal="play"] .home-section-head { animation: home-enter-text var(--enter) backwards; }
+.home-lab[data-reveal="play"]::before { animation: home-fade-in 1400ms ease 120ms backwards; }
+.home-lab[data-reveal="play"] .home-lab-tile {
+  animation: home-enter var(--enter) calc(var(--enter-step) + var(--n) * var(--enter-step)) backwards; }
+.home-glance[data-reveal="play"] .home-glance-board { animation: home-enter var(--enter) var(--enter-step) backwards; }
+.home-install[data-reveal="play"] { animation: home-enter var(--enter) backwards; }
 
 /* ---- narrower ---------------------------------------------------------------------- */
 @media (max-width: 1080px) {
@@ -764,9 +778,14 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
   .home { gap: 26px; }
   .home-stage { border-radius: 18px; }
   .home-hero { gap: 24px; min-height: 0; padding: 26px 20px 104px; }
-  .home .home-hero h1 { gap: 8px; }
-  .home-hero-name { font-size: 34px; }
-  .home-hero-accent { font-size: 19px; }
+  .home .home-hero h1 { gap: 12px; }
+  .home-hero-brand { font-size: clamp(42px, 12.5vw, 56px); }
+  .home-hero-brand:lang(ja) { font-size: clamp(34px, 10.2vw, 48px); }
+  .home-hero-product { font-size: 12.5px; }
+  .home-hero-accent { margin-top: 18px; font-size: 17.5px; }
+  .home > :is(.home-lab, .home-glance, .home-install) { margin-top: 22px; }
+  .home-lab::before { inset: -28px -10px -32px; }
+  .home-section-head { gap: 12px; margin-bottom: 16px; }
   .home-hero-actions { gap: 10px; margin-top: 26px; }
   .home-cta { flex: 1 1 0; min-height: 46px; padding: 0 14px; font-size: 14px; }
   /* The art becomes a band of the mosaic's top rows; the calculator card stays with the tools below. */
@@ -777,7 +796,7 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
   .home-mosaic-cell { height: auto; aspect-ratio: 1; border-radius: 4px; }
   .home-art-card { display: none; }
   /* Over the mosaic band, clear of the buttons above and the board below: the compact read-out. */
-  .home-art .home-pop { left: 50%; top: -12px; width: min(304px, 94%); padding: 10px 12px; transform: translateX(-50%);
+  .home-art .home-pop { left: 50%; top: -12px; width: min(328px, 96%); padding: 10px 12px; transform: translateX(-50%);
     transform-origin: top center; }
   .home-pop-head { padding-bottom: 8px; }
   .home-pop-dir { gap: 6px; padding-top: 8px; }
@@ -789,13 +808,12 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
   .home-task-tabs { flex: 1; gap: 0; }
   .home-task-tabs button { flex: 1 1 0; justify-content: center; gap: 6px; min-width: 0; min-height: 50px; padding: 0 6px; font-size: 13.5px; }
   .home-task-tabs button svg { width: 16px; height: 16px; }
-  .home-task-tabs button::after { left: 8px; right: 8px; }
+  .home-board-nav { --tab-inset: 8px; }
   .home-cell { padding: 20px 16px 20px; }
   .home .home-cell h2 { font-size: 17px; }
   .home .home-cell h2.home-cell-lead { font-size: 13.5px; }
   /* Narrow, the leads wrap to different lengths: start them all at the same top instead. */
   .home-cell-heading, form.home-build .home-cell-lead, .home-ask-head { align-items: flex-start; min-height: 0; }
-  .home-cell-body { margin-bottom: 14px; font-size: 13px; }
   form.home-build { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto 1fr;
     grid-template-areas: "lead" "fields" "flow" "actions"; }
   /* The flow fills the slack, so the button sits at the foot as it does on diagnose. */

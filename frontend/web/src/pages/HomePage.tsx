@@ -23,6 +23,7 @@ import { BuildFlow } from "./home/BuildFlow.tsx";
 import { Hero } from "./home/Hero.tsx";
 import { Install } from "./home/Install.tsx";
 import { Lab } from "./home/Lab.tsx";
+import { SectionHead } from "./home/SectionHead.tsx";
 import { readSheet } from "./home/teamSheet.ts";
 import { HOME_TACTICS, useHomeDraft, type HomeTask } from "./home/draft.ts";
 import { HOME_EXAMPLES, exampleName } from "./home/example.ts";
@@ -56,6 +57,58 @@ function useNearViewport<T extends Element>(): [RefObject<T | null>, boolean] {
   return [ref, near];
 }
 
+/** Sections below the first screen enter once, the first time they scroll into view: each carries
+ * `data-reveal`, set to "wait" (held back) and then "play" (styles.home.css runs the entrance). What is
+ * already on screen at load is never held back, and without an observer or with reduced motion
+ * nothing is. */
+function useReveal(root: RefObject<HTMLElement | null>) {
+  // The observer's first report places each section from the browser's own layout pass (reading the
+  // places directly forced the whole page's first layout inside the render). A section starting in
+  // view is left as is; one starting below the fold is held, unseen, until it scrolls in.
+  useEffect(() => {
+    const node = root.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const sections = node.querySelectorAll<HTMLElement>("[data-reveal]");
+    const fresh = new WeakSet<Element>(sections);
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const section = entry.target as HTMLElement;
+        if (fresh.delete(section) && entry.boundingClientRect.top <= window.innerHeight * 0.92) {
+          observer.unobserve(section);
+        } else if (!entry.isIntersecting) {
+          section.dataset.reveal = "wait";
+        } else {
+          section.dataset.reveal = "play";
+          observer.unobserve(section);
+        }
+      }
+    }, { rootMargin: "0px 0px -12% 0px" });
+    for (const section of sections) observer.observe(section);
+    return () => observer.disconnect();
+  }, [root]);
+}
+
+/** One underline for the board's tabs, sliding to the chosen one: its place is written as --tab-x and
+ * --tab-w on the tab row, measured again whenever a tab's width changes (language, font load). */
+function useTabIndicator(nav: RefObject<HTMLElement | null>, task: string | undefined) {
+  // Placed from the observer, whose first report comes after the browser's own layout pass:
+  // reading the tab's place directly forced the whole page's first layout inside the render.
+  useEffect(() => {
+    const node = nav.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const place = () => {
+      const on = node.querySelector<HTMLElement>("[role=tab].on");
+      if (!on) return;
+      node.style.setProperty("--tab-x", `${on.offsetLeft}px`);
+      node.style.setProperty("--tab-w", `${on.offsetWidth}px`);
+    };
+    const observer = new ResizeObserver(place);
+    for (const tab of node.querySelectorAll("[role=tab]")) observer.observe(tab);
+    return () => observer.disconnect();
+  }, [nav, task]);
+}
+
 export function HomePage() {
   const location = useLocation();
   const legacy = new URLSearchParams(location.search);
@@ -73,6 +126,8 @@ function Launchpad() {
   const canSession = !canBuild && can("team.uep");
   const canAsk = can("llm.qa") && !!adapter.qa;
   const [glanceRef, glanceNear] = useNearViewport<HTMLElement>();
+  const home = useRef<HTMLDivElement>(null);
+  const tabRow = useRef<HTMLDivElement>(null);
   const [savedTask, setTask] = useHomeDraft("task");
   const tasks: HomeTask[] = [...(canDiagnose ? ["diagnose" as const] : []),
     ...(canBuild || canSession ? ["build" as const] : []), ...(canAsk ? ["ask" as const] : [])];
@@ -84,13 +139,15 @@ function Launchpad() {
   // The assistant page exists when any of its three tools does (App.tsx's own condition); a local
   // runtime starts in its agent sessions.
   const start = canSession ? "/sessions" : canDiagnose || canAsk || canBuild ? "/assist" : "/calc";
+  useReveal(home);
+  useTabIndicator(tabRow, task);
 
   return (
-    <div className="home">
+    <div ref={home} className="home">
       <Hero online={online} start={start} />
 
       <div id="home-start" className="panel home-board">
-        {task && <div className="home-board-nav"><SegmentedControl kind="tabs" idBase="home-task" value={task}
+        {task && <div ref={tabRow} className="home-board-nav"><SegmentedControl kind="tabs" idBase="home-task" value={task}
           onChange={setTask} ariaLabel={t("home.tasks")} className="home-task-tabs"
           items={tasks.map((id) => {
             const Icon = TASK_ICONS[id];
@@ -115,10 +172,8 @@ function Launchpad() {
 
       <Lab />
 
-      <section ref={glanceRef} className="home-glance" aria-labelledby="home-glance-heading">
-        <header className="home-section-head">
-          <h2 id="home-glance-heading">{t("home.glance")}</h2>
-        </header>
+      <section ref={glanceRef} className="home-glance" aria-labelledby="home-glance-heading" data-reveal="">
+        <SectionHead id="home-glance-heading" title={t("home.glance")} mark="glance" />
         <div className="panel home-glance-board">
           {glanceNear ? (
             <Suspense fallback={<><GlanceFallback /><GlanceFallback /></>}>

@@ -208,6 +208,9 @@ export function lanesOf(card: TuneCardDto, base: Spread): Lane[] {
 
 const STORE_CAP = 6000;
 const BATCH_CAP = 240;
+/** Batches in flight at once: the inference lane spreads them over its engines (LANE_WIDTH); the
+ * interactive lane has one engine, so its batches go one after another. */
+const IN_FLIGHT = { interactive: 1, inference: 3 } as const;
 
 export const requestKey = (request: DamageRequestDto): string => JSON.stringify(request);
 
@@ -245,7 +248,8 @@ export function useDamageStore(adapter: RuntimeAdapter, cap = STORE_CAP, lane: "
     }
     return out;
   }, []);
-  const fetchMissing = useCallback(async (requests: DamageRequestDto[], signal?: AbortSignal) => {
+  const fetchMissing = useCallback(async (requests: DamageRequestDto[], signal?: AbortSignal,
+    requestLane: "interactive" | "inference" = lane) => {
     const seen = new Set<string>();
     const missing: Array<{ key: string; request: DamageRequestDto }> = [];
     for (const request of requests) {
@@ -260,13 +264,15 @@ export function useDamageStore(adapter: RuntimeAdapter, cap = STORE_CAP, lane: "
       chunks.push(missing.slice(at, at + BATCH_CAP));
     }
     const owned = new Set<string>();
-    try {
-      for (const scheduled of chunks) {
-        if (signal?.aborted) break;
-        const chunk = scheduled.filter(({ key }) => !store.current.has(key) && !inflight.current.has(key));
+    // Batches leave in order (whatever the caller listed first is computed first), several at a time
+    // on the inference lane; an abort stops new ones from leaving.
+    let next = 0;
+    const drain = async () => {
+      while (next < chunks.length && !signal?.aborted) {
+        const chunk = chunks[next++]!.filter(({ key }) => !store.current.has(key) && !inflight.current.has(key));
         if (!chunk.length) continue;
         chunk.forEach(({ key }) => { inflight.current.add(key); owned.add(key); });
-        const output = await adapter.damageBatch(chunk.map((item) => item.request), { lane });
+        const output = await adapter.damageBatch(chunk.map((item) => item.request), { lane: requestLane });
         chunk.forEach(({ key }, index) => {
           const result = output[index];
           // An engine refusal for these exact inputs is itself a stable answer: keep it as null so
@@ -277,10 +283,17 @@ export function useDamageStore(adapter: RuntimeAdapter, cap = STORE_CAP, lane: "
           owned.delete(key);
         });
       }
-      setError(false);
-    } catch (failure) {
-      console.error("durability damage batch failed:", failure);
-      setError(true);
+    };
+    try {
+      const settled = await Promise.allSettled(
+        Array.from({ length: Math.min(IN_FLIGHT[requestLane], chunks.length) }, drain));
+      const failed = settled.find((outcome) => outcome.status === "rejected");
+      if (failed) {
+        console.error("durability damage batch failed:", failed.reason);
+        setError(true);
+      } else {
+        setError(false);
+      }
     } finally {
       owned.forEach((key) => inflight.current.delete(key));
       // Oldest-first eviction keeps the map bounded across a long session of edits.

@@ -84,7 +84,9 @@ export function TeamsPage() {
           <BoxShelf state={state} maxBoxes={limits.boxes} />
         </div>
       )}
-      {library !== "unavailable" && <StorageNote state={state} />}
+      {/* Once the library has read: shown while loading, this foot of the page sat right under the
+          header and was then pushed away by the shelves (a layout shift). */}
+      {state && <StorageNote state={state} />}
     </div>
   );
 }

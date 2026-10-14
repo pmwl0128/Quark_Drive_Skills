@@ -18,7 +18,7 @@ const MATCHUP_MESSAGES = {
   "calc.disguiseAdjusted": { zh: "已将画皮的一次减伤计入击倒回合。",
                              en: "The KO turns account for Disguise's one-time damage reduction.",
                              ja: "ばけのかわによる1回分のダメージ軽減を確定数に反映しています。" },
-  "matchup.title": { zh: "对战模拟", en: "Battle simulation", ja: "対戦シミュレーション" },
+  "matchup.title": { zh: "环境模拟", en: "Metagame simulation", ja: "環境シミュレーション" },
   "matchup.ko": { zh: "KO 表", en: "KO grid", ja: "KO表" },
   "matchup.check": { zh: "对位表", en: "Matchup grid", ja: "対面表" },
   "matchup.unavailable": { zh: "当前运行环境未提供对战矩阵。", en: "The matchup grid is not available in this runtime.",
@@ -116,6 +116,30 @@ const MATCHUP_MESSAGES = {
   "matchup.c1": { zh: "同场可应对", en: "can answer from the same field", ja: "同場から対処可能" },
   "matchup.c0": { zh: "无法稳定应对", en: "no reliable answer", ja: "安定した対処なし" },
   "a11y.matchupView": { zh: "模拟视图", en: "Simulation view", ja: "シミュレーション表示" },
+  "actual.history": { zh: "历史计算", en: "Past runs", ja: "計算の履歴" },
+  "actual.historyEmpty": { zh: "暂无计算记录", en: "No runs yet", ja: "計算の履歴はまだありません" },
+  "actual.historyTop": { zh: "环境前 {k} 名", en: "Top {k}", ja: "上位{k}体" },
+  "actual.historyClear": { zh: "清空记录", en: "Clear records", ja: "履歴を消去" },
+  "actual.historyConfirm": { zh: "确认清空", en: "Clear all", ja: "すべて消去" },
+  "actual.historyCancel": { zh: "取消", en: "Cancel", ja: "キャンセル" },
+  "actual.historyDelete": { zh: "删除记录", en: "Delete record", ja: "履歴を削除" },
+  "actual.historyStale": { zh: "数据已更新", en: "Data updated", ja: "データ更新" },
+  "actual.historyRunning": { zh: "计算中", en: "Running", ja: "計算中" },
+  "actual.historyInterrupted": { zh: "已中断", en: "Interrupted", ja: "中断" },
+  "actual.justNow": { zh: "刚刚", en: "just now", ja: "たった今" },
+  "actual.staleNote": {
+    zh: "这次结果基于 {asOf} 的数据，环境数据已更新。",
+    en: "This result was computed on the {asOf} data; the metagame data has since been updated.",
+    ja: "この結果は {asOf} のデータに基づいています。環境データはその後更新されました。" },
+  "actual.legacyNote": {
+    zh: "这份旧版结果未保存当时的数据版本，请重新计算。",
+    en: "This older result did not retain its data version. Run it again to use the current data.",
+    ja: "この旧バージョンの結果には当時のデータ情報がありません。現在のデータで再計算してください。" },
+  "actual.ruleNote": {
+    zh: "这次结果生成于 {season} · {rule} 规则。",
+    en: "This result was produced under {season} · {rule}.",
+    ja: "この結果は {season} · {rule} ルールで作成されました。" },
+  "actual.rerun": { zh: "重新计算", en: "Run again", ja: "再計算" },
 };
 
 export const useMatchupT = defineMessages(MATCHUP_MESSAGES);
