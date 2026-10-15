@@ -803,7 +803,7 @@ def map_oppdetails(dto: dict, slug: str) -> dict | None:
     keys = {variant["key"] for variant in species.get("variants", [])} or {slug}
     matrix = {}
     for attacker, row in dto["matrix"].items():
-        cells = row if attacker in keys else {key: row[key] for key in keys if key in row}
+        cells = row if attacker in keys else {key: cell for key, cell in row.items() if key in keys}
         if cells:
             matrix[attacker] = cells
     return {**({"teamEvidenceExpiresAt": dto["teamEvidenceExpiresAt"]}
