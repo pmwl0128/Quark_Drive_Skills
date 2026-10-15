@@ -15,6 +15,7 @@ payload contract; run `python scripts/team.py vocab` for enumerated intent field
 - [`build-context`](#6-build-context-intent-layer)
 - [Evidence](#7-evidence-output-side-lightweight)
 - [Frame](#8-frame-assembly-front-door)
+- [Top Meta](#9-top-meta-the-library-on-the-metagames-fields)
 
 ## 1. `team-json` (the canonical team structure)
 
@@ -483,7 +484,10 @@ come from `team.py schema` (`commands.frame`, `commands.slate-evaluate`, and
     "core_tiers": {"anchor": 1, "core": 2, "recurring_partner": 1},   // counts per role, all facts
     "flex_slots": {"open_count": 2,            // 2nd Mega / coverage / utility are YOURS (>=1 always open)
                    "substitutable_count": 1},  // recurring-partner slots: filled, but not binding
-    "observed_facts": {"observed_mega_slots": {...},
+    "observed_facts": {"observed_mega_slots": {...}, // sample_count counts known registrations only;
+                       // unknown_sample_count + sample_count = total_sample_count.
+                       // profile.mega_registration.count is null when a Mega-capable member's
+                       // set is unpublished/inferred; explicit Mega species remain observed.
                        "mega_registration_reference": { // group distribution when sample>=30,
                          "basis": "frame_group|frame_pool", // else whole-pool fallback
                          "distribution": {...}, "confidence": "medium|low"
@@ -554,3 +558,62 @@ least one survivor that is modal relative to its own bound frame unless the cont
 those modal survivors. Samples below 30 remain visible but are not load-bearing;
 in reliable samples, share >=20% is common, at least 5% but below 20% is minority, and <5% is rare (modal is tracked
 separately and may tie). These labels describe observations; they do not score team strength.
+
+## 9. Top Meta (The Library On The Metagame's Fields)
+
+`data/top_meta/<rule>_<format>.json` counts the current rule's real-team library on the in-game
+metagame's own fields; `team.py topmeta` joins one scope with the in-game snapshot at query time. It
+is a VIEW of the library, never a second metagame authority: `repset`/`frame` do not consume it, and
+agreeing with them is not corroboration (same data). Display names: 竞技环境 / 上位環境 / Top Meta.
+
+Counting units are decided on the dev side, where player identity exists, and shipped de-identified:
+
+- **team unit** — one player's distinct six-species composition (the same six in several events,
+  seasons or the event partition count once; swapping a member is a new unit);
+- **set unit** — one player's distinct full build of one species (any changed field is a new unit;
+  the same build seen with and without SP is one unit, kept with its SP);
+- rows without player identity: byte-identical full six-member teams collapse into one team unit;
+  their members never merge across different teams. Distinct players on one team stay separate
+  (rentals and netdecks are real adoption);
+- a Mega form counts as its base species (the stone stays in `items`); an ability that is not one of
+  the base species' own is the Mega's run-form ability and counts as unknown.
+
+Table shape (storage; consume through `topmeta`):
+
+```json
+{"schema_version": 1, "format": "double", "rule": "M-C", "season": "M-7",
+ "built_for": {"season": "M-7", "rule": "M-C", "format": "double", "built_at": "...",
+               "data_partitions": ["M-6", "M-7", "M-C-events"],
+               "source_fingerprints": {"team_library": "<sha256>", "dex": "<sha256>"}},
+ "base_species": {"Aegislash-Blade": "Aegislash"},
+ "scopes": {
+   "season": {"season": "M-7", "partitions": ["M-7"], "teams": 1764, "sets": 10261, "species": {}},
+   "rule": {"partitions": ["M-6", "M-7", "M-C-events"], "teams": 9076, "sets": 50888, "species": {}}}}
+```
+
+A species entry is `{teams, sets, lanes: {observed_full_set, extracted_set}, panels}`; each of
+`moves|items|abilities|natures|spreads|partners` is `{n, counts: {key: count}}` with its OWN `n` (the
+units whose field is known — a missing field is never a zero). Spread keys are `hp/atk/def/spa/spd/spe`.
+The season scope never reads event partitions; neither scope reads a handover predecessor. No count
+is cropped and no publication threshold exists at this layer.
+
+`topmeta` output (`schema: top_meta.v1`) carries `sample {teams, sets}`, `compared_with`,
+`identity_folds` (library-only forms folded into the in-game ranking's identity through their dex
+base), a `ranking`, and per-species panels. Every panel entry is ONE record with both sides:
+
+| Field | Meaning |
+|---|---|
+| `count`, `share` | Top Meta units carrying the entry, and `count / n` |
+| `ingame` | `{kind:"pct", value}`; `{kind:"bound", below}` = outside the in-game list, an UPPER bound (never 0); `{kind:"absent"}`; partners `{kind:"rank", value}` / `{kind:"unlisted"}` |
+| `top_minus_ingame` | Top Meta share minus in-game share; the in-game perspective is its negation. `delta_is_floor:true` when derived from a bound |
+| `within_noise` | the in-game value lies inside the Wilson 95% interval of the Top Meta share — a muting aid, not a significance claim |
+| `marker` | count tier only: `outside_ingame_top` (seen here, absent from the in-game list) / `unseen_in_top` (count 0 while `(1-p)^n < 0.05`) |
+
+Panel `tier` is `count` (n < 5, no numeric difference), `low` (5–29) or `reliable` (≥ 30); it decides
+presentation, never existence. Ranking rows carry `rank` (competition ranking by team units), `teams`,
+`share`, `tier`, `ingame_rank`, `rank_delta` (= `ingame_rank - rank`, null in the count tier) and
+`within_noise` (the in-game rank falls inside the rank range implied by the share's Wilson interval).
+The season scope compares only with the same season's snapshot (`compared_with.window: same_season`).
+The rule scope spans seasons whose in-game snapshots cannot be pooled, so it compares with the current
+in-game snapshot (`window: current_snapshot`): the two sides cover different time ranges, and a consumer
+must say so. No field is a score.

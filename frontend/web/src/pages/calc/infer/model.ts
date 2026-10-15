@@ -26,13 +26,11 @@ export type InferKey = BulkKey | OffKey;
 export type SpKey = "hp" | InferKey;
 
 import { SP_MAX } from "../../../lib/battle.ts";
-export { SP_MAX } from "../../../lib/battle.ts";
 import { SP_BUDGET } from "../../../lib/battle.ts";
-export { SP_BUDGET } from "../../../lib/battle.ts";
 const W = SP_MAX + 1;
 const SP_RANGE = Array.from({ length: W }, (_, sp) => sp);
-export const BULK_KEYS: BulkKey[] = ["def", "spd"];
-export const OFF_KEYS: OffKey[] = ["atk", "spa"];
+const BULK_KEYS: BulkKey[] = ["def", "spd"];
+const OFF_KEYS: OffKey[] = ["atk", "spa"];
 export const SP_KEYS: SpKey[] = ["hp", "atk", "def", "spa", "spd"];
 
 // -- what the game shows --------------------------------------------------------------------
@@ -225,7 +223,7 @@ function bestProduct(hp: number[], stat: number[], total: number): number {
 
 /** Bulk-equivalent SP: the fewest neutral-nature SP in HP + the stat that reach this product. Below
  * 0 SP (a lowering nature) is reported as 0; above 64 as 64. */
-export function bulkEquivalent(product: number, hp: number[], stat: number[]): number {
+function bulkEquivalent(product: number, hp: number[], stat: number[]): number {
   for (let total = 0; total <= 2 * SP_MAX; total++) {
     if (bestProduct(hp, stat, total) >= product) return total;
   }
@@ -244,7 +242,7 @@ export function bulkProduct(space: FoeSpace, key: BulkKey, sps: Partial<Record<S
   return actualStat(space.base.hp, "hp", sps.hp ?? 0, 1) * actualStat(space.base[key], key, sps[key] ?? 0, mult);
 }
 
-export function rulerAxis(space: FoeSpace, key: BulkKey): [number, number] {
+function rulerAxis(space: FoeSpace, key: BulkKey): [number, number] {
   const { hp, stat } = statTables(space.base);
   return [hp[0]! * stat(key, 0.9)[0]!, hp[SP_MAX]! * stat(key, 1.1)[SP_MAX]!];
 }

@@ -6,10 +6,11 @@ import type {
   BuilderRequestDto, BuilderStartDto, Capabilities,
   DamageBatchResultDto, DamageRequestDto, DamageResultDto, DiagnoseReportDto,
   DiagnoseRequestDto, FormatId, LearnersDto, MetaDetailDto, MetaFacetsDto, MetaKoDto,
-  OppCacheDto, OppCheckGridDto, OppKoGridDto, OppSetCatalogDto,
+  OppCheckGridDto, OppDetailsDto, OppKoGridDto, OppSetCatalogDto,
   PokemonCardDto,
   OnlineQuotaDto, QaAnswerDto, QaProgressDto, QaRequestDto, RankingDto, ResolveEntryDto, SessionDto, SessionWithLedgerDto,
-  MetaKoTrendDto, SpeedBatchResultDto, SpeedInputDto, TrendDto, TuneResultDto, UsageTrendDto,
+  MetaKoTrendDto, SpeedBatchResultDto, SpeedInputDto, TopMetaDetailDto, TopMetaRankingDto,
+  TopMetaScopeId, TrendDto, TuneResultDto, UsageTrendDto,
 } from "@pokemon-champions/protocol";
 import { OnlineErrorDetailSchema } from "@pokemon-champions/protocol";
 
@@ -71,6 +72,12 @@ export interface RuntimeAdapter {
   koTrend(format: FormatId, slug: string): Promise<MetaKoTrendDto>;
   /** Inverted facet index for the filter rail; one lazy document per format. */
   metaFacets(format: FormatId): Promise<MetaFacetsDto>;
+  /** Top Meta (竞技环境): the real-team library on the metagame's own fields, one ranking per scope.
+   * 404 = no table ships for the current rule. */
+  topRanking(format: FormatId, scope: TopMetaScopeId): Promise<TopMetaRankingDto>;
+  /** One Pokemon's Top Meta panels, both scopes in one document; also the in-game page's comparison
+   * source. 404 = the Pokemon has no Top Meta sample. */
+  topDetail(format: FormatId, slug: string): Promise<TopMetaDetailDto>;
   dexIndex(): Promise<DexIndexEntry[]>;
   /** Move -> learners index for the dex browse filter; one lazy document for the whole roster. */
   learners(): Promise<LearnersDto>;
@@ -81,12 +88,11 @@ export interface RuntimeAdapter {
   damageBatch(items: DamageRequestDto[], options?: { lane?: "interactive" | "inference" }): Promise<DamageBatchResultDto>;
   /** A speed ladder (my mon + opponents) in one fault-isolated batch (calc runtime only). */
   speedBatch(items: SpeedInputDto[], options?: { lane?: "interactive" | "inference" }): Promise<SpeedBatchResultDto>;
-  /** Opponent standard-set KO matrix (team.matchup). Shipped STATIC cache — served by the bridge live
-   * and exported to the online projection too. */
-  oppCache(format: FormatId): Promise<OppCacheDto>;
+  /** One species' build rows plus their reverse cells, without downloading the full matrix. */
+  oppDetails(format: FormatId, slug: string): Promise<OppDetailsDto>;
   /** Processed real-build catalog without the damage matrix. */
   oppSets(format: FormatId): Promise<OppSetCatalogDto>;
-  /** Lean default-page KO verdicts; full cell facts stay lazy in `oppCache`. */
+  /** Lean default-page KO verdicts; full cell facts stay lazy in `oppDetails`. */
   oppKo(format: FormatId): Promise<OppKoGridDto>;
   /** Derived C2/C1/C0 check grid over the same matrix (both runtimes, same static cache). */
   oppChecks(format: FormatId): Promise<OppCheckGridDto>;

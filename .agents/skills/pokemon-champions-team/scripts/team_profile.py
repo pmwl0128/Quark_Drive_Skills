@@ -23,6 +23,7 @@ from cliffs import champ_speed, SP_CAP
 from diagnose import diagnose_defense, diagnose_offense, diagnose_speed, diagnose_roles
 from selection import _mega_form_for
 from team_io import team_from_dict
+import completeness
 
 # Max-speed-line bucket boundaries (a mechanical, tunable knob — objective dims, not quality tiers).
 # Champions final-speed lines at max investment mostly land 100–200; <100 = the Trick-Room-leaning tail.
@@ -131,12 +132,24 @@ def profile(team: dict[str, Any], *, dex_fn: Callable, move_fn: Callable,
 
     # --- mega usage: who can / would Mega (facts; ONE per battle is select's law, not repeated here) ---
     mega = []
+    unknown_mega_members = []
     for m in t.pokemon:
         f = facts.get(m.species) or {}
         form = _mega_form_for(
             {"species": m.species, "item": m.item}, f, item_info, facts)
         if form:
             mega.append({"member": m.species, "form": form})
+        # A roster-only base form with an unpublished item is NOT evidence of no Mega.
+        # Explicit Mega forms are observed species facts; a known non-Mega-capable form
+        # cannot register a Mega regardless of its missing set. Otherwise trust only an
+        # authoritative set (including an explicitly empty item on a full observed set).
+        registration_known = bool(f.get("found")) and (
+            bool(f.get("is_mega"))
+            or ("mega_forms" in f and not f["mega_forms"])
+            or completeness.set_authoritative(m.completeness, has_moves=bool(m.moves))
+        )
+        if not registration_known:
+            unknown_mega_members.append(m.species)
 
     return {
         "kind": "profile",
@@ -150,6 +163,10 @@ def profile(team: dict[str, Any], *, dex_fn: Callable, move_fn: Callable,
         "offense": off_vec,
         "defense": def_vec,
         "mega_usage": mega,
+        "mega_registration": {
+            "count": None if unknown_mega_members else len(mega),
+            "unknown_members": unknown_mega_members,
+        },
         # Aggregation carries the source operators' honesty markers verbatim.
         "confidences": {k: {"confidence": d.get("confidence"), "reason": d.get("confidence_reason")}
                         for k, d in (("defense", defense), ("offense", offense),

@@ -10,11 +10,12 @@ import { loadLibraryVocabulary } from "./vocabulary.ts";
 import { libraryDb, type LibraryDb } from "./db.ts";
 import {
   BOX_SLOTS, BoxRecordSchema, defaultLayout, LIBRARY_SCHEMA_VERSION, LIBRARY_START, LibraryLayoutSchema,
-  preferredBox, TEAM_SIZE, TEAM_SLOT_STEP, TeamRecordSchema,
+  preferredBox, TEAM_SLOT_STEP, TeamRecordSchema,
   type BoxRecord, type LibraryLayout, type LibraryOrigin, type LibrarySnapshot, type TeamRecord,
 } from "./records.ts";
+import { TEAM_SIZE } from "../battle.ts";
 
-export interface SaveMeta {
+interface SaveMeta {
   origin: LibraryOrigin;
   snapshot?: LibrarySnapshot | null;
   name?: string;
@@ -63,12 +64,12 @@ async function askPersistence(): Promise<void> {
   }
 }
 
-export function readTeamRecord(row: unknown): TeamRecord | null {
+function readTeamRecord(row: unknown): TeamRecord | null {
   const parsed = TeamRecordSchema.safeParse(row);
   return parsed.success ? parsed.data : null;
 }
 
-export function readBoxRecord(row: unknown): BoxRecord | null {
+function readBoxRecord(row: unknown): BoxRecord | null {
   const parsed = BoxRecordSchema.safeParse(row);
   return parsed.success ? parsed.data : null;
 }
@@ -172,7 +173,7 @@ export function isFree(state: Pick<LibraryState, "box" | "layout">, at: BoxPosit
 /** A team's identity for "already saved": its format and its members' builds, in any order. Builds,
  * not box ids — the box may hold two Pokémon with the same build, and a team is the same team
  * whichever of them it uses. */
-export function teamBuildKey(format: FormatId, members: TeamMemberDoc[]): string {
+function teamBuildKey(format: FormatId, members: TeamMemberDoc[]): string {
   return JSON.stringify([format, members.map(memberBuildKey).sort()]);
 }
 
@@ -186,7 +187,7 @@ export function findSameTeam(state: Pick<LibraryState, "teams" | "box">, format:
     && teamBuildKey(format, team.members.map((id) => box.get(id)!.member)) === key) ?? null;
 }
 
-export interface TeamSavePlan {
+interface TeamSavePlan {
   /** Per member of the team: the box Pokémon with the same build it will use, or null for a new one. */
   reuse: (BoxRecord | null)[];
   /** Box cells the new Pokémon need, and how many are free. */
@@ -312,7 +313,7 @@ export function updateTeam(id: string, patch: { name?: string; notes?: string; t
 
 // ---- building a team from the box -------------------------------------------------------
 
-export type TeamEditResult =
+type TeamEditResult =
   | { ok: true; record: TeamRecord }
   /** The team already has six, already has this Pokémon, or one of the two is gone. */
   | { ok: false; reason: "full" | "present" | "missing" };
@@ -482,7 +483,7 @@ export function moveBoxGroup(moves: Array<{ id: string; to: BoxPosition }>): Pro
   });
 }
 
-export interface RemovedBoxRecord {
+interface RemovedBoxRecord {
   record: BoxRecord;
   /** The teams it was taken out of, and where in each party it stood. */
   memberships: Array<{ teamId: string; index: number }>;

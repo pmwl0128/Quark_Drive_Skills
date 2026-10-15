@@ -791,6 +791,26 @@ def _species_row(r: dict) -> dict:
     return row
 
 
+def map_oppdetails(dto: dict, slug: str) -> dict | None:
+    """Slice a mapped cache by species, preserving every build and both damage directions.
+
+    This is the common boundary for the local endpoint and static projection. A defender-only
+    build has no outgoing row but still retains its incoming cells; variant ids are never parsed.
+    """
+    species = next((row for row in dto["species"] if row["slug"] == slug), None)
+    if species is None:
+        return None
+    keys = {variant["key"] for variant in species.get("variants", [])} or {slug}
+    matrix = {}
+    for attacker, row in dto["matrix"].items():
+        cells = row if attacker in keys else {key: row[key] for key in keys if key in row}
+        if cells:
+            matrix[attacker] = cells
+    return {**({"teamEvidenceExpiresAt": dto["teamEvidenceExpiresAt"]}
+               if "teamEvidenceExpiresAt" in dto else {}),
+            "format": dto["format"], "matrix": matrix}
+
+
 def map_oppcache(cache: dict) -> dict:
     """Map the cache to its wire DTO.
 
@@ -1107,3 +1127,192 @@ def map_diagnose_report(team: dict, validate_raw: dict, diagnose_raw: dict) -> d
                   **({"attentionCalibration": calibration} if calibration else {})},
         **({"checks": checks} if checks else {}),
     }
+
+
+# --- Top Meta (竞技环境 / 上位環境) ---------------------------------------------------------
+# The team skill owns the counting and the comparison (scripts/topmeta.py); these mappers only crop
+# and name. Every entry is ONE record carrying both sides, so the in-game page and the Top Meta page
+# read the same deviation from opposite perspectives — nothing here recomputes it.
+
+# The page shows ten rows per panel; the in-game page additionally needs the record for every row it
+# lists itself, so those survive the crop too.
+TOP_PANEL_LIMIT = 10
+# Web boundary, not a sample threshold: a partner row coming from fewer distinct teams than this is
+# close to naming one team's line-up, which the projection must not carry (frontend/design.md §7.1).
+TOP_PARTNER_MIN_TEAMS = 3
+
+
+def _topmeta_mod():
+    if str(_TEAM_SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(_TEAM_SCRIPTS))
+    import topmeta  # noqa: E402
+    return topmeta
+
+
+# The dex tables a Top Meta entry may name; the table name is interpolated, so it is whitelisted.
+_TOP_TABLES = frozenset({"moves", "items", "abilities", "natures", "pokemon"})
+
+
+def _dex_row(table: str, name: str):
+    if table not in _TOP_TABLES:
+        raise KeyError(table)
+    return _conn().execute(f"select * from {table} where canonical=?", (name,)).fetchone()
+
+
+def _top_named(name: str, row) -> dict:
+    return named(name, row["display_name"] if row else None, row["display_name_ja"] if row else None)
+
+
+def _int_or_none(value) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _top_ingame(ingame: dict | None) -> dict | None:
+    if ingame is None:
+        return None
+    kind = ingame["kind"]
+    if kind in ("pct", "rank"):
+        return {"kind": kind, "value": ingame["value"]}
+    if kind == "bound":
+        return {"kind": "bound", "below": ingame["below"]}
+    return {"kind": kind}
+
+
+def _top_value_entry(panel: str, e: dict) -> dict:
+    if panel == "spreads":
+        row: dict = {"spread": {k: v for k, v in e["spread"].items() if v}}
+    else:
+        dex = _dex_row(panel, e["name"])
+        row = _top_named(e["name"], dex)
+        if panel == "moves":
+            row.update({"type": type_name(dex["type"]) if dex else None,
+                        "category": type_name(dex["category"]) if dex else None,
+                        "power": _int_or_none(dex["power"]) if dex else None})
+        elif panel == "items":
+            row["key"] = f"item:{slugify(e['name'])}"
+    row.update({"count": e["count"], "share": e["share"], "ingame": _top_ingame(e["ingame"]),
+                "delta": e["top_minus_ingame"], "withinNoise": e["within_noise"],
+                "marker": e["marker"]})
+    if e.get("delta_is_floor"):
+        row["deltaIsFloor"] = True
+    return row
+
+
+def _top_value_panel(panel: str, p: dict) -> dict:
+    observed = [e for e in p["entries"] if e["count"] > 0]
+    keep = {id(e) for e in observed[:TOP_PANEL_LIMIT]}
+    keep |= {id(e) for e in p["entries"] if (e.get("ingame") or {}).get("kind") == "pct"}
+    return {"n": p["n"], "tier": p["tier"],
+            "entries": [_top_value_entry(panel, e) for e in p["entries"] if id(e) in keep]}
+
+
+def _top_partner_panel(p: dict, slug_of) -> dict:
+    entries = []
+    for e in p["entries"]:
+        listed_ingame = (e.get("ingame") or {}).get("kind") == "rank"
+        if 0 < e["count"] < TOP_PARTNER_MIN_TEAMS:
+            continue
+        if e["count"] == 0 and not listed_ingame:
+            continue
+        if e["count"] > 0 and (e["rank"] or 0) > TOP_PANEL_LIMIT and not listed_ingame:
+            continue
+        entries.append({**_top_named(e["name"], _dex_row("pokemon", e["name"])), "slug": slug_of(e["name"]),
+                        "key": f"pokemon:{slugify(e['name'])}",
+                        "count": e["count"], "share": e["share"], "rank": e["rank"],
+                        "ingame": _top_ingame(e["ingame"]), "rankDelta": e["rank_delta"]})
+    return {"n": p["n"], "tier": p["tier"], "entries": entries}
+
+
+def _top_header(doc: dict) -> dict:
+    out = {"format": doc["format"], "rule": doc["rule"], "scope": doc["scope"],
+           "season": doc.get("season"), "partitions": list(doc.get("partitions") or []),
+           "sample": {"teams": doc["sample"]["teams"], "sets": doc["sample"]["sets"]},
+           "comparedWith": None}
+    cw = doc.get("compared_with")
+    if cw:
+        out["comparedWith"] = {"season": cw["season"], "window": cw.get("window", "same_season")}
+        if cw.get("updated_at"):
+            out["comparedWith"]["updatedAt"] = cw["updated_at"]
+    if doc.get("built_at"):
+        out["builtAt"] = doc["built_at"]
+    return out
+
+
+def map_top_ranking(doc: dict, slug_of) -> dict:
+    """One scope's Top Meta ranking. `slug_of` gives the in-game meta slug where the species is
+    ranked in-game (so both views route to the same detail page), else the dex slug."""
+    rows = []
+    for r in doc["ranking"]:
+        dex = _dex_row("pokemon", r["name"])
+        rows.append({
+            "rank": r["rank"], "slug": slug_of(r["name"]), "key": f"pokemon:{slugify(r['name'])}",
+            "types": json.loads(dex["types_json"] or "[]") if dex else [],
+            **_top_named(r["name"], dex),
+            "teams": r["teams"], "share": r["share"], "tier": r["tier"],
+            "ingameRank": r["ingame_rank"], "rankDelta": r["rank_delta"],
+            "withinNoise": r["within_noise"],
+        })
+    return {**_top_header(doc), "rows": rows}
+
+
+def _top_scope(doc: dict | None, name: str, slug_of) -> dict | None:
+    if doc is None or name not in doc["species"]:
+        return None
+    s = doc["species"][name]
+    rank = next((r for r in doc["ranking"] if r["name"] == name), None)
+    panels = {panel: _top_value_panel(panel, s["panels"][panel])
+              for panel in ("moves", "items", "abilities", "natures", "spreads")}
+    panels["partners"] = _top_partner_panel(s["panels"]["partners"], slug_of)
+    return {
+        **_top_header(doc),
+        "rank": rank["rank"] if rank else None, "tier": rank["tier"] if rank else None,
+        "share": rank["share"] if rank else None,
+        "rankDelta": rank["rank_delta"] if rank else None,
+        "withinNoise": rank["within_noise"] if rank else None,
+        "ingameRank": s["ingame_rank"], "teams": s["teams"], "sets": s["sets"],
+        "lanes": dict(s["lanes"]), "panels": panels,
+    }
+
+
+def map_top_detail(season_doc: dict, rule_doc: dict, name: str, slug_of) -> dict:
+    """One Pokemon's Top Meta panels for BOTH scopes in one document: switching scope on the page
+    costs no request, and the in-game page reads the season scope's records for its comparison."""
+    dex = _dex_row("pokemon", name)
+    return {
+        "slug": slug_of(name), "key": f"pokemon:{slugify(name)}",
+        **_top_named(name, dex),
+        "format": season_doc["format"], "rule": season_doc["rule"], "season": season_doc.get("season"),
+        "scopes": {"season": _top_scope(season_doc, name, slug_of),
+                   "rule": _top_scope(rule_doc, name, slug_of)},
+    }
+
+
+def top_meta_docs(fmt: str, meta_data, season: str, rule: str) -> dict | None:
+    """Both scopes compared through the team skill, plus the slug lookup. None when no table ships.
+
+    The in-game side is read from the shipped meta files (ranking + details of the CURRENT season)
+    and its zh/ja names resolved through the dex — the same single naming authority map_detail uses."""
+    tm = _topmeta_mod()
+    table = tm.load_table(fmt, rule)
+    if table is None:
+        return None
+    ranking = json.loads((meta_data / f"ranking_{season}_{fmt}.json").read_text(encoding="utf-8"))
+    details = json.loads((meta_data / f"details_{season}_{fmt}.json").read_text(encoding="utf-8"))
+
+    def resolve_batch(kind: str, names: list[str]) -> dict:
+        return {n: resolve_en(kind, n) for n in names}
+
+    ingame = tm.ingame_from_meta(ranking, details.get("rows") or [], resolve_batch)
+    slugs = ingame["slugs"]
+
+    def slug_of(name: str) -> str:
+        return slugs.get(name) or slugify(name)
+
+    season_doc = tm.compare(table, "season", ingame)
+    rule_doc = tm.compare(table, "rule", ingame)
+    names = sorted(set(season_doc["species"]) | set(rule_doc["species"]))
+    return {"season": season_doc, "rule": rule_doc, "slug_of": slug_of,
+            "by_slug": {slug_of(n): n for n in names}}

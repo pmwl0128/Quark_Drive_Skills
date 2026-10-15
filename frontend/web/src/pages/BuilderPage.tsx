@@ -11,7 +11,7 @@ import { BUILDER_TACTICS, BuilderJobDtoSchema, type BuilderJobDto, type BuilderR
 import { IconAdjustmentsHorizontal, IconChevronUp, IconRefresh } from "@tabler/icons-react";
 import { lazy, useEffect, useMemo, useState } from "react";
 import type { FormatId } from "@pokemon-champions/protocol";
-import { AdaptiveCombobox } from "../components/AdaptiveCombobox.tsx";
+import { PokemonCombo } from "../components/build/PokemonCombo.tsx";
 import { FormatTabs } from "../components/FormatTabs.tsx";
 import { PageHeader } from "../components/PageHeader.tsx";
 import { SegmentedControl, segmentedPanelId, segmentedTabId } from "../components/SegmentedControl.tsx";
@@ -438,15 +438,10 @@ export function BuilderPage({ embedded = false, active = true, fill = null, onCo
           </div>
           <div className="builder-field">
             <label htmlFor="builder-anchor">{t("builder.anchor")}</label>
-            <AdaptiveCombobox id="builder-anchor" value={anchor}
+            <PokemonCombo id="builder-anchor" value={anchor}
               maxLength={100} onValueChange={setAnchor}
               placeholder={t("builder.anchorHint")}
-              options={dex.status === "ready" ? dex.data.map((entry) => ({
-                key: entry.slug,
-                value: displayName(entry, lang),
-                secondary: entry.name,
-                searchText: `${entry.nameZh ?? ""} ${entry.nameJa ?? ""} ${entry.slug}`,
-              })) : []} />
+              dex={dex.status === "ready" ? dex.data : []} />
           </div>
           <div className="builder-field" {...ownedDrop}>
             <label htmlFor="builder-owned">{t("builder.owned")}</label>

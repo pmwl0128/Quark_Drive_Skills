@@ -2,10 +2,7 @@ import { expect, test } from "vitest";
 import type { OppSetCatalogDto } from "@pokemon-champions/protocol";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import type { ItemRef } from "../../runtime/projection.ts";
-import {
-  buildConfigSig, modalForEntry, observedBuildOptions, sideFromBuild, sideIsBare,
-  withMega, type ModalSet,
-} from "../../components/build/inputs.tsx";
+import { buildConfigSig, modalForEntry, observedBuildOptions, sideFromBuild, sideIsBare, withMega, type ModalSet } from "../../lib/buildState.ts";
 import { buildCardOptionForMon } from "./duel/MonEditor.tsx";
 import { applyBuildOption, makeMon, rollModifier, updateRosterMon } from "./duel/state.ts";
 

@@ -21,7 +21,7 @@ import {
   type PointerEvent,
 } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AdaptiveCombobox } from "../AdaptiveCombobox.tsx";
+import { PokemonCombo } from "../build/PokemonCombo.tsx";
 import { GameImage } from "../GameImage.tsx";
 import { useToast } from "../Toast.tsx";
 import { useDexByName, useDexIndex } from "../../hooks.ts";
@@ -621,13 +621,6 @@ function AddToCell({ box, slot, state, onAdded, onPaste }: {
   const [unknown, setUnknown] = useState(false);
   const full = freeCells(state).length === 0;
 
-  const options = useMemo(() => dexList.status === "ready" ? dexList.data.map((entry) => ({
-    key: entry.slug,
-    value: displayName(entry, lang),
-    secondary: entry.name,
-    searchText: `${entry.nameZh ?? ""} ${entry.nameJa ?? ""} ${entry.slug}`,
-  })) : [], [dexList, lang]);
-
   const add = async (text: string) => {
     if (dexList.status !== "ready" || !text.trim()) return;
     const entry = findSpecies(dexList.data, text);
@@ -655,7 +648,8 @@ function AddToCell({ box, slot, state, onAdded, onPaste }: {
         <IconPlus aria-hidden />{t("lib.box.addLabel")}
       </label>
       <span className="lib-add-row">
-        <AdaptiveCombobox id="lib-box-add" value={value} options={options} maxLength={60} disabled={full}
+        <PokemonCombo id="lib-box-add" value={value} dex={dexList.status === "ready" ? dexList.data : []}
+          maxLength={60} disabled={full}
           placeholder={t("lib.box.addPlaceholder")} aria-invalid={unknown || undefined}
           onValueChange={(next) => { setValue(next); setUnknown(false); }}
           onCommit={(next, reason) => { if (reason === "selection") void add(next); }} />

@@ -6,14 +6,13 @@
  * side's remaining health under its own name. */
 import type { DamageResultDto, LearnsetDto } from "@pokemon-champions/protocol";
 import { useId, useState, type ReactNode } from "react";
-import { TypeBadge } from "../../../components/TypeBadge.tsx";
 import { useLang } from "../../../i18n.ts";
 import { useCalcT } from "../messages.ts";
 import { useDamageText } from "../../../lib/damageText.tsx";
 import { koLabel, koTone } from "../../../lib/ko.ts";
 import type { MetaUsage } from "../../../lib/metaUsage.ts";
-import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import { MoveCell } from "../../../components/build/MoveCell.tsx";
+import "../../../components/build/styles.sp.css";
 import {
   ROLL_COUNT, ROLL_MODES, rollIndexOf, rollModeAt, rollModifier, rollValue,
 } from "./state.ts";
@@ -32,57 +31,53 @@ export interface SlotResult {
 
 /** Turns-to-KO for a result, falling back to the plain roll-band projection when the engine
  * reported no KO verdict (status moves and no-damage hits have none). */
-export function turnsOf(res: DamageResultDto): number | null {
+function turnsOf(res: DamageResultDto): number | null {
   if (res.koChance?.n != null) return res.koChance.n;
   if (res.maxPercent <= 0) return null;
   return Math.ceil(100 / Math.max(res.maxPercent, 0.01));
 }
 
-function Headline({ entry, name, result, verdict, notes }: {
-  entry: DexIndexEntry | undefined;
+function Headline({ name, result, verdict, notes }: {
   name: string;
   result: DamageResultDto | null;
   /** The KO verdict line, or — without a result — why there is none. */
   verdict: ReactNode;
   notes: string[];
 }) {
+  const { lang } = useLang();
   const turns = result ? turnsOf(result) : null;
   const tone = result ? koTone(turns, result.koChance?.guaranteed ?? false, result.max) : "none";
   const hpRange = result
     ? `${result.min} – ${result.max}${result.defenderHP > 0 ? ` / ${result.defenderHP}` : ""} HP` : "";
-  // No portrait here: the roster bar right above already shows who is up; the build below carries it.
+  const verdictText = typeof verdict === "string" ? verdict : "";
+  // Compact only an engine-provided verdict. An absent KO result must not become a roll-based claim.
+  const shortVerdict = result?.koChance?.n != null
+    ? koLabel(result.koChance.n, result.maxPercent > 0, result.koChance.guaranteed ?? false, lang)
+    : verdict;
+  // Identity badges and the portrait live with the build below; this row reads name, KO, damage.
   return (
     <div className="duel-head">
-      <span className="duel-ident">
-        <span className="duel-name-line">
-          <span className="duel-name">{name}</span>
-          {entry?.isMega && <span className="mega-badge hp-mega-tag">MEGA</span>}
-        </span>
-        <span className="duel-types">
-          {(entry?.types ?? []).map((type) => <TypeBadge key={type} type={type} />)}
-        </span>
+      <span className="duel-name-line">
+        <span className="duel-name" title={name}>{name}</span>
+        {notes.length > 0 && (
+          <span className="hp-warning" tabIndex={0} role="img"
+            aria-label={notes.join("；")} data-tooltip={notes.join("\n")}>
+            <span aria-hidden>!</span>
+          </span>
+        )}
       </span>
-      {/* Percent first: it is the number a damage question is asked in. The same band in HP is
-          its tooltip; the line under it is the answer the percent leads to — the KO verdict, with
-          any caveat about this matchup right before it. */}
       <span className="duel-dmg">
+        <span className={`duel-summary-verdict${verdictText ? " duel-tip" : ""}`}
+          tabIndex={verdictText ? 0 : undefined} data-tooltip={verdictText || undefined}
+          aria-label={verdictText || undefined}>
+          {shortVerdict}
+        </span>
         <strong className={`duel-dmg-pct num ko-text-${tone}${result ? " duel-tip" : ""}`}
           tabIndex={result ? 0 : undefined} data-tooltip={hpRange || undefined}
           aria-label={result ? `${result.minPercent.toFixed(1)} – ${result.maxPercent.toFixed(1)}%, ${hpRange}`
             : undefined}>
           {result ? <>{result.minPercent.toFixed(1)} – {result.maxPercent.toFixed(1)}<small>%</small></> : "—"}
         </strong>
-        <span className="duel-verdict-line">
-          {notes.length > 0 && (
-            <span className="hp-warning" tabIndex={0} role="img"
-              aria-label={notes.join("；")} data-tooltip={notes.join("\n")}>
-              <span aria-hidden>!</span>
-            </span>
-          )}
-          <span className={`duel-summary-verdict${result?.koChance?.guaranteed ? " guaranteed" : ""}`}>
-            {verdict}
-          </span>
-        </span>
       </span>
     </div>
   );
@@ -123,11 +118,10 @@ function HpBar({ name, maxHP, remaining, band }: {
 }
 
 export function ResultCard({
-  monName, entry, slots, learnset, usage, selected, onSelect, onMove, roll, onRoll, crit, onCrit,
+  monName, slots, learnset, usage, selected, onSelect, onMove, roll, onRoll, crit, onCrit,
   singleTarget, onSingleTarget, singleTargetAvailable, maxHP, remaining, band, busy, notes,
 }: {
   monName: string;
-  entry: DexIndexEntry | undefined;
   slots: SlotResult[];
   learnset: LearnsetDto | null;
   /** This mon's metagame moves, which lead each slot's list. */
@@ -189,7 +183,7 @@ export function ResultCard({
 
   return (
     <div className="duel-result">
-      <Headline entry={entry} name={monName} result={res} notes={notes}
+      <Headline name={monName} result={res} notes={notes}
         verdict={res ? verdict : idle} />
       <HpBar name={monName} maxHP={maxHP} remaining={remaining} band={band} />
 
@@ -235,22 +229,21 @@ export function ResultCard({
           of them is where the slider is. Crit and single target are flags about the HIT, not roll
           picks, so the slider never touches them. */}
       <div className="duel-rolls">
-        <span className="duel-rolls-cap">{t("calc.roll")}</span>
-        <span className="duel-roll-read num">
-          <strong>{res ? picked : "—"}</strong>
-          <span className="muted">{pickedPct != null ? `${pickedPct.toFixed(1)}%` : ""}</span>
-        </span>
-        <span className="boost-slider roll duel-roll-lane">
-          <span className="boost-lane">
-            <span className="boost-track" aria-hidden
-              style={{ ["--fill-left" as string]: "0%",
-                       ["--fill-width" as string]: `${(rollIdx / Math.max(1, rollMax)) * 100}%` }} />
-            <input type="range" min={0} max={rollMax} step={1} value={rollIdx} disabled={!res}
-              aria-label={t("calc.rolls")}
-              aria-valuetext={res ? t("calc.rollValue").replace("{n}", String(randomModifier)) : undefined}
-              title={res ? t("calc.rollValue").replace("{n}", String(randomModifier)) : ""}
-              onChange={(e) => onRoll(Number(e.target.value))} />
+        <span className="duel-roll-value">
+          <span className="duel-rolls-cap">{t("calc.roll")}</span>
+          <span className="duel-roll-read num">
+            <strong>{res ? picked : "—"}</strong>
+            <span className="muted">{pickedPct != null ? `${pickedPct.toFixed(1)}%` : ""}</span>
           </span>
+        </span>
+        <span className={`stat-sp-meter duel-roll-lane${res ? "" : " disabled"}`}
+          style={{ ["--sp-fill" as string]: `${(rollIdx / Math.max(1, rollMax)) * 100}%` }}>
+          <span className="stat-sp-track" aria-hidden><span className="stat-sp-fill" /></span>
+          <input type="range" min={0} max={rollMax} step={1} value={rollIdx} disabled={!res}
+            aria-label={t("calc.rolls")}
+            aria-valuetext={res ? t("calc.rollValue").replace("{n}", String(randomModifier)) : undefined}
+            title={res ? t("calc.rollValue").replace("{n}", String(randomModifier)) : ""}
+            onChange={(e) => onRoll(Number(e.target.value))} />
         </span>
         <span className="duel-roll-btns">
           <span className="duel-roll-group" role="group" aria-label={t("calc.roll")}>

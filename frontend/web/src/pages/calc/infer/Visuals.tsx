@@ -31,7 +31,7 @@ export function InferredCell({ view, loading = false, showScope = false }: {
 const pct = (value: number, [lo, hi]: [number, number]) =>
   Math.max(0, Math.min(100, ((value - lo) / Math.max(1, hi - lo)) * 100));
 
-export interface RulerMark {
+interface RulerMark {
   product: number;
   label: string;
   fits: boolean;

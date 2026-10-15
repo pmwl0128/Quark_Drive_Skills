@@ -8,10 +8,10 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { BoxRecord, LibraryLayout, TeamRecord } from "./records.ts";
 
-export const LIBRARY_DB_NAME = "pokemon-champions-library";
+const LIBRARY_DB_NAME = "pokemon-champions-library";
 
 /** Small keyed settings of the library itself; today only the layout. */
-export type LibraryMetaRow = { id: "layout" } & LibraryLayout;
+type LibraryMetaRow = { id: "layout" } & LibraryLayout;
 
 export class LibraryDb extends Dexie {
   teams!: EntityTable<TeamRecord, "id">;

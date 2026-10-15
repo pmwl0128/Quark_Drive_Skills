@@ -35,6 +35,8 @@ export function Modal({ title, onClose, children, footer, width = 560, className
     focus();
     const keepFocus = (event: FocusEvent) => {
       if (!panel?.isConnected || panel.contains(event.target as Node)) return;
+      const owner = (event.target as Element).closest<HTMLElement>("[data-focus-owner]")?.dataset.focusOwner;
+      if (owner && panel.contains(document.getElementById(owner))) return;
       const dialogs = document.querySelectorAll(".modal");
       if (dialogs[dialogs.length - 1] === panel) focus();
     };

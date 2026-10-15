@@ -9,7 +9,8 @@ import { GameImage } from "../../../components/GameImage.tsx";
 import { displayName, useLang } from "../../../i18n.ts";
 import { useCalcT, optionalCalcKey, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
-import { natureLabel, spSum } from "../../../components/build/inputs.tsx";
+import { natureLabel } from "../../../lib/buildLabels.ts";
+import { spSum } from "../../../lib/buildState.ts";
 import type { MonState } from "../duel/state.ts";
 import {
   formatProbability, lanesOf, num, record, survival, targetProbability,

@@ -10,19 +10,21 @@
  * caller decides when they are saved. */
 import "../../styles.mbe.css";
 import { STAT_KEYS, type FormatId, type NatureDto, type StatKey, type TeamMemberDoc } from "@pokemon-champions/protocol";
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, type CSSProperties, type ReactNode } from "react";
 import { GameImage } from "../GameImage.tsx";
 import { typeColor, PLACEHOLDERS } from "../../assets/icons.ts";
-import { useAsync, useDexIndex, useItems, useNatures } from "../../hooks.ts";
+import { useLearnset, useDexIndex, useItems, useNatures } from "../../hooks.ts";
 import { displayName, useLang } from "../../i18n.ts";
 import { actualStat, natureMultiplier } from "../../lib/stats.ts";
-import { loadLearnset } from "../../runtime/projection.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import { MonNameRow, MonPortrait } from "../build/MonIdentity.tsx";
 import { MoveSlot } from "../build/MoveCell.tsx";
-import {
-  BuildPickerButton, clampNum, ItemCombo, megaFor, NatureOptions, spSum, spSumClass, type BuildOption,
-} from "../build/inputs.tsx";
+import { BuildPickerButton, ItemCombo } from "../build/inputs.tsx";
+import { megaFor } from "../../lib/lookup.ts";
+import { clampNum, spSum, spSumClass, type BuildOption } from "../../lib/buildState.ts";
+import { NatureCombo } from "../build/NatureCombo.tsx";
+import { ItemFieldLabel } from "../build/FieldLabels.tsx";
+import { AdaptiveSelect } from "../AdaptiveSelect.tsx";
 import { useMetaUsage } from "../../lib/metaUsage.ts";
 import { useLibraryT, type LibraryMsgKey } from "./messages.ts";
 
@@ -113,7 +115,11 @@ export function MonBuildEditor({ value, onChange, layout = "dialog", beside, for
   const slug = literal?.slug ?? "";
   // The form it battles as (a held stone makes the Mega): its art, types and stats.
   const entry = (slug && megaFor(slug, value.item ?? "", dexList, itemList)) || literal;
-  const learnset = useAsync(() => slug ? loadLearnset(slug).catch(() => null) : Promise.resolve(null), [slug]);
+  const requiredStone = entry?.isMega ? itemList.find((item) => item.requiredBy?.includes(entry.name)) : undefined;
+  useEffect(() => {
+    if (requiredStone && value.item !== requiredStone.name) onChange({ ...value, item: requiredStone.name });
+  }, [requiredStone?.name, slug]);
+  const learnset = useLearnset(slug);
   const usage = useMetaUsage(slug, formats);
   const moves = Array.from({ length: MOVE_SLOTS }, (_, index) => value.moves[index] ?? "");
   const spread = value.spread ?? {};
@@ -136,7 +142,7 @@ export function MonBuildEditor({ value, onChange, layout = "dialog", beside, for
   };
 
   const nameRow = (
-    <MonNameRow slug={slug} item={value.item ?? ""} dex={dexList} items={itemList} pickerKey="box-editor"
+    <MonNameRow slug={slug} item={value.item ?? ""} dex={dexList} items={itemList}
       identityShown={layout === "dialog"}
       actions={slug ? (
         <BuildPickerButton slug={slug} format={formats[0] ?? "single"} formats={[...formats]} onPick={applyBuild} />
@@ -158,20 +164,19 @@ export function MonBuildEditor({ value, onChange, layout = "dialog", beside, for
   const buildRow = (
     <div className="mbe-row">
       <label>{t("calc.ability")}
-        <select value={value.ability ?? ""} onChange={(event) => set({ ability: event.target.value || null })}>
+        <AdaptiveSelect value={value.ability ?? ""} onValueChange={(value) => set({ ability: value || null })}>
           <option value="">—</option>
           {(entry ?? literal)?.abilities.map((ability) => (
             <option key={ability.name} value={ability.name}>{displayName(ability, lang)}</option>
           ))}
-        </select>
+        </AdaptiveSelect>
       </label>
       <label>{t("calc.nature")}
-        <select value={value.nature ?? ""} onChange={(event) => set({ nature: event.target.value || null })}>
-          <NatureOptions natures={natures.status === "ready" ? natures.data : NO_NATURES} usage={usage} />
-        </select>
+        <NatureCombo value={value.nature ?? ""} natures={natures.status === "ready" ? natures.data : NO_NATURES}
+          usage={usage} onChange={(next) => set({ nature: next || null })} />
       </label>
-      <label>{t("calc.item")}
-        <ItemCombo idKey="box-editor-item" value={value.item ?? ""} items={itemList} usage={usage}
+      <label><ItemFieldLabel value={value.item ?? ""} items={itemList} />
+        <ItemCombo value={value.item ?? ""} items={itemList} usage={usage} disabled={!!requiredStone}
                    onChange={(item) => set({ item: item || null })} />
       </label>
     </div>

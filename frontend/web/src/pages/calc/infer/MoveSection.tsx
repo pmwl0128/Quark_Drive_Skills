@@ -12,7 +12,7 @@ import { GameImage } from "../../../components/GameImage.tsx";
 import { displayName, useLang } from "../../../i18n.ts";
 import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
-import { BOOST_KEYS, boostLabel } from "../../../components/build/inputs.tsx";
+import { BOOST_KEYS, boostLabel } from "../../../lib/buildState.ts";
 import { useMetaUsage } from "../../../lib/metaUsage.ts";
 import { MoveCell } from "../../../components/build/MoveCell.tsx";
 import { SIDE_FLAGS, type FieldState, type MonState } from "../duel/state.ts";

@@ -15,16 +15,17 @@ import { useTransferT } from "../lib/library/transferMessages.ts";
 import { useLibraryDrop, useLibraryReceiver, useLibrarySource } from "../lib/library/workspace.tsx";
 import { toTeamDoc } from "../lib/teamDoc.ts";
 import type { DexIndexEntry } from "../runtime/adapter.ts";
-import type { BuildOption } from "../components/build/inputs.tsx";
+import type { BuildOption } from "../lib/buildState.ts";
 import { roveFocus, useFocusOnOpen, usePopover } from "../lib/popover.ts";
 import { MonBuildEditor } from "../components/library/MonBuildEditor.tsx";
 import { TeamSprites } from "../components/TeamDots.tsx";
 import { clearRecords, deleteRecord, finishRecord, freshness, isCutOff, readResult, readSelected, relativeTime, saveSelected, snapshotOf, startRecord, useAssistRecords, type AssistRecord } from "../lib/runRecords.ts";
+import { preloadable } from "../lib/preloadable.ts";
 
 const ActualResult = lazy(() => import("./matchup/ActualResult.tsx").then(module => ({ default: module.ActualResult })));
 
 // The library store loads with the list, not with the page.
-const TeamImportList = lazy(() => import("../components/library/TeamImportList.tsx"));
+const TeamImportList = preloadable(() => import("../components/library/TeamImportList.tsx"));
 
 type InputMode = "manual" | "text";
 type Spread = Record<"hp" | "atk" | "def" | "spa" | "spd" | "spe", number>;
@@ -105,18 +106,18 @@ function TeamImport({ format, onPick }: { format: FormatId; onPick: (doc: TeamDo
   const pop = usePopover();
   const list = useRef<HTMLDivElement>(null);
   useFocusOnOpen(pop.open, list, "[role=menuitem]");
+  const preloadList = () => void TeamImportList.preload().catch(() => {});
   return (
     <div className="team-import" ref={pop.wrap} onBlur={pop.onBlur}>
       <button ref={pop.trigger} type="button" className={`ghost-btn team-import-btn${pop.open ? " open" : ""}`}
-        aria-haspopup="menu" aria-expanded={pop.open} title={t("actual.importTeamHint")} onClick={pop.toggle}>
+        aria-haspopup="menu" aria-expanded={pop.open} title={t("actual.importTeamHint")} onClick={pop.toggle}
+        onPointerEnter={preloadList} onFocus={preloadList}>
         <IconFileImport size={16} aria-hidden />{t("actual.importTeam")}
       </button>
       {pop.open && (
         <div ref={list} className="duel-pop team-import-pop" role="menu" aria-label={t("actual.importTeam")}
           onKeyDown={(event) => roveFocus(event, "[role=menuitem]")}>
-          <Suspense fallback={null}>
-            <TeamImportList format={format} onPick={(doc) => { pop.setOpen(false); onPick(doc); }} />
-          </Suspense>
+          <TeamImportList format={format} autoFocus onPick={(doc) => { pop.setOpen(false); onPick(doc); }} />
         </div>
       )}
     </div>

@@ -1,7 +1,8 @@
 /** Presentation over the completed inference, never a second copy of the shared roster. */
 import type { Observation } from "./context.ts";
 import type { InferenceView } from "./useInference.ts";
-import { SP_BUDGET, SP_KEYS, SP_MAX, type Candidate } from "./model.ts";
+import { SP_KEYS, type Candidate } from "./model.ts";
+import { SP_BUDGET, SP_MAX } from "../../../lib/battle.ts";
 
 export function observationSummary(observations: readonly Observation[], view: Pick<InferenceView,
   "remaining" | "impossible" | "skipped" | "loading">) {

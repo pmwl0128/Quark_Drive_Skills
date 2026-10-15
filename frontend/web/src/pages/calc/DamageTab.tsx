@@ -12,19 +12,19 @@
  * Every number on the page comes from ONE fault-isolated batch per section, so a bad cell (an
  * unknown move on a swapped-in mon) never blanks the rest. */
 import type {
-  DamageRequestDto, DamageResultDto, LearnsetDto, NatureDto,
+  DamageRequestDto, DamageResultDto, NatureDto,
 } from "@pokemon-champions/protocol";
 import { isErrorShape } from "@pokemon-champions/protocol";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx";
-import { useAsync, useMovesByName } from "../../hooks.ts";
+import { useLearnset, useMovesByName } from "../../hooks.ts";
 import { useDamageText } from "../../lib/damageText.tsx";
 import { displayName, useLang } from "../../i18n.ts";
 import { useCalcT } from "./messages.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
-import { loadLearnset, type ItemRef } from "../../runtime/projection.ts";
-import type { BuildOption } from "../../components/build/inputs.tsx";
+import { type ItemRef } from "../../runtime/projection.ts";
+import type { BuildOption } from "../../lib/buildState.ts";
 import { AllMatchups, type GridCol, type GridRow } from "./duel/AllMatchups.tsx";
 import { loadDuelView, saveDuelView } from "./duel/persist.ts";
 import { FieldPanel, useFieldOffers } from "./duel/FieldPanel.tsx";
@@ -32,9 +32,9 @@ import { MonEditor, buildCardOptionForMon } from "./duel/MonEditor.tsx";
 import { ResultCard, type SlotResult } from "./duel/ResultCard.tsx";
 import { SwapSeam } from "./duel/SwapSeam.tsx";
 import { monsFromPaste } from "./duel/paste.ts";
-import { DuelBar, TeamBar, TEAM_MAX, type ImportOutcome } from "./duel/TeamBar.tsx";
+import { DuelBar, TeamBar, type ImportOutcome } from "./duel/TeamBar.tsx";
+import { MOVE_SLOTS, TEAM_SIZE } from "../../lib/battle.ts";
 import {
-  MOVE_SLOTS,
   ROLL_TOP, applyBuildOption, curHPOf, damageRequest, effectiveEntry, makeMon, maxHPOf, otherSide,
   rollValue, withoutMember, type MonState, type SideId,
 } from "./duel/state.ts";
@@ -75,7 +75,7 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
     setRoll(flip); setCrit(flip); setSingle(flip);
   }, [swaps]);
 
-  const [duel, setDuel] = useState<PerSide<SlotResult[]>>(perSide([], []));
+  const [duelRun, setDuel] = useState<{ owner: string; slots: PerSide<SlotResult[]> } | null>(null);
   const [duelBusy, setDuelBusy] = useState(false);
   const [duelError, setDuelError] = useState<string | null>(null);
   const [gridRun, setGridRun] = useState<{
@@ -137,7 +137,7 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
     const team = teams[side];
     const activeEmpty = team[active[side]] && !team[active[side]]!.slug ? active[side] : -1;
     const emptyIndex = activeEmpty >= 0 ? activeEmpty : team.findIndex((candidate) => !candidate.slug);
-    if (emptyIndex < 0 && team.length >= TEAM_MAX) return { ok: false as const, reason: "full" as const };
+    if (emptyIndex < 0 && team.length >= TEAM_SIZE) return { ok: false as const, reason: "full" as const };
     const base = { ...makeMon(entry.slug), pinned: true };
     const mon = option ? { ...applyBuildOption(base, option, optionIndex), pinned: true } : base;
     const index = emptyIndex >= 0 ? emptyIndex : team.length;
@@ -160,10 +160,8 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
   }), [field.format, pickFromRail, lang]);
   useEffect(() => { onRailApi?.(railApi); }, [onRailApi, railApi]);
 
-  const learnsetA = useAsync<LearnsetDto | null>(
-    () => (mon.a.slug ? loadLearnset(mon.a.slug) : Promise.resolve(null)), [mon.a.slug]);
-  const learnsetB = useAsync<LearnsetDto | null>(
-    () => (mon.b.slug ? loadLearnset(mon.b.slug) : Promise.resolve(null)), [mon.b.slug]);
+  const learnsetA = useLearnset(mon.a.slug);
+  const learnsetB = useLearnset(mon.b.slug);
   const learnset = perSide(
     learnsetA.status === "ready" ? learnsetA.data : null,
     learnsetB.status === "ready" ? learnsetB.data : null);
@@ -207,20 +205,18 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
       }
       map[side] = slots;
     }
-    return { requests, map };
+    return { requests, map, moves: perSide(mon.a.moves, mon.b.moves), owner: `${mon.a.uid}:${mon.b.uid}` };
   }, [mon, field, crit, single, dex, items]);
 
   useEffect(() => {
-    const { requests, map } = duelPlan;
+    const { requests, map, moves, owner } = duelPlan;
     const blank = (side: SideId): SlotResult[] =>
       Array.from({ length: MOVE_SLOTS }, (_, i) => {
-        const name = mon[side].moves[i] ?? "";
-        const ref = moveVocab.get(name);
-        return { move: name, label: moveLabel(name), category: ref?.category, type: ref?.type,
-                 result: null, failed: false };
+        const name = moves[side][i] ?? "";
+        return { move: name, label: name, result: null, failed: false };
       });
     if (!requests.length) {
-      setDuel(perSide(blank("a"), blank("b")));
+      setDuel({ owner, slots: perSide(blank("a"), blank("b")) });
       setDuelError(null);
       return;
     }
@@ -236,17 +232,29 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
           if (!cell || isErrorShape(cell)) return { ...s, failed: true };
           return { ...s, result: cell as DamageResultDto, failed: false };
         });
-        setDuel(perSide(read("a"), read("b")));
+        setDuel({ owner, slots: perSide(read("a"), read("b")) });
         setDuelError(null);
       }).catch((e) => {
         if (cancelled) return;
         console.error("Damage calculation failed:", e);
-        setDuel(perSide(blank("a"), blank("b")));
+        setDuel({ owner, slots: perSide(blank("a"), blank("b")) });
         setDuelError(t("calc.error"));
       }).finally(() => { if (!cancelled) setDuelBusy(false); });
     }, 220);
     return () => { cancelled = true; window.clearTimeout(timer); setDuelBusy(false); };
-  }, [duelPlan, adapter, moveVocab, moveLabel]);
+  }, [duelPlan, adapter]);
+
+  // Editable names always follow the live roster, independently of the debounced calculation.
+  // Old readings can remain pending for a spread edit, but never migrate to a different pair.
+  const liveSlots = (side: SideId): SlotResult[] => Array.from({ length: MOVE_SLOTS }, (_, i) => {
+    const move = mon[side].moves[i] ?? "";
+    const ref = moveVocab.get(move);
+    const previous = duelRun?.owner === duelPlan.owner ? duelRun.slots[side][i] : undefined;
+    return { move, label: moveLabel(move), type: ref?.type, category: ref?.category,
+      result: previous?.move === move ? previous.result : null,
+      failed: previous?.move === move ? previous.failed : false };
+  });
+  const duel = perSide(liveSlots("a"), liveSlots("b"));
 
   // -- the all-pairs grid -----------------------------------------------------------------
 
@@ -400,11 +408,7 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
   const column = (side: SideId) => (
     <ResultCard
       monName={nameOf(side)}
-      entry={effectiveEntry(mon[side], dex, items)}
-      slots={duel[side].length ? duel[side] : Array.from({ length: MOVE_SLOTS }, (_, i) => ({
-        move: mon[side].moves[i] ?? "", label: moveLabel(mon[side].moves[i] ?? ""),
-        type: moveVocab.get(mon[side].moves[i] ?? "")?.type, result: null, failed: false,
-      }))}
+      slots={duel[side]}
       learnset={learnset[side]}
       usage={usage[side]}
       selected={shownSlot(side)}
@@ -440,8 +444,8 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
         <TeamBar label={sideLabel.a} teamLabel={t("calc.attackerTeam")} team={teams.a} librarySide="a"
           index={active.a} onIndex={(i) => setActive((p) => ({ ...p, a: i }))}
           onAdd={() => {
-            if (teams.a.length >= TEAM_MAX) return;
-            setTeams((p) => p.a.length >= TEAM_MAX ? p : { ...p, a: [...p.a, makeMon()] });
+            if (teams.a.length >= TEAM_SIZE) return;
+            setTeams((p) => p.a.length >= TEAM_SIZE ? p : { ...p, a: [...p.a, makeMon()] });
             setActive((p) => ({ ...p, a: teams.a.length }));
           }}
           onRemove={(i) => {
@@ -458,8 +462,8 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
         <TeamBar label={sideLabel.b} teamLabel={t("calc.defenderTeam")} team={teams.b} librarySide="b"
           index={active.b} onIndex={(i) => setActive((p) => ({ ...p, b: i }))}
           onAdd={() => {
-            if (teams.b.length >= TEAM_MAX) return;
-            setTeams((p) => p.b.length >= TEAM_MAX ? p : { ...p, b: [...p.b, makeMon()] });
+            if (teams.b.length >= TEAM_SIZE) return;
+            setTeams((p) => p.b.length >= TEAM_SIZE ? p : { ...p, b: [...p.b, makeMon()] });
             setActive((p) => ({ ...p, b: teams.b.length }));
           }}
           onRemove={(i) => {
@@ -478,7 +482,7 @@ export function DamageTab({ dex, natures, items, onRailApi }: {
             {side === "b" && <SwapSeam onSwap={flip} />}
             <section className="panel duel-side">
               {column(side)}
-              <MonEditor label={sideLabel[side]} mon={mon[side]}
+              <MonEditor mon={mon[side]}
                 setMon={setActiveMon[side]} dex={dex} natures={natures} items={items}
                 format={field.format}
                 onSetPick={(option, index) => setMonAt(

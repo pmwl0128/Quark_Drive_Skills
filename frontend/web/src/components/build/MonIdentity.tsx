@@ -1,4 +1,5 @@
 import { useMemo, type ReactNode } from "react";
+import { AdaptiveSelect } from "../AdaptiveSelect.tsx";
 import type { TeamMemberDoc } from "@pokemon-champions/protocol";
 import { GameImage } from "../GameImage.tsx";
 import { TypeBadge } from "../TypeBadge.tsx";
@@ -8,10 +9,8 @@ import { displayName, useLang } from "../../i18n.ts";
 import { useSharedT } from "../messages.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import type { ItemRef } from "../../runtime/projection.ts";
-import { MonPicker, megaFor } from "./inputs.tsx";
-/** Species (and, for a species with Mega forms, the forme) as one identity row: a single field, or
- * two side by side when a forme exists. Shared by the calculator and the bulk tool so the same mon
- * is named the same way on both. `actions` rides on the row's label line. */
+import { MonPicker } from "./MonPicker.tsx";
+import { megaFor } from "../../lib/lookup.ts";
 /** The mon's portrait on a soft wash of its primary type, beside the name row of a build. With
  * `member` it can be dragged into the library dock's boxes (design §2.4). */
 export function MonPortrait({ entry, name, member }: {
@@ -35,18 +34,15 @@ export function MonPortrait({ entry, name, member }: {
   );
 }
 
-export function MonNameRow({ slug, item, dex, items, pickerKey, actions, nameExtra, identityShown = false,
+/** Species and optional Mega forme as one row, shared by calculation and library editors. */
+export function MonNameRow({ slug, item, dex, items, actions, identityShown = false,
   onSpecies, onForme }: {
   slug: string;
   item: string;
   dex: DexIndexEntry[];
   items: ItemRef[];
-  pickerKey: string;
   actions?: ReactNode;
-  /** Rides on the name's label line right after the types (a status about the mon itself). */
-  nameExtra?: ReactNode;
-  /** The surface already prints this mon's types and Mega state beside its portrait (the damage
-   * calculator's result headline), so the row leaves them out instead of saying them twice. */
+  /** Omit identity badges when the surrounding surface already provides that information. */
   identityShown?: boolean;
   /** A different species: the caller decides what of the old build survives. */
   onSpecies: (slug: string) => void;
@@ -81,10 +77,9 @@ export function MonNameRow({ slug, item, dex, items, pickerKey, actions, nameExt
               {(entry?.types ?? []).map((ty) => <TypeBadge key={ty} type={ty} />)}
             </span>
           )}
-          {nameExtra}
           {!formes.length && actionBox}
         </span>
-        <MonPicker idKey={pickerKey} slug={slug} dex={dex} ariaLabel={t("calc.name")}
+        <MonPicker slug={slug} dex={dex} ariaLabel={t("calc.name")}
           onSlug={(next) => { if (next !== slug) onSpecies(next); }} />
       </div>
       {formes.length > 0 && (
@@ -94,19 +89,19 @@ export function MonNameRow({ slug, item, dex, items, pickerKey, actions, nameExt
             {mega && !identityShown && <span className="mega-badge" title={displayName(mega, lang)}>MEGA</span>}
             {actionBox}
           </span>
-          <select value={entry?.slug ?? ""} aria-label={t("calc.forme")}
-            onChange={(e) => {
-              const next = dex.find((x) => x.slug === e.target.value);
+          <AdaptiveSelect value={entry?.slug ?? ""} aria-label={t("calc.forme")}
+            onValueChange={(value) => {
+              const next = dex.find((x) => x.slug === value);
               // Dropping back to the base must also drop the stone, or the held item would silently
               // re-Mega it and the picker would disagree with the numbers.
               const dropStone = !!next && !next.isMega
                 && items.some((i) => i.name === item && i.requiredBy?.length);
-              onForme(e.target.value, dropStone);
+              onForme(value, dropStone);
             }}>
             {formes.map((f) => (
               <option key={f.slug} value={f.slug}>{displayName(f, lang)}</option>
             ))}
-          </select>
+          </AdaptiveSelect>
         </div>
       )}
     </div>

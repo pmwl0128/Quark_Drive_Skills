@@ -22,9 +22,12 @@ const CATEGORY_ICONS = byStem(categoryIconModules);
 // Canonical type colors come from the icon pack's index (the same file that defines the SVGs),
 // so the pack's color and the UI's type ink can never drift apart.
 import typeIconIndex from "../../../assets/type-icons/index.json";
+type IconIndex = Record<"types" | "move_categories", Record<string, { color: string }>>
+  & { markers: Record<string, { gradient: string[] }> };
 const TYPE_COLORS: Record<string, string> = Object.fromEntries(
-  Object.entries((typeIconIndex as { types: Record<string, { color: string }> }).types)
-    .map(([key, meta]) => [key, meta.color]));
+  Object.entries((typeIconIndex as IconIndex).types).map(([key, meta]) => [key, meta.color]));
+const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries((typeIconIndex as IconIndex).move_categories).map(([key, meta]) => [key, meta.color]));
 
 /** Canonical type color (lowercase key); falls back to the neutral typeless ink. */
 export function typeColor(type: string): string {
@@ -40,6 +43,17 @@ export function categoryIconUrl(category: string): string | undefined {
   return CATEGORY_ICONS[category.toLowerCase()];
 }
 
+import megaMarker from "../../../assets/type-icons/markers/mega.svg?url";
+/** The Mega Evolution filter marker (an abstract Mega Stone) and the gradient of its disc, as a
+ * background a picked chip can wear. */
+export const MEGA_ICON = megaMarker;
+export const MEGA_TINT = `linear-gradient(135deg, ${(typeIconIndex as IconIndex).markers.mega!.gradient.join(", ")})`;
+
+/** Canonical move-category color, from the same icon pack index. */
+export function categoryColor(category: string): string {
+  return CATEGORY_COLORS[category.toLowerCase()] ?? "#8A8A8A";
+}
+
 import pokemonPlaceholder from "../../../assets/placeholders/pokemon.svg?url";
 import itemPlaceholder from "../../../assets/placeholders/item.svg?url";
 import genericPlaceholder from "../../../assets/placeholders/generic.svg?url";
@@ -51,3 +65,5 @@ export const PLACEHOLDERS = {
   generic: genericPlaceholder,
 } as const;
 export const BRAND_LOGO = brandLogo;
+/** The public site printed on share images, which name it even when made from a local runtime. */
+export const PUBLIC_SITE_HOST = "champion.mpan.top";

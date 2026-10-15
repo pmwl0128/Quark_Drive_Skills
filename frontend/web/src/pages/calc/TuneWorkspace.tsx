@@ -12,28 +12,30 @@
  * Every damage number comes from a request-keyed store. An idle sweep prefetches each HP / Def / SpD
  * position for the moves on screen, so dragging a slider is answered from memory rather than by a
  * debounced round trip. */
-import type { DamageRequestDto, FormatId, LearnsetDto, NatureDto } from "@pokemon-champions/protocol";
+import type { DamageRequestDto, FormatId, NatureDto } from "@pokemon-champions/protocol";
 import { STAT_KEYS } from "@pokemon-champions/protocol";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx";
-import { useAsync, useMovesByName } from "../../hooks.ts";
+import { useLearnset, useMovesByName } from "../../hooks.ts";
 import { displayName, useLang } from "../../i18n.ts";
 import { useCalcT } from "./messages.ts";
 import { takeTuneFill } from "../../lib/team.ts";
 import { HttpError, type DexIndexEntry } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
-import { loadLearnset, type ItemRef } from "../../runtime/projection.ts";
-import { BOOST_KEYS, type BuildOption } from "../../components/build/inputs.tsx";
+import { useDamageStore } from "./tune/useDamageStore.ts";
+import { type ItemRef } from "../../runtime/projection.ts";
+import { BOOST_KEYS, type BuildOption } from "../../lib/buildState.ts";
 import { monsFromPaste } from "./duel/paste.ts";
 import { SwapSeam } from "./duel/SwapSeam.tsx";
-import { TEAM_MAX, type ImportOutcome } from "./duel/TeamBar.tsx";
+import { type ImportOutcome } from "./duel/TeamBar.tsx";
+import { TEAM_SIZE } from "../../lib/battle.ts";
 import {
   EMPTY_FIELD, applyBuildOption, damageRequest, effectiveEntry, makeMon, monToMember, withoutMember,
   type FieldState, type MonState, type SideId,
 } from "./duel/state.ts";
 import { useRoster } from "./roster.tsx";
 import {
-  cloneSps, formatProbability, pressedStat, targetProbability, useDamageStore,
+  cloneSps, formatProbability, pressedStat, targetProbability,
   type Baseline, type BulkStat, type Goal, type GoalTarget, type Hits, type Rolls, type TuneSide,
 } from "./tune/model.ts";
 import { AttackerCard, DefenderCard, type MoveReading } from "./tune/MonCards.tsx";
@@ -180,8 +182,7 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
   const restoreMine = useCallback(() => restore(mineId, mineBaseline), [restore, mineId, mineBaseline]);
   const restoreFoe = useCallback(() => restore(foeId, foeBaseline), [restore, foeId, foeBaseline]);
 
-  const foeLearnset = useAsync<LearnsetDto | null>(
-    () => foe.slug ? loadLearnset(foe.slug) : Promise.resolve(null), [foe.slug]);
+  const foeLearnset = useLearnset(foe.slug);
 
   // The opponent's selected move is the roster's side-"b" slot, shared with the calculator. When it
   // points at a blank or status slot the verdict reads the first attacking move instead — without
@@ -210,7 +211,7 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
 
   const addMember = useCallback((side: TuneSide) => {
     const size = teams[SIDE[side]].length;
-    if (size >= TEAM_MAX) return;
+    if (size >= TEAM_SIZE) return;
     setTeams((previous: Teams) => ({ ...previous, [SIDE[side]]: [...previous[SIDE[side]], makeMon()] }));
     setActive((previous) => ({ ...previous, [SIDE[side]]: size }));
   }, [teams, setTeams, setActive]);
@@ -242,7 +243,7 @@ export function TuneWorkspace({ dex, natures, items, onRailApi }: {
     const side: SideId = targetId === "primary" ? "a" : "b";
     const team = teams[side];
     const empty = team.findIndex((candidate) => !candidate.slug);
-    if (empty < 0 && team.length >= TEAM_MAX) return { ok: false as const, reason: "full" as const };
+    if (empty < 0 && team.length >= TEAM_SIZE) return { ok: false as const, reason: "full" as const };
     const base = { ...makeMon(entry.slug), pinned: true };
     const mon = option ? applyBuildOption(base, option) : base;
     const index = empty >= 0 ? empty : team.length;

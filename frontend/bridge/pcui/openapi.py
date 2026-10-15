@@ -155,6 +155,10 @@ LOCAL_ROUTES: dict[RouteKey, dict[str, Any]] = {
         "Read one Pokemon's KO panel history", "meta", _ref("MetaKoTrendDtoSchema")),
     ("GET", "/api/meta/facets"): _route(
         "Read the filter facet index", "meta", _ref("MetaFacetsDtoSchema")),
+    ("GET", "/api/meta/top-ranking"): _route(
+        "Read one Top Meta ranking scope", "meta", _ref("TopMetaRankingDtoSchema")),
+    ("GET", "/api/meta/top-detail"): _route(
+        "Read one Pokemon's Top Meta panels", "meta", _ref("TopMetaDetailDtoSchema")),
     ("POST", "/api/calc/damage"): _route(
         "Calculate one damage matchup", "calc", _ref("DamageResultDtoSchema"),
         request=_ref("DamageRequestDtoSchema")),
@@ -170,7 +174,8 @@ LOCAL_ROUTES: dict[RouteKey, dict[str, Any]] = {
     ("GET", "/api/team/oppcache"): _route(
         "Read opponent matchup projection", "team", {
             "oneOf": [_ref("OppCacheDtoSchema"), _ref("OppKoGridDtoSchema"),
-                      _ref("OppCheckGridDtoSchema"), _ref("OppSetCatalogDtoSchema")],
+                      _ref("OppCheckGridDtoSchema"), _ref("OppSetCatalogDtoSchema"),
+                      _ref("OppDetailsDtoSchema")],
         }),
     ("POST", "/api/team/session"): _route(
         "Run a deterministic team operator batch", "team", _TEAM_SESSION_RESULT,

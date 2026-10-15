@@ -7,7 +7,7 @@ import type { FieldState, MonState } from "../duel/state.ts";
 import { neutralNature, speedInputOf } from "../speed/lens.ts";
 import type { FoeSpace, Inference } from "./model.ts";
 
-export interface SpeedRange { nature: string; lo: number; hi: number; spHi: number }
+interface SpeedRange { nature: string; lo: number; hi: number; spHi: number }
 export interface SpeedProjection { mine: number | null; ranges: SpeedRange[]; incomplete: boolean }
 export interface SpeedPlan {
   inputs: SpeedInputDto[];

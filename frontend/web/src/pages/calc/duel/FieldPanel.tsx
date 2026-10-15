@@ -20,9 +20,10 @@ import { roveFocus, useFocusOnOpen, usePopover } from "../../../lib/popover.ts";
 import { useRoster } from "../roster.tsx";
 import type { FieldResolution, FieldSource } from "./entryFields.ts";
 import type { FieldState, SharedFlagKey } from "./state.ts";
-import { Caret, PlusGlyph } from "./TeamBar.tsx";
+import { PlusGlyph } from "./TeamBar.tsx";
+import { AdaptiveSelect } from "../../../components/AdaptiveSelect.tsx";
 
-export interface FieldSuggestion {
+interface FieldSuggestion {
   /** English canonical of the ability that would set it — shown so the offer names its source. */
   ability: string;
   label: string;
@@ -59,7 +60,7 @@ export function useFieldOffers(): {
 }
 
 /** The calculator's field-wide switches; a tool that reads others passes its own list. */
-export const DAMAGE_SHARED_FLAGS: SharedFlagKey[] = ["gravity", "foresight", "switchInDrops"];
+const DAMAGE_SHARED_FLAGS: SharedFlagKey[] = ["gravity", "foresight", "switchInDrops"];
 
 function FieldPicker<V extends string>({ kind, cap, value, options, label, mark, onPick }: {
   kind: "weather" | "terrain";
@@ -70,36 +71,17 @@ function FieldPicker<V extends string>({ kind, cap, value, options, label, mark,
   mark: (value: V | "") => ReactNode;
   onPick: (value: V | "") => void;
 }) {
-  const pop = usePopover();
-  const list = useRef<HTMLDivElement>(null);
-  useFocusOnOpen(pop.open, list, '[aria-selected="true"]');
   const current = label(value);
   // The empty label already names its field ("无天气"); a set value gets the caption back for
   // screen readers and the tooltip, since the pill itself only shows the value.
   const spoken = value ? `${cap} · ${current}` : current;
   return (
-    <div className={`field-pick ${kind}`} ref={pop.wrap} onBlur={pop.onBlur}>
-      <button ref={pop.trigger} type="button"
-        className={`field-pill${pop.open ? " open" : ""}${value ? " set" : ""}`}
-        aria-haspopup="listbox" aria-expanded={pop.open} aria-label={spoken}
-        title={spoken} onClick={pop.toggle}>
-        {mark(value)}
-        <span className="field-pill-value">{current}</span>
-        <Caret />
-      </button>
-      {pop.open && (
-        <div ref={list} className="duel-pop field-pick-pop" role="listbox" aria-label={cap}
-          onKeyDown={(event) => roveFocus(event, "[role=option]")}>
-          {options.map((option) => (
-            <button key={option || "none"} type="button" role="option"
-              aria-selected={option === value}
-              className={`duel-menu-row${option === value ? " on" : ""}`}
-              onClick={() => { onPick(option); pop.setOpen(false); pop.trigger.current?.focus(); }}>
-              {mark(option)}<span>{label(option)}</span>
-            </button>
-          ))}
-        </div>
-      )}
+    <div className={`field-pick ${kind}`}>
+      <AdaptiveSelect className={`field-pill${value ? " set" : ""}`} value={value}
+        leading={mark(value)} optionIcon={option => mark(option as V | "")}
+        aria-label={spoken} title={spoken} onValueChange={value => onPick(value as V | "")}>
+        {options.map(option => <option key={option || "none"} value={option}>{label(option)}</option>)}
+      </AdaptiveSelect>
     </div>
   );
 }

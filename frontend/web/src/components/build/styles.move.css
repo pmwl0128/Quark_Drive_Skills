@@ -1,0 +1,7 @@
+.move-slot-input { display: block; min-width: 0; }
+
+/* A move row's tail (OptionRow): type, category and power in fixed places, so a list sorted by those
+   reads as columns. */
+.move-option-facts { display: inline-flex; flex: none; align-items: center; gap: 3px; }
+.move-option-facts .type-badge img { width: 14px; height: 14px; }
+.move-option-power { width: 24px; color: var(--sub); font: 600 11.5px var(--font-num, var(--font-ui)); text-align: right; }

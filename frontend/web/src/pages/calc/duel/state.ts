@@ -6,7 +6,7 @@
  * bottom all-pairs grid (either axis) reuse exactly the same field, without a second flag vocabulary
  * that could drift from the forward one.
  *
- * `SideState` (shared.tsx) stays untouched — the speed and tune tabs build on it — and `MonState`
+ * `SideState` (lib/buildState.ts) stays untouched — the speed and tune tabs build on it — and `MonState`
  * only adds what a full combatant needs: its four move slots, its current HP, and an explicit
  * ability-trigger answer. */
 import type {
@@ -16,14 +16,11 @@ import { STAT_KEYS } from "@pokemon-champions/protocol";
 import { actualStat, natureMultiplier } from "../../../lib/stats.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import {
-  BOOST_KEYS, EMPTY_SIDE, buildConfigSig, modalSig, withMega, type BuildOption, type SideState,
-} from "../../../components/build/inputs.tsx";
+import { BOOST_KEYS, EMPTY_SIDE, buildConfigSig, modalSig, withMega, type BuildOption, type SideState } from "../../../lib/buildState.ts";
 
 import { MOVE_SLOTS } from "../../../lib/battle.ts";
-export { MOVE_SLOTS } from "../../../lib/battle.ts";
 
-export interface BuildReference {
+interface BuildReference {
   key: string;
   source: "aggregate" | "meta";
   coverage: number | null;
@@ -188,7 +185,7 @@ export const TERRAIN_ABILITIES: Record<string, Terrain> = {
  * `cat` is what the flag DOES to the numbers (cuts damage taken, raises damage dealt, changes
  * turn order, chips on entry); the team strip colours its chips by it so a row of five reads at a
  * glance without spelling each one out. */
-export type SideFlagCategory = "wall" | "boost" | "speed" | "hazard";
+type SideFlagCategory = "wall" | "boost" | "speed" | "hazard";
 
 export const SIDE_FLAGS: Array<{
   key: string; label: string; cat: SideFlagCategory; doublesOnly?: boolean; hint?: string;
@@ -206,7 +203,7 @@ export const SIDE_FLAGS: Array<{
   { key: "stealth_rock", label: "calc.stealthRock", cat: "hazard", hint: "calc.stealthRockHint" },
 ];
 
-export type SideFlags = Record<string, boolean>;
+type SideFlags = Record<string, boolean>;
 
 export interface FieldState {
   format: FormatId;
@@ -242,7 +239,7 @@ function liveFlags(flags: SideFlags, format: FormatId): SideFlags {
 /** The FieldDto for one direction. Offensive flags ride on the attacking side's record and
  * defensive ones on the defending side's; the calc merges them the same way for every request, so a
  * reversed direction is just the two records swapped. */
-export function fieldFor(field: FieldState, from: SideId): FieldDto {
+function fieldFor(field: FieldState, from: SideId): FieldDto {
   const attackerSide = liveFlags(field.sides[from], field.format);
   const defenderSide = liveFlags(field.sides[otherSide(from)], field.format);
   return {
@@ -258,7 +255,7 @@ export function fieldFor(field: FieldState, from: SideId): FieldDto {
 
 // -- combatants ---------------------------------------------------------------------------
 
-export interface MoveOptions {
+interface MoveOptions {
   crit?: boolean;
   /** false = this spread move hits ONE target, so it keeps full power. */
   singleTarget?: boolean;
@@ -266,7 +263,7 @@ export interface MoveOptions {
 
 /** CombatantDto for the calc: only non-default fields are sent, so the engine keeps applying its
  * own defaults for everything the user has not actually decided. */
-export function combatantOf(mon: MonState, dex: DexIndexEntry[], items: ItemRef[],
+function combatantOf(mon: MonState, dex: DexIndexEntry[], items: ItemRef[],
                             move?: { name: string; options?: MoveOptions }): CombatantDto | null {
   const { state, entry } = withMega(mon, dex, items);
   if (!entry) return null;
@@ -322,7 +319,7 @@ export function damageRequest(
 export const ROLL_COUNT = 16;
 export const ROLL_TOP = ROLL_COUNT - 1;
 
-export type RollMode = "low" | "mid" | "high";
+type RollMode = "low" | "mid" | "high";
 export const ROLL_MODES: RollMode[] = ["low", "mid", "high"];
 
 /** The index a named mode picks. `mid` is the middle ROLL, not a mean. */

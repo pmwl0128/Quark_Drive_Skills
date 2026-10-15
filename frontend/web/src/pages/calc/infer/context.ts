@@ -4,18 +4,19 @@
 import type { DamageRequestDto, MetaDetailDto, NatureDto } from "@pokemon-champions/protocol";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import { withMega } from "../../../components/build/inputs.tsx";
+import { withMega } from "../../../lib/buildState.ts";
 import {
   damageRequest, maxHPOf, natureMult, type FieldState, type MonState,
 } from "../duel/state.ts";
 import { pressedStat } from "../tune/model.ts";
+import { SP_MAX } from "../../../lib/battle.ts";
 import {
-  SP_MAX, type BulkKey, type FoeSpace, type InferKey, type Mult, type OffKey, type SpaceNature,
+  type BulkKey, type FoeSpace, type InferKey, type Mult, type OffKey, type SpaceNature,
   type SpaceOption,
 } from "./model.ts";
 
 /** Environment share (percent) below which a nature, item or ability is not considered. */
-export const PRUNE_PERCENT = 1;
+const PRUNE_PERCENT = 1;
 
 export type ObservationKind = "bulk" | "offense";
 
@@ -91,7 +92,7 @@ const NOT_READABLE = new Set([
 const NOT_INTO_FOE = new Set(["Foul Play"]);
 const NOT_FROM_FOE = new Set(["Body Press"]);
 
-export type MoveUse = { key: InferKey } | { reason: "status" | "unreadable" };
+type MoveUse = { key: InferKey } | { reason: "status" | "unreadable" };
 
 export function bulkUse(move: string, category: string | undefined): MoveUse {
   if (!move || !category || category === "Status") return { reason: "status" };
@@ -115,7 +116,7 @@ export interface RequestKit {
 }
 
 /** One nature per (stat, multiplier): the engine only needs the multiplier on the stat in play. */
-export function natureFor(natures: NatureDto[], key: InferKey, mult: Mult): string {
+function natureFor(natures: NatureDto[], key: InferKey, mult: Mult): string {
   const pick = mult === 1
     ? natures.find((nature) => !nature.upStat || nature.upStat === nature.downStat)
     : natures.find((nature) => mult === 1.1

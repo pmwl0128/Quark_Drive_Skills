@@ -18,14 +18,14 @@ export function matchLocal<T extends { name: string; nameZh?: string; nameJa?: s
   return raw.trim() ? matchName(pool, raw) : undefined;
 }
 
-export interface PasteVocabulary {
+interface PasteVocabulary {
   dex: DexIndexEntry[];
   items: ItemRef[];
   natures: NatureDto[];
   adapter: RuntimeAdapter;
 }
 
-export interface PastedMember {
+interface PastedMember {
   entry: DexIndexEntry;
   member: TeamMemberDoc;
 }

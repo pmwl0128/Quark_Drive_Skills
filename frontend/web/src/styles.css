@@ -33,6 +33,9 @@
      red-orange-amber-olive-green ramp (KO buckets) plus green/amber/grey (check grades), so a
      warm or green chip would read as a GRADE rather than a position. */
   --build-a: #2457df; --build-b: #7b45d6; --build-c: #0d7f92;
+  --seg-track: color-mix(in srgb, var(--panel-2) 76%, var(--panel));
+  --seg-active: var(--panel);
+  --seg-shadow: 0 1px 3px rgb(25 39 68 / 0.08);
   /* Solid action buttons (primary, the bulk tool's action, hover-filled keep/edit). On light they are
      the brand; on dark the brand is a light blue that white text does not read on, and its coloured
      glow looks like a highlight, so dark uses a deep blue with a plain drop shadow. */
@@ -71,6 +74,8 @@
     --shadow-raised: 0 18px 42px rgb(0 0 0 / 0.48);
     --pct-fill: color-mix(in srgb, var(--brand) 16%, transparent);
     --build-a: #7fa5ff; --build-b: #b48cf5; --build-c: #4fc0d4;
+    --seg-active: #29384c;
+    --seg-shadow: 0 2px 4px rgb(0 0 0 / 0.2);
     --action: #3667ee; --action-hover: #4a78f2;
     --action-shadow: 0 8px 18px -14px rgb(0 0 0 / 0.8);
     --action-shadow-hover: 0 10px 20px -14px rgb(0 0 0 / 0.85);
@@ -108,7 +113,7 @@ body {
 a { color: var(--brand); text-decoration: none; }
 a:hover { text-decoration: underline; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
-button, input, select {
+button, input {
   font: inherit;
   color: inherit;
 }
@@ -156,8 +161,8 @@ button, input, select {
   padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--panel);
 }
-.topbar select {
-  height: 32px; min-height: 32px; background: var(--panel); border: 1px solid var(--line);
+.topbar .adaptive-select {
+  width: 104px; height: 32px; min-height: 32px; background: var(--panel); border: 1px solid var(--line);
   border-radius: var(--radius-sm); padding: 0 28px 0 10px;
 }
 .theme-toggle {
@@ -255,7 +260,7 @@ button, input, select {
   .topbar .logo { flex: none; }
   .topbar .env { margin-left: auto; white-space: nowrap; }
   .topbar .env-date { display: none; }
-  .topbar select { max-width: 88px; padding-right: 14px; }
+  .topbar .adaptive-select { max-width: 88px; }
   /* Two rows: search, brand and settings, then the working row — the sections and the library dock.
      The zero-height ::after is the line break between them. */
   .topbar::after { content: ""; order: 1; flex: 0 0 100%; height: 0; }
@@ -274,6 +279,9 @@ button, input, select {
   .topbar .logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .theme-toggle button { width: 24px; }
 }
+@media (max-width: 380px) {
+  .topbar { column-gap: 7px; }
+}
 @media (min-width: 721px) and (max-width: 980px) {
   .topbar { gap: 10px; padding: 8px 12px; }
   .topbar .logo { gap: 7px; font-size: 15px; }
@@ -282,7 +290,7 @@ button, input, select {
   .topbar nav::-webkit-scrollbar { display: none; }
   .topbar nav a { flex: none; padding: 7px 8px; }
   .topbar .env { flex: none; padding: 5px 7px; font-size: 10.5px; }
-  .topbar select { flex: none; max-width: 94px; padding-left: 8px; }
+  .topbar .adaptive-select { flex: none; max-width: 94px; padding-left: 8px; }
 }
 main.content {
   flex: 1; width: min(1240px, 100% - 48px); margin: 0 auto; padding: 28px 0 72px;
@@ -356,6 +364,8 @@ main.content:focus { outline: none; }
   min-height: 42px; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap;
 }
 .page-heading-row .page-title { flex: 1; min-width: 160px; margin: 0; }
+.page-title-group { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 160px; }
+.page-title-group .page-title { flex: none; min-width: 0; }
 .page-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .page-header .page-lead { margin: 2px 0 0; }
 /* A tool page whose tabs stay at hand while its long results scroll (the simulation and assist
@@ -370,8 +380,7 @@ main.content:focus { outline: none; }
 .page-lead-detached { margin: 0 0 16px; }
 .page-tabs { min-height: 36px; }
 .seg.page-tabs button { min-height: 34px; padding-top: 5px; padding-bottom: 5px; }
-.subtabs.page-tabs .subtab { min-height: 32px; padding-top: 4px; padding-bottom: 4px; }
-.subtabs.page-tabs { padding: 1px; border: 1px solid var(--line); background: transparent; }
+.subtabs.page-tabs .subtab { min-height: 34px; padding-top: 5px; padding-bottom: 5px; }
 @media (max-width: 520px) {
   .page-heading-actions { flex: 1 0 100%; justify-content: flex-start; }
 }
@@ -379,16 +388,29 @@ main.content:focus { outline: none; }
 .muted { color: var(--sub); }
 .mono { font-family: var(--font-mono); }
 .num { font-variant-numeric: tabular-nums; }
-.seg {
-  display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
-  background: color-mix(in srgb, var(--panel-2) 68%, var(--panel)); padding: 3px;
+.seg, .subtabs {
+  display: inline-flex; align-items: stretch; gap: 3px; padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent); border-radius: 12px;
+  background: var(--seg-track);
 }
-.seg button {
-  border: 0; border-radius: 7px; background: transparent; padding: 6px 14px; cursor: pointer; color: var(--sub);
-  font-weight: 500;
+.seg button, .subtabs .subtab {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 32px; padding: 5px 13px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--sub); font-size: 13px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
 }
-.seg button.on { background: var(--panel); color: var(--ink); font-weight: 700;
-  box-shadow: 0 1px 3px rgb(24 40 72 / 0.1); }
+.seg button:hover:not(.on):not(:disabled), .subtabs .subtab:hover:not(.on):not(:disabled) {
+  color: var(--ink); background: color-mix(in srgb, var(--panel) 55%, transparent);
+}
+.seg button.on, .subtabs .subtab.on {
+  background: var(--seg-active); color: color-mix(in srgb, var(--brand) 38%, var(--ink));
+  box-shadow: var(--seg-shadow), inset 0 0 0 1px color-mix(in srgb, var(--brand) 14%, var(--line));
+}
+.segmented-control > button {
+  transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+.segmented-control > button:focus-visible { outline-offset: 3px; }
+.seg button:disabled, .subtabs .subtab:disabled { opacity: 0.48; cursor: not-allowed; }
 
 /* type badges: the type disc icon + localized label */
 .type-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
@@ -413,10 +435,6 @@ main.content:focus { outline: none; }
   letter-spacing: 0.07em; color: var(--sub); border-bottom: 1px solid var(--line);
 }
 .panel .rows { padding: 6px 0; }
-.p-row { display: flex; align-items: center; gap: 10px; padding: 6px 16px; font-size: 14px; }
-.p-row .p-rank { font-family: var(--font-mono); color: var(--sub); width: 20px; font-size: 12px; }
-.p-row .p-name { flex: 1; display: flex; align-items: center; gap: 7px; }
-.p-row img.mini { width: 22px; height: 22px; image-rendering: auto; }
 
 /* stat bars */
 
@@ -444,15 +462,6 @@ main.content:focus { outline: none; }
   position: absolute; top: 6px; left: 8px; font-family: var(--font-mono); font-size: 12px;
   color: var(--sub); background: var(--panel-2); padding: 1px 7px;
 }
-.rank-badge.top { background: var(--brand); color: #fff; font-weight: 700; }
-/* graduated usage-tier fill (S 1-10 … D 101+): distinct HUES per tier for at-a-glance separation
-   (a single-hue opacity ramp read as nearly identical) — red → orange → gold → blue → grey. */
-.rank-badge.tier-S { background: #cc6a63; color: #fff; font-weight: 700; }
-.rank-badge.tier-A { background: #d99a5e; color: #241a00; font-weight: 700; }
-.rank-badge.tier-B { background: #86bf72; color: #16240f; font-weight: 700; }
-.rank-badge.tier-C { background: color-mix(in srgb, var(--brand) 55%, var(--panel-2)); color: #fff; font-weight: 600; }
-.rank-badge.tier-D { background: var(--panel-2); color: var(--sub); }
-
 /* hero ability chips + rank links */
 
 /* matchup chips */
@@ -474,17 +483,12 @@ input[type="number"].num::-webkit-inner-spin-button { -webkit-appearance: none; 
 /* Field clusters (weather+terrain / screens / other-effects) are set apart by a thin left rule
    instead of text headings. Each checkbox is a vertical cell: caption on the label row, checkbox in a
    select-height box below, so the boxes bottom-align with the selects in the align-items:end row. */
-.fld-chk { align-self: end; display: grid; gap: 4px; justify-items: center;
-  font-size: 12px; color: var(--sub); cursor: pointer; }
-.fld-chk .cap { white-space: nowrap; }
-.fld-chk .box { height: 33px; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
-.fld-chk input { margin: 0; width: 15px; height: 15px; cursor: pointer; }
 .rolls { font-family: var(--font-mono); font-size: 11.5px; color: var(--sub); word-break: break-all; }
 
 /* ---- calc ----------------------------------------------------------------------- */
 .form-panel { padding: 16px; display: grid; gap: 10px; }
 .form-panel label { font-size: 12px; color: var(--sub); display: grid; gap: 4px; }
-.form-panel input:not([type="checkbox"]):not([type="radio"]), .form-panel select {
+.form-panel input:not([type="checkbox"]):not([type="radio"]), .form-panel .adaptive-select {
   padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
   width: 100%;
 }
@@ -542,7 +546,6 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
 .sp-sum.under { color: var(--sub); }
 .sp-sum.full { color: #2b7a2b; font-weight: 700; }
 .sp-sum.over { color: #b3261e; font-weight: 700; }
-.chk { display: flex; gap: 5px; align-items: center; font-size: 13px; }
 .ghost-btn { border: 1px dashed var(--line); background: transparent; color: var(--brand);
   border-radius: 8px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
 .ghost-btn:hover { border-color: var(--brand); }
@@ -571,20 +574,12 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
 .calc-matrix td .ko { display: block; font-size: 11px; opacity: 0.9; }
 .calc-matrix td.miss { text-align: center; cursor: default; }
 .calc-matrix td.on { outline: 2px solid var(--ink); outline-offset: -2px; }
-.matrix-detail { margin-top: 14px; }
 .result-inspector {
   scroll-margin: 18px; display: grid; gap: 10px; padding: 16px 18px;
   border: 1px solid var(--line); border-left: 3px solid var(--brand); border-radius: 11px;
   background: var(--panel); box-shadow: var(--shadow);
 }
 .result-inspector:focus { outline: none; }
-.result-summary { font-size: 13px; color: var(--sub); }
-.result-verdict { width: fit-content; padding: 5px 10px; border-radius: 999px; color: var(--brand-strong);
-  background: var(--brand-soft); font-size: 12.5px; font-weight: 700; }
-.result-rolls { padding: 10px 12px; border-radius: 8px; background: var(--panel-2); color: var(--sub);
-  font-size: 11.5px; line-height: 1.6; overflow-wrap: anywhere; }
-.result-caveat { padding: 8px 10px; border-radius: 8px; color: var(--sub);
-  background: color-mix(in srgb, var(--warning) 8%, var(--panel)); font-size: 12.5px; }
 
 /* base / Mega / Mega-Z of one species: the sibling forms of whichever one you opened */
 /* two columns: left defensive profile, right STAB coverage */
@@ -592,14 +587,6 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
 /* ---- calc: per-side status + boosts + doubles auras ---------------------------- */
 /* boosts are 5 stats (no HP) — give them their own 5-col track so the selects fill the width and the
    last one lines up with the right edge (the status select above) instead of leaving a 6th gap. */
-
-/* ---- calc sub-tabs (伤害 / 速度 / 耐久) ---------------------------------------- */
-.subtabs { display: inline-flex; gap: 4px; background: var(--panel-2); border-radius: 9px; padding: 3px; }
-.subtab { border: 0; background: transparent; color: var(--sub); font-size: 13px; font-weight: 600;
-  padding: 6px 14px; cursor: pointer; }
-.subtab.on { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
-.subtab:hover:not(.on):not(:disabled) { color: var(--ink); }
-.subtab:disabled { opacity: 0.48; cursor: not-allowed; }
 
 /* ---- speed line: presets + ladder --------------------------------------------- */
 .speed-presets { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -618,15 +605,9 @@ td.contested::after { content: ""; position: absolute; inset: 0; pointer-events:
   display: inline-flex; align-items: center; gap: 6px; color: var(--sub); font-size: 12px;
   white-space: nowrap;
 }
-.speed-tier-scope select { width: auto; min-width: 70px; min-height: 34px; height: 34px;
+.speed-tier-scope .adaptive-select { width: auto; min-width: 70px; min-height: 34px; height: 34px;
   padding: 5px 28px 5px 9px; border: 1px solid var(--line); border-radius: 8px;
   background: var(--panel); color: var(--ink); font: 600 12px/1.2 var(--font-ui); }
-.speed-tier-scope .fld-chk {
-  display: inline-flex; align-items: center; align-self: center; gap: 5px;
-  color: var(--sub); font-size: 12px;
-}
-.speed-tier-scope .fld-chk .cap { order: 2; }
-.speed-tier-scope .fld-chk .box { order: 1; height: auto; padding: 0; }
 .tier-legend { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .tier-legend .lg { padding: 3px 9px; border-radius: 999px; font-weight: 650; }
 .tier-legend .lg.faster { background: color-mix(in srgb, var(--danger) 12%, var(--panel)); color: var(--danger); }
@@ -814,7 +795,7 @@ button.speed-row-marker:active:not(:disabled) { transform: translateY(-50%); opa
 .decision-field { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--sub); }
 .decision-submit-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .decision-field input { width: 72px; }
-.decision-field select { min-width: 90px; }
+.decision-field .adaptive-select { min-width: 90px; }
 .decision-hint { margin-left: 10px; font-size: 12px; }
 
 /* UEP structured artifact cards */
@@ -828,7 +809,6 @@ button.speed-row-marker:active:not(:disabled) { transform: translateY(-50%); opa
 .uep-card-list.bad { color: #b3261e; }
 .uep-slate-cand { display: grid; gap: 5px; border-top: 1px solid var(--line); padding-top: 7px; }
 .uep-slate-cand:first-child { border-top: 0; padding-top: 0; }
-.uep-species { font-size: 12.5px; }
 
 /* UEP status view: banner, stepper, party strip */
 .uep-banner {
@@ -1032,8 +1012,6 @@ button.speed-row-marker:active:not(:disabled) { transform: translateY(-50%); opa
 .uep-team-block { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
 .uep-team-block:last-of-type { border-bottom: 0; }
 .uep-team-actions { padding: 0 16px 8px; display: flex; gap: 8px; flex-wrap: wrap; }
-.uep-tune { padding: 4px 16px 14px; display: grid; gap: 10px; }
-.uep-tune .tune-cards { margin-top: 4px; }
 
 .uep-flag-item { display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; }
 
@@ -1143,10 +1121,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
   border-radius: 999px; padding: 4px 11px; font-size: 12px; cursor: pointer;
 }
 .qa-example:hover { color: var(--ink); border-color: var(--sub); }
-.qa-answer { width: 100%; margin-top: 14px; }
-/* An ungrounded reply is a decline, not a sourced fact — read it as muted/aside, not authoritative. */
-.qa-answer.ungrounded { border-left: 3px solid var(--line); opacity: 0.92; }
-.qa-answer.ungrounded .qa-answer-text { color: var(--text-2, inherit); }
 .qa-ungrounded { margin-top: 10px; font-size: 12.5px; }
 /* Every line of an answer is its own <p>, and there is no global p-margin reset — so each one came
    with the browser's default 1em above AND below, collapsing to a full blank line between every
@@ -1533,10 +1507,6 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
 .dex-moves-table tbody tr:hover td:first-child,
 .dex-abilities-table tbody tr:hover td:first-child { box-shadow: none; }
 
-/* list-panel contexts carry their own affordances — the dotted underline is noise there
-   (meta detail rows) */
-.p-row .ehover { border-bottom: none; }
-
 /* quick-solve per-move breakdown: each move's own minimum; ← marks the binding one */
 
 /* dex item groups + move priority accents */
@@ -1573,45 +1543,19 @@ button:active:not(:disabled), .session-card:active, .dex-card:active {
    compositor-friendly transform/opacity plus local color changes; no continuous ambient work. */
 
 /* shared chrome + controls */
-input, select, textarea {
+input, .adaptive-select, textarea {
   accent-color: var(--brand);
   transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 }
-input:hover, select:hover, textarea:hover { border-color: var(--line-strong); }
-input:focus, select:focus, textarea:focus {
+input:hover, .adaptive-select:hover, textarea:hover { border-color: var(--line-strong); }
+input:focus, .adaptive-select:focus, textarea:focus {
   border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 14%, transparent);
   outline: none;
 }
 /* Popovers portalled to <body> (lists, build picker, hover cards) sit above the modal layer (2000):
    a dialog's own inputs and pickers open over it, never behind it. Toasts stay on top (2100). */
-.adaptive-listbox {
-  position: fixed; z-index: 2050; overflow-y: auto; overscroll-behavior: contain;
-  padding: 4px; border: 1px solid var(--line-strong); border-radius: 10px;
-  background: var(--panel); color: var(--ink); box-shadow: var(--shadow-raised);
-}
-.adaptive-listbox button {
-  width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 8px 10px; border: 0; border-radius: 7px;
-  background: transparent; color: inherit; text-align: left; cursor: pointer;
-}
-.adaptive-listbox button.active, .adaptive-listbox button:active { background: var(--brand-soft); }
-.adaptive-listbox button span { min-width: 0; overflow-wrap: anywhere; }
-.adaptive-listbox button small { flex: none; max-width: 45%; color: var(--sub); overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; }
-/* The build inputs' list: the metagame's picks first, faintly tinted, with their share; a hairline;
-   then everything else. Compact rows where a mouse is the pointer. */
-.adaptive-listbox.rich button > span { flex: 1 1 auto; }
-.adaptive-listbox.rich button.meta { background: color-mix(in srgb, var(--brand) 4%, transparent); }
-.adaptive-listbox.rich button.meta.active, .adaptive-listbox.rich button.active { background: var(--brand-soft); }
-.adaptive-share { flex: none; min-width: 36px; text-align: right; color: var(--brand-strong);
-  font: 700 11.5px var(--font-mono); }
-.adaptive-sep { height: 1px; margin: 4px 8px; background: var(--line-strong); opacity: 0.7; }
-@media (pointer: fine) {
-  .adaptive-listbox.rich button { min-height: 30px; padding: 4px 10px; font-size: 13px; }
-  .adaptive-listbox.rich button small { font-size: 11.5px; }
-}
-.form-panel input:not([type="checkbox"]):not([type="radio"]), .form-panel select, .builder-field > input, .builder-field > textarea, .uep-form textarea, .uep-checkpoint textarea {
+.form-panel input:not([type="checkbox"]):not([type="radio"]), .form-panel .adaptive-select, .builder-field > input, .builder-field > textarea, .uep-form textarea, .uep-checkpoint textarea {
   min-height: 38px; border-radius: var(--radius-sm); border-color: var(--line);
   background: color-mix(in srgb, var(--panel) 97%, var(--bg));
 }
@@ -1655,12 +1599,6 @@ input:focus, select:focus, textarea:focus {
   min-height: 42px; padding: 13px 16px 11px; font-size: 12px; font-weight: 750;
   letter-spacing: 0.075em; color: var(--sub); border-bottom-color: var(--line);
 }
-.subtabs, .subtabs.page-tabs {
-  border: 1px solid var(--line); border-radius: 10px; padding: 3px;
-  background: color-mix(in srgb, var(--panel-2) 72%, var(--panel));
-}
-.subtab { min-height: 34px; padding: 6px 15px; border-radius: 7px; }
-.subtab.on { box-shadow: 0 1px 4px rgb(23 42 77 / 0.11); }
 .page-disclosure { padding: 11px 14px; border-left: 3px solid var(--brand); }
 .data-table th {
   font-size: 11px; letter-spacing: 0.085em; padding-top: 11px; padding-bottom: 11px;
@@ -1689,7 +1627,7 @@ input:focus, select:focus, textarea:focus {
 .dex-card img.sprite { width: 62px; height: 62px; }
 .dex-card .nm { font-size: 13px; letter-spacing: -0.01em; }
 .dex-card.ranked .rank-badge { top: 9px; left: 9px; min-width: 27px; text-align: center; }
-.rank-badge { border-radius: 6px; font-weight: 800; box-shadow: 0 1px 2px rgb(16 26 47 / 0.08); }
+.rank-badge { border-radius: 6px; font-weight: 600; }
 .dex-item-card { min-height: 76px; border-color: var(--line); }
 .dex-item-card:hover {
   border-color: color-mix(in srgb, var(--brand) 52%, var(--line));
@@ -1697,24 +1635,6 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Pokémon identity + detail */
-
-/* Meta detail rows: local focus, rail and a single-pass sheen. */
-.p-row { position: relative; isolation: isolate; min-height: 38px; overflow: hidden;
-  transition: background-color 220ms ease, box-shadow 220ms ease, color 180ms ease; }
-.p-row::before {
-  content: ""; position: absolute; inset: 8px auto 8px 0; width: 2px; border-radius: 3px;
-  background: var(--brand); opacity: 0; transform: scaleY(0.7);
-  transition: opacity 200ms ease, transform 220ms var(--ease-out);
-}
-.p-row::after { display: none; }
-.p-row:hover {
-  background-color: color-mix(in srgb, var(--brand) 4.5%, transparent);
-  box-shadow: inset 0 1px color-mix(in srgb, var(--brand) 5%, transparent),
-              inset 0 -1px color-mix(in srgb, var(--brand) 5%, transparent);
-}
-.p-row:hover::before { opacity: 0.72; transform: scaleY(1); }
-.p-row .mini, .p-row .type-badge { transition: transform 220ms var(--ease-out), filter 220ms ease; }
-.p-row:hover .mini, .p-row:hover .type-badge { transform: scale(1.035); filter: saturate(1.04); }
 
 /* charts + matrices */
 .trend-chart { position: relative; padding: 10px; border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
@@ -1741,7 +1661,7 @@ input:focus, select:focus, textarea:focus {
   outline-color: var(--ink); filter: brightness(1.09) saturate(1.08);
   box-shadow: inset 0 0 0 1px var(--panel), 0 0 0 2px color-mix(in srgb, var(--brand) 45%, transparent);
 }
-.matchup-detail, .matrix-detail { border-left: 3px solid var(--brand); background: var(--panel); }
+.matchup-detail { border-left: 3px solid var(--brand); background: var(--panel); }
 .legend { padding: 7px 9px; border: 1px solid var(--line); border-radius: 9px; width: fit-content;
   background: var(--panel); }
 
@@ -1848,9 +1768,7 @@ input:focus, select:focus, textarea:focus {
 @media (prefers-reduced-motion: reduce) {
   .spinner::before { animation: none; border-top-color: var(--line); }
   .page-header { animation: none; }
-  .p-row:hover, .diag-table tbody tr.diag-row-click:hover, .primary-btn:hover:not(:disabled), .tune-card:hover, .dex-card:hover, .dex-item-card:hover, .qa-example:hover, .builder-tactics label:hover { transform: none; }
-  .p-row:hover .mini, .p-row:hover .type-badge { transform: none; }
-  .p-row::after { display: none; }
+  .diag-table tbody tr.diag-row-click:hover, .primary-btn:hover:not(:disabled), .tune-card:hover, .dex-card:hover, .dex-item-card:hover, .qa-example:hover, .builder-tactics label:hover { transform: none; }
   .party-card:hover .party-sprite { transform: none; }
 }
 
@@ -1995,7 +1913,6 @@ input:focus, select:focus, textarea:focus {
 .value-list .value-row.on { background: var(--brand-soft); }
 .value-list .value-row.on .box { border-color: var(--brand); background: var(--panel); }
 
-.panel h2 .panel-note { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11.5px; margin-left: auto; color: var(--sub); }
 .panel h2 { display: flex; align-items: baseline; gap: 9px; }
 
 /* ==== calc: two-team damage workspace =============================================
@@ -2046,8 +1963,10 @@ input:focus, select:focus, textarea:focus {
 .hp-bar-max { line-height: 34px; }
 
 /* -- rolls and one-line result ------------------------------------------------------ */
-.duel-rolls { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.duel-rolls-cap { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+.duel-rolls { display: grid; grid-template-columns: auto minmax(64px, 1fr) auto auto;
+  align-items: center; gap: 8px; font-size: 11.5px; }
+.duel-roll-value { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.duel-rolls-cap { font-size: inherit; letter-spacing: 0.05em; text-transform: uppercase;
   color: var(--sub); }
 .duel-roll-group { display: inline-flex; gap: 0; border-radius: 8px; overflow: hidden;
   border: 1px solid var(--line); }
@@ -2067,10 +1986,6 @@ input:focus, select:focus, textarea:focus {
 .roll-btn.flag.on { border-style: solid; }
 
 .duel-summary { font-size: 13px; color: var(--sub); }
-.duel-line {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 9px 11px; border-radius: 8px; background: var(--panel-2);
-}
 .duel-line-text {
   flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5;
   color: var(--sub); white-space: pre-wrap; word-break: break-word;
@@ -2093,11 +2008,12 @@ input:focus, select:focus, textarea:focus {
 .paste-note.warn { color: var(--warning); }
 
 /* -- per-mon editor ----------------------------------------------------------------- */
-.mon-editor { display: grid; gap: 11px; padding: 16px; min-width: 0; }
+.mon-editor { container: mon-stats / inline-size; display: grid; gap: 11px; padding: 16px; min-width: 0; }
 .mon-editor-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.build-picker-trigger { white-space: nowrap; flex: none; }
 .ghost-btn.tiny { padding: 3px 9px; font-size: 11.5px; border-radius: 7px; }
 
-.mon-editor-namerow select { min-height: 33px; padding: 5px 9px; border: 1px solid var(--line);
+.mon-editor-namerow .adaptive-select { min-height: 33px; padding: 5px 28px 5px 9px; border: 1px solid var(--line);
   border-radius: 8px; background: var(--panel-2); color: var(--ink); }
 .mon-editor-types { display: flex; gap: 6px; flex-wrap: wrap; }
 .mon-editor-cap { font-size: 12px; color: var(--sub); }
@@ -2118,8 +2034,6 @@ input:focus, select:focus, textarea:focus {
 .stat-table-row input[type="number"] { padding: 4px 6px; text-align: center; min-width: 0;
   border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); color: var(--ink); }
 .stat-final { font-weight: 700; }
-
-.hp-field { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
 
 .move-slot { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: center; }
 .move-slot-mark { display: grid; place-items: center; }
@@ -2144,13 +2058,12 @@ input:focus, select:focus, textarea:focus {
 /* -- narrow viewports ------------------------------------------------------------------ */
 @media (max-width: 520px) {
   .stat-table-head, .stat-table-row { grid-template-columns: 36px 36px 1fr 1fr 46px; }
-  .duel-rolls { gap: 5px; }
 }
 
 /* The duel panels are not `.form-panel`s (they carry their own grids), so they opt into the same
    control shell explicitly rather than inheriting a layout meant for a different card. */
 .mon-editor label { font-size: 12px; color: var(--sub); display: grid; gap: 4px; }
-.mon-editor-namerow select,
+.mon-editor-namerow .adaptive-select,
 .mon-editor-namerow input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%; min-height: 38px; padding: 7px 10px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -2192,7 +2105,7 @@ input:focus, select:focus, textarea:focus {
 .mon-editor-namefield { display: grid; gap: 4px; min-width: 0; }
 
 /* -- build row: nature needs room for "(攻击↑ / 特攻↓)", status needs far less -------- */
-.mon-build-row { display: grid; grid-template-columns: 1fr 1.45fr 1.15fr 0.85fr; gap: 8px 10px; }
+.mon-build-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; }
 @media (max-width: 720px) { .mon-build-row { grid-template-columns: 1fr 1fr; } }
 
 /* -- boost as a slider, with the direction carried by colour ------------------------- */
@@ -2241,10 +2154,7 @@ input:focus, select:focus, textarea:focus {
    sized to its own content drags every row under it out of step. Stretch instead. */
 .duel-result { align-content: start; }
 
-/* The 16 rolls are reference detail, so they ride in the control row rather than owning one.
-   Clipped, never wrapped — the full list is in the tooltip. */
-.duel-rolls { flex-wrap: nowrap; }
-.duel-rolls-cap { flex: none; }
+/* The roll shortcuts and hit flags keep the same compact button face. */
 .duel-roll-group, .duel-rolls .roll-btn { flex: none; }
 .duel-rolls .roll-btn { font-size: 11px; padding: 3px 8px; }
 
@@ -2285,19 +2195,6 @@ input:focus, select:focus, textarea:focus {
 .boost-slider.down input[type="range"]::-webkit-slider-thumb { border-color: var(--danger); }
 .boost-slider.down input[type="range"]::-moz-range-thumb { border-color: var(--danger); }
 
-/* -- 6. grid detail: verdict, band and sentence on one aligned line ------------------- */
-.all-matchups .matrix-detail { display: grid; gap: 7px; }
-.detail-head { grid-template-columns: 104px 124px 1fr; gap: 10px; align-items: baseline;
-}
-/* The verdict cell keeps its width even when there is no verdict (a 0% hit has none), so the
-   band under it never slides left and the rows stop lining up. */
-.detail-head > .result-verdict { justify-self: start; }
-.detail-head > .detail-band { font-size: 14px; font-weight: 700; }
-.detail-head > .result-summary { font-size: 13px; }
-@media (max-width: 760px) {
-  .detail-head { grid-template-columns: 1fr; gap: 5px; }
-}
-
 /* -- 7. blank slots show the bundled placeholder, not a grey rectangle ---------------- */
 .team-chip-empty, .hp-bar-sprite { object-fit: contain; }
 .team-chip-btn img.team-chip-empty { width: 30px; height: 30px; opacity: 0.55; }
@@ -2309,39 +2206,22 @@ img.hp-bar-sprite[alt=""] { opacity: 0.5; }
 .duel-summary {
   min-height: 20px; text-overflow: ellipsis; white-space: nowrap;
 }
-.duel-line { min-height: 54px; align-items: center; }
 .duel-line-text {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .duel-rolls .roll-btn:disabled { opacity: 0.45; cursor: default; }
 
-/* The header reserves a two-line verdict row. Switching between short and long localized KO prose
-   therefore never resizes the result card. */
 /* The prose renderer puts inline portraits in this line, and those measure a pixel taller than the
    plain text the empty state shows — enough to move everything below when you switch mons. Pin the
    line box and cap the chips to it. */
 .duel-summary { height: 24px; line-height: 24px; overflow: hidden; }
 .duel-summary img { max-height: 20px; vertical-align: middle; }
 
-/* A `1fr` track still refuses to shrink below its content's min-content width, and the no-wrap roll
-   row has a wide one. Cap the tracks, and let that row wrap on a phone — "one line" is a two-column
-   desktop rule, not a reason to push the page sideways. */
-@media (max-width: 860px) {
-  .duel-rolls { flex-wrap: wrap; }
-}
-
 /* -- 3. HP's row carries its own current value: slider, percentage, editable number --- */
 .stat-table-head, .stat-table-row {
   grid-template-columns: 36px 42px minmax(52px, 1fr) minmax(98px, 1.4fr) 62px;
 }
 .boost-slider { grid-template-columns: 1fr 34px; }
-/* HP is a quantity, not a stage, so its bar fills from the left and takes the health ramp. */
-.boost-slider.hp .boost-track { color: var(--success); }
-.boost-slider.hp.warn .boost-track { color: var(--warning); }
-.boost-slider.hp.low .boost-track { color: var(--danger); }
-.boost-slider.hp input[type="range"]::-webkit-slider-thumb { border-color: var(--brand); }
-.boost-slider.hp input[type="range"]::-moz-range-thumb { border-color: var(--brand); }
-.boost-slider.hp .boost-read { color: var(--sub); }
 input.stat-cur.hp-cur {
   width: 100%; min-width: 0; padding: 3px 4px;
   border: 1px solid var(--line); border-radius: 6px;
@@ -2353,20 +2233,6 @@ input.stat-cur.hp-cur {
 }
 .all-matchups-head h2 { margin: 0; }
 .all-matchups-head p { flex: 1; min-width: 200px; }
-
-.detail-head {
-  display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
-}
-.detail-head > .result-summary { min-width: 0; justify-self: start; }
-.detail-head > .result-verdict {
-  justify-self: end; min-width: 168px; height: 26px; display: flex; align-items: center;
-  justify-content: center; white-space: nowrap; margin: 0;
-}
-.detail-head > .detail-band { justify-self: end; white-space: nowrap; }
-@media (max-width: 760px) {
-  .detail-head { grid-template-columns: 1fr; gap: 6px; }
-  .detail-head > .result-verdict, .detail-head > .detail-band { justify-self: start; }
-}
 
 /* -- 5. the stat table's header labels centre over their columns ---------------------- */
 .stat-table-head > span { text-align: center; }
@@ -2386,14 +2252,14 @@ input.stat-cur.hp-cur {
 /* -- 5. the build row's controls are one control family, one height ------------------
    (they used to be styled through `.mini-fields`, which this card no longer uses) */
 .mon-build-row > label { display: grid; gap: 4px; font-size: 12px; color: var(--sub); min-width: 0; }
-.mon-build-row select,
+.mon-build-row .adaptive-select,
 .mon-build-row input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%; height: 38px; min-height: 38px; padding: 0 10px; font: inherit; font-size: 13px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--panel) 97%, var(--bg)); color: var(--ink);
 }
-.mon-build-row select { padding-right: 26px; }
-.mon-build-row input:disabled, .mon-build-row select:disabled {
+.mon-build-row .adaptive-select { padding-right: 26px; }
+.mon-build-row input:disabled, .mon-build-row .adaptive-select:disabled {
   color: var(--sub); background: var(--panel-2); cursor: default;
 }
 /* The item field is a combobox wrapper, so the height has to reach the input inside it. */
@@ -2447,9 +2313,6 @@ input.stat-cur.hp-cur {
    Ghost, Dragon and Fighting are dark enough that text on the solid colour stops being readable. */
 .duel-move-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 6px; }
 
-/* -- summary and its copy control share a line ------------------------------------- */
-.duel-line { min-height: 46px; }
-
 /* The dex flyout holds one scrolling column of filter sections, not the metagame rail's
    facet-column + value-column split, so it overrides that grid rather than inheriting it. */
 .dex-flyout-body {
@@ -2487,24 +2350,11 @@ input.stat-cur.hp-cur {
    of them is a legitimate question. The slider is therefore the control and the three buttons are
    shortcuts onto it — which is why they sit at the far end, away from the number they set: the
    reading (value, then position) runs left to right, and the pressing is a separate act. */
-.duel-rolls { gap: 6px; }
-.duel-roll-read {
-  flex: none; display: inline-flex; gap: 4px; min-width: 0;
-}
-.duel-roll-read strong { font-size: 15px; font-weight: 750; }
-.duel-roll-read .muted { font-size: 11px; }
-.duel-roll-lane { flex: 0 1 31%; width: 31%; max-width: 31%; min-width: 70px; }
-.boost-slider.roll { grid-template-columns: 1fr; }
-/* No neutral centre on a roll: zero damage is one end of the scale, not its middle. */
-.boost-slider.roll .boost-track::before { display: none; }
-.boost-slider.roll .boost-track { color: var(--brand); }
-.boost-slider.roll input[type="range"]::-webkit-slider-thumb { border-color: var(--brand); }
-.boost-slider.roll input[type="range"]::-moz-range-thumb { border-color: var(--brand); }
-.boost-slider.roll input[type="range"]:disabled { cursor: default; }
-.boost-slider.roll input[type="range"]:disabled::-webkit-slider-thumb { border-color: var(--line-strong); }
-.boost-slider.roll input[type="range"]:disabled::-moz-range-thumb { border-color: var(--line-strong); }
+.duel-roll-read { min-width: 0; }
+.duel-roll-read strong { font-size: inherit; font-weight: 600; }
+.duel-roll-read .muted { font-size: inherit; }
 .duel-roll-btns {
-  flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+  display: inline-flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0;
 }
 
 /* -- 2. the build card's four slots are a 2x2 too ------------------------------------
@@ -2546,12 +2396,6 @@ input.stat-cur.hp-cur { text-align: center; }
    one is live" cannot be a shade apart from its three neighbours. It is the ONLY cell that wears
    its move's type: ring, wash, a thicker type edge and a heavier name, all at once, against three
    achromatic siblings. The pale types carry it on shape, the dark ones on colour. */
-
-@media (max-width: 720px) {
-  .duel-rolls { flex-wrap: wrap; }
-  .duel-roll-lane { flex-basis: 66%; width: 66%; max-width: 66%; order: 3; }
-  .duel-roll-btns { margin-left: auto; }
-}
 
 /* ==== compact complete-build picker ==================================================
    Both anchors already show the species. Start directly with the choices and spend the saved
@@ -2605,7 +2449,7 @@ input.stat-cur.hp-cur { text-align: center; }
 .teams-rail-row .rail-format { flex: none; padding: 2px; }
 .teams-rail-row .rail-format button { min-height: 0; padding: 3px 9px; font-size: 12px; }
 .teams-rail-row label { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
-.teams-rail-row select { min-height: 0; height: 28px; padding: 0 26px 0 8px; font-size: 12.5px; }
+.teams-rail-row .adaptive-select { min-height: 0; height: 28px; padding: 0 26px 0 8px; font-size: 12.5px; }
 .teams-rail-hint { margin: 0; font-size: 11.5px; line-height: 1.5; }
 .calc-rail-feedback { padding: 8px 14px; border-bottom: 1px solid var(--line);
   font-size: 11.5px; line-height: 1.35; }
@@ -2842,10 +2686,6 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 .duel-result { grid-template-columns: minmax(0, 1fr); min-width: 0; }
 .duel-result > * { min-width: 0; }
 .hp-bar-sprite { width: 42px; height: 42px; }
-.hp-mega-tag {
-  flex: none; margin-left: 0; height: 17px; padding: 0 5px; display: grid; place-items: center;
-  font-size: 8.5px; line-height: 1;
-}
 .hp-warning {
   position: relative; flex: none; width: 14px; height: 14px; display: grid; place-items: center;
   border-radius: 50%; background: var(--danger); color: #fff; cursor: help;
@@ -2860,22 +2700,8 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   opacity: 0; pointer-events: none; transform: translate(-50%, 3px); transition: opacity 120ms ease, transform 120ms ease;
 }
 .hp-warning:hover::after, .hp-warning:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
-.duel-summary-verdict {
-  flex: none; display: inline-flex; align-items: center; justify-content: center;
-  height: 24px; padding: 0 2px; color: var(--brand-strong);
-  font-size: 12px; font-weight: 700; line-height: 1;
-  white-space: nowrap; background: none; border: 0;
-}
-.duel-summary-verdict.guaranteed {
-  padding: 0 2px; border-radius: 0; background: none;
-}
-.duel-summary-verdict:empty { visibility: hidden; }
 .duel-move-grid { row-gap: 8px; }
 .duel-result { gap: 6px; padding: 7px 14px 11px; }
-.duel-line {
-  height: 49px; min-height: 49px; max-height: 49px;
-  padding-top: 7px; padding-bottom: 7px;
-}
 
 /* ==== duel strip: two wings and a centre console ====================================
    The roster bar opens every calc tool. It is framed by a hairline and left unfilled: the weather
@@ -3135,9 +2961,9 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   cursor: pointer; transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 .field-pill:hover { border-color: var(--line-strong); }
-.field-pill.open { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
-.field-pill-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.field-pill:not(.set) .field-pill-value { color: var(--sub); font-weight: 600; }
+.field-pill[aria-expanded="true"] { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.field-pill.adaptive-select { min-height: 34px; padding-right: 26px; }
+.field-pill:not(.set) .adaptive-select-value { color: var(--sub); font-weight: 600; }
 .wx-swatch {
   display: block; flex: none; width: 18px; height: 18px; border-radius: 6px;
   border: 1px dashed var(--line-strong); background: center / cover no-repeat;
@@ -3165,8 +2991,9 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   flex: none; height: 34px; padding: 3px; border-radius: 10px;
   background: color-mix(in srgb, var(--panel-2) 86%, transparent);
 }
+/* The shared segmented button has a 32px floor; this compact one fits its 34px frame instead. */
 .field-format.seg button {
-  height: 26px; padding: 0 13px; font-size: 13px; font-weight: 600; line-height: 26px;
+  height: 26px; min-height: 0; padding: 0 13px; font-size: 13px; font-weight: 600; line-height: 26px;
   white-space: nowrap;
 }
 .field-format.seg button.on { font-weight: 750; }
@@ -3206,7 +3033,6 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 .duel-menu-row.danger { color: var(--danger); }
 .duel-menu-row:disabled { opacity: .45; cursor: default; background: none; }
 .duel-menu-sep { height: 1px; margin: 4px 6px; background: var(--line); }
-.field-pick-pop { left: 50%; translate: -50% 0; min-width: 100%; width: max-content; }
 .team-cond-pop, .field-shared-pop { max-width: calc(100cqw - 24px); padding: 10px; }
 .team-cond-pop { width: 400px; }
 .field-shared-pop { width: max-content; }
@@ -3245,6 +3071,18 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   display: grid; gap: 8px; padding: 12px;
 }
 .team-bar.mirrored .paste-pop { left: auto; right: 0; }
+.saved-team-pop { width: 380px; max-width: calc(100vw - 16px); padding: 10px; display: grid; gap: 8px;
+  grid-template-rows: auto auto minmax(0, 1fr); overflow: hidden; z-index: 2050; }
+.saved-team-heading { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12.5px; }
+.saved-team-heading b { min-width: 0; flex: 1; }
+.saved-team-close { flex: none; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px;
+  background: var(--panel-2); color: var(--sub); font-size: 19px; line-height: 1; cursor: pointer; }
+.saved-team-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.saved-team-tools .muted { font-size: 11px; }
+.saved-team-list { display: flex; min-height: 0; overflow: hidden; }
+.saved-team-list .team-import-choices { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+.saved-team-list .team-import-choices > div { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.saved-team-list .team-import-more { flex: none; }
 
 /* -- tiers ----------------------------------------------------------------------------------
    Below ~1080px the console takes its own row above the two rosters; below 780px everything
@@ -3313,7 +3151,6 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 
 @media (max-width: 520px) {
   .hp-warning::after { max-width: min(260px, 70vw); }
-  .duel-summary-verdict { grid-column: 1; grid-row: 2; justify-self: start; }
 }
 
 /* ==== calc workspace: rosters → results → builds ======================================= */
@@ -3330,13 +3167,11 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   border-radius: 0 0 var(--radius) var(--radius);
   background: color-mix(in srgb, var(--panel-2) 55%, var(--panel));
 }
-.duel-result { gap: 8px; }
-/* The caveat glyph sits right after the sentence it qualifies; the verdict keeps the far end. */
+.duel-result { gap: 8px; container: duel-result / inline-size; }
 
 /* -- headline: who, and what the selected hit does ------------------------------------- */
 .duel-head {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px;
-  min-width: 0; height: 52px;
+  --duel-name-size: 20px; display: flex; align-items: center; gap: 20px; min-width: 0; height: 36px;
 }
 /* The portrait (beside a build's name) sits on a soft wash of its primary type, so the two sides read
    apart at a glance. */
@@ -3354,27 +3189,35 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 /* Small portraits elsewhere that carry a build (components/library/DragMon.tsx). */
 .lib-drag { display: inline-flex; align-items: center; cursor: grab; }
 .lib-drag:active { cursor: grabbing; }
-.duel-ident { display: grid; gap: 3px; min-width: 0; }
-.duel-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.duel-name-line { position: relative; display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
 .duel-name {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 19px; line-height: 1.15; font-weight: 800; letter-spacing: -.01em;
+  font-size: var(--duel-name-size); line-height: 1.2; font-weight: 750; letter-spacing: -.02em;
 }
-.duel-types { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.duel-types .type-badge { gap: 3px; font-size: 11.5px; color: var(--sub); }
-.duel-types .type-badge img { width: 15px; height: 15px; }
-.duel-dmg { display: grid; justify-items: end; gap: 2px; white-space: nowrap; }
-.duel-dmg-pct { font-size: 22px; line-height: 1.05; font-weight: 800; letter-spacing: -.02em; }
-.duel-dmg-pct small { margin-left: 1px; font-size: 13px; font-weight: 700; }
+.duel-dmg { --duel-result-size: 28px; display: flex; flex: none; align-items: baseline; gap: 18px; white-space: nowrap; }
+.duel-dmg-pct { font-family: "PC Numerals", var(--font-ui); font-size: var(--duel-result-size); line-height: 1; font-weight: 800; letter-spacing: -.025em; }
+.duel-dmg-pct small { margin-left: 2px; font-size: 14px; font-weight: 650; }
 .duel-dmg-pct.ko-text-none { color: var(--sub); }
-/* Under the percent: the KO verdict, with this matchup's caveat glyph just before it. */
-.duel-verdict-line { display: inline-flex; align-items: center; gap: 6px; min-height: 18px; }
-.duel-verdict-line .duel-summary-verdict { height: 18px; padding: 0; font-size: 12.5px; }
-.duel-verdict-line .muted { font-size: 12px; font-weight: 500; }
-/* The glyph sits at the card's right edge, so its note opens leftward instead of centring. */
-.duel-verdict-line .hp-warning::after { left: auto; right: -6px; transform: translate(0, 3px); }
-.duel-verdict-line .hp-warning:hover::after,
-.duel-verdict-line .hp-warning:focus-visible::after { transform: translate(0, 0); }
+.duel-summary-verdict {
+  flex: none; color: var(--ink); font: 750 var(--duel-name-size)/1.2 "PC Numerals", var(--font-ui);
+  letter-spacing: -.02em; white-space: nowrap;
+}
+.duel-summary-verdict:empty { display: none; }
+.duel-summary-verdict .muted { font: 500 12px/1.2 var(--font-ui); letter-spacing: 0; }
+/* Anchor caveats to the name group so the note remains inside the card on a narrow screen. */
+.duel-name-line .hp-warning { position: static; }
+.duel-name-line .hp-warning::after { left: 0; transform: translateY(3px); }
+.duel-name-line .hp-warning:hover::after,
+.duel-name-line .hp-warning:focus-visible::after { transform: none; }
+@container duel-result (max-width: 440px) {
+  .duel-head { --duel-name-size: 18px; gap: 14px; height: 34px; }
+  .duel-dmg { --duel-result-size: 25px; gap: 12px; }
+}
+@container duel-result (max-width: 340px) {
+  .duel-head { --duel-name-size: 16px; gap: 10px; height: 32px; }
+  .duel-dmg { --duel-result-size: 22px; gap: 9px; }
+  .duel-dmg-pct small { font-size: 12px; }
+}
 /* The same band in HP rides on the percent as its tooltip. */
 .duel-tip { position: relative; cursor: help; outline: none; }
 .duel-tip::after {
@@ -3388,11 +3231,11 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 .duel-tip:hover::after, .duel-tip:focus-visible::after { opacity: 1; visibility: visible; transform: none; }
 .duel-tip:focus-visible { border-radius: 4px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 45%, transparent); }
 
-/* The roll row: reading, a shorter slider, the named rolls and hit flags right after it, and the
-   copy control closing the row. */
-.duel-rolls .duel-roll-lane { flex: 0 1 22%; width: 22%; max-width: 22%; min-width: 64px; }
-.duel-rolls .duel-roll-btns { margin-left: 2px; }
-.duel-copy { position: relative; flex: none; margin-left: auto; }
+/* Match the SP meter, with one segment per random modifier and a full-height hit area. */
+.duel-rolls .duel-roll-lane { min-width: 64px; --sp-color: var(--brand); --sp-segment-width: 6.25%; }
+.duel-roll-lane.disabled { opacity: .45; }
+.duel-roll-lane input:disabled { cursor: default; }
+.duel-copy { position: relative; justify-self: end; }
 .duel-copy-pop {
   position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 60;
   display: grid; gap: 8px; width: min(460px, 82vw); padding: 10px 12px;
@@ -3412,15 +3255,12 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   display: block; padding: 8px 10px; border-radius: 7px; background: var(--panel-2);
   font-size: 11.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--sub);
 }
-@media (max-width: 720px) {
-  .duel-rolls .duel-roll-lane { flex-basis: 60%; width: 60%; max-width: 60%; }
+@container duel-result (max-width: 520px) {
+  .duel-rolls { grid-template-columns: auto minmax(0, 1fr) auto; gap: 5px 8px; }
+  .duel-rolls .duel-roll-lane { grid-column: 2 / -1; }
+  .duel-roll-btns { grid-column: 1 / 3; }
 }
 
-/* -- the result block, tidied: one accent per job ------------------------------------------
-   KO tone colours the damage percent (the headline and each move) and nothing else; the verdict
-   under the headline is the same fact in words, in ink. */
-.duel-verdict-line .duel-summary-verdict { color: var(--ink); font-weight: 650; }
-.duel-verdict-line .duel-summary-verdict.guaranteed { font-weight: 750; }
 /* The HP numbers sit on the bar itself, lifted by a halo instead of boxed in pills; only the
    fainted tag keeps a fill, because it is the one that must stop the eye. */
 .hp-bar-track .hp-bar-tag { padding: 0; background: none; color: var(--ink); letter-spacing: .04em;
@@ -3556,9 +3396,6 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   /* Species and forme stack on a phone: side by side, the forme heading and its two actions have
      no room left and wrap letter by letter. */
   .mon-editor-namerow.split { grid-template-columns: minmax(0, 1fr); }
-  .duel-head { gap: 9px; }
-  .duel-name { font-size: 17px; }
-  .duel-dmg-pct { font-size: 18px; }
   .duel-move-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -3594,7 +3431,7 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 .tw-state.idle { color: var(--sub); background: var(--panel-2); }
 .tw-hits button { padding: 4px 12px; font-size: 12px; }
 .tw-target-select {
-  min-width: 0; height: 32px; padding: 0 8px; font: inherit; font-size: 12.5px; font-weight: 600;
+  min-width: 0; min-height: 32px; height: 32px; padding: 0 28px 0 8px; font: inherit; font-size: 12.5px; font-weight: 600;
   border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel); color: var(--ink);
 }
 /* The verdict's pin button and the solver's button are one box: same size, same right edge, so they
@@ -3790,60 +3627,19 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   margin-left: auto; font-size: 11.5px; cursor: help;
 }
 .tw-bulk b { margin-left: 3px; color: var(--ink); font-weight: 700; }
-/* name | SP box | slider | stage | value — the order the reader edits and then reads a stat in. */
+/* name | SP capsule and meter | stage | value — the order the reader edits and then reads a stat in. */
 .tw-sp-row {
-  display: grid; grid-template-columns: 38px 44px minmax(0, 1fr) 50px 78px;
+  display: grid; grid-template-columns: 38px minmax(0, 1fr) 50px 78px;
   gap: 10px; align-items: center; min-width: 0;
 }
 .tw-sp-name { font-size: 12px; font-weight: 700; color: var(--sub); white-space: nowrap; }
-/* Same track grammar as the calculator's boost sliders: a 4px rail inset by the thumb radius, the
-   filled part in brand blue, and a tick where the loaded spread sat. */
-.tw-sp-slider { position: relative; display: flex; align-items: center; height: 22px; min-width: 0; }
-.tw-sp-track {
-  position: absolute; left: 7px; right: 7px; top: 50%; height: 4px; transform: translateY(-50%);
-  border-radius: 2px; background: var(--panel-3); pointer-events: none;
-}
-.tw-sp-track::after {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
-  width: calc(100% * var(--fill, 0)); border-radius: 2px; background: var(--brand);
-}
-.tw-sp-base {
-  position: absolute; top: 4px; bottom: 4px; width: 2px; border-radius: 1px; pointer-events: none;
-  left: calc(7px + (100% - 14px) * var(--base, 0) - 1px);
-  background: color-mix(in srgb, var(--sub) 70%, transparent);
-}
-.tw-sp-slider input[type="range"] {
-  position: relative; -webkit-appearance: none; appearance: none;
-  width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer;
-}
-.tw-sp-slider input[type="range"]::-webkit-slider-runnable-track { height: 22px; background: transparent; }
-.tw-sp-slider input[type="range"]::-moz-range-track { height: 22px; background: transparent; }
-.tw-sp-slider input[type="range"]::-moz-range-progress { background: transparent; }
-.tw-sp-slider input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 14px; height: 14px; margin-top: 4px; border-radius: 50%;
-  background: var(--panel); border: 2px solid var(--brand); box-shadow: 0 1px 3px rgb(16 26 47 / .22);
-}
-.tw-sp-slider input[type="range"]::-moz-range-thumb {
-  width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box;
-  background: var(--panel); border: 2px solid var(--brand); box-shadow: 0 1px 3px rgb(16 26 47 / .22);
-}
-.tw-sp-slider input[type="range"]:focus-visible { outline: none; }
-.tw-sp-slider input[type="range"]:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent);
-}
-.tw-sp-slider input[type="range"]:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent);
-}
-.tw-sp-input {
-  width: 100%; min-width: 0; height: 30px; padding: 0 2px; text-align: center; font-weight: 650;
-  border: 1px solid var(--line); border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--panel) 97%, var(--bg)); color: var(--ink);
-}
 /* A stage is narrow on purpose (-6..+6 is all it holds) and takes the direction's colour once moved. */
 .tw-stage-sel {
-  width: 100%; min-width: 0; height: 28px; padding: 0 0 0 4px; font: inherit; font-size: 12px; font-weight: 650;
+  width: 100%; min-width: 0; min-height: 28px; height: 28px; padding: 0 12px 0 2px; font: inherit; font-size: 12px; font-weight: 650;
   border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--sub);
 }
+.tw-stage-sel .adaptive-select-value { flex: 1; text-align: center; }
+.tw-stage-sel .adaptive-select-chevron { right: 2px; width: 9px; }
 .tw-stage-sel.up {
   color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, var(--line));
   background: color-mix(in srgb, var(--success) 8%, var(--panel));
@@ -3870,20 +3666,18 @@ button.swap-seam:active:not(:disabled) { transform: none; }
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: center;
   padding-top: 8px; border-top: 1px dashed var(--line);
 }
-/* name | SP box | short slider | unlabelled stage */
+/* name | SP capsule and meter | unlabelled stage */
 .tw-stat-strip {
-  display: grid; grid-template-columns: auto 38px minmax(24px, 1fr) 44px; align-items: center; gap: 6px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) 44px; align-items: center; gap: 6px;
   min-width: 0; font-size: 11.5px; color: var(--sub); white-space: nowrap;
 }
-.tw-stat-strip .tw-sp-input { height: 26px; }
-.tw-stat-strip .tw-stage-sel { height: 26px; font-size: 11.5px; }
-.tw-sp-slider.mini { height: 18px; }
-.tw-sp-slider.mini .tw-sp-track { left: 6px; right: 6px; height: 3px; }
-.tw-sp-slider.mini input[type="range"] { height: 18px; }
-.tw-sp-slider.mini input[type="range"]::-webkit-slider-runnable-track { height: 18px; }
-.tw-sp-slider.mini input[type="range"]::-moz-range-track { height: 18px; }
-.tw-sp-slider.mini input[type="range"]::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: 3px; }
-.tw-sp-slider.mini input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; }
+.tw-stat-strip .tw-stage-sel { font-size: 11.5px; }
+@container mon-stats (max-width: 480px) {
+  .tw-sp-rest { gap: 8px; }
+  .tw-sp-rest .tw-stat-strip { grid-template-columns: auto minmax(0, 1fr) 32px; gap: 4px; font-size: 10px; }
+  .tw-sp-rest .stat-sp-control.plain { gap: 4px; }
+  .tw-sp-rest .stat-sp-control.plain .stat-sp-capsule { width: 30px; }
+}
 .tw-offense {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: center;
   padding-top: 10px; border-top: 1px solid var(--line);
@@ -3921,7 +3715,7 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 @media (max-width: 600px) {
   .tw-offense { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .tw-move-grid { grid-template-columns: minmax(0, 1fr); }
-  .tw-sp-row { grid-template-columns: 30px 40px minmax(0, 1fr) 46px 64px; gap: 6px; }
+  .tw-sp-row { grid-template-columns: 30px minmax(0, 1fr) 46px 64px; gap: 6px; }
   .tw-sp-head { flex-wrap: wrap; }
   .tw-sp-rest { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .tw-verdict-body { grid-template-columns: minmax(0, 1fr); }
@@ -3972,12 +3766,16 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 /* Beside the environment-build button of an editor, where the row already spaces its controls. */
 .mon-editor-actions .keep-mon { margin-left: 0; vertical-align: middle; }
 @media (pointer: coarse) {
-  .modal-close, .keep-mon, .ghost-btn.tiny, .second-btn.tiny, .lib-box-rename, .team-export-btn, .topbar .topbar-tool, .theme-toggle button, .topbar select, .primary-btn, .second-btn, .ghost-btn, .seg button, .seg.page-tabs button, .field-format.seg button, .subtabs button {
+  .modal-close, .keep-mon, .ghost-btn.tiny, .second-btn.tiny, .lib-box-rename, .team-export-btn, .topbar .topbar-tool, .theme-toggle button, .topbar .adaptive-select, .primary-btn, .second-btn, .ghost-btn, .seg button, .seg.page-tabs button, .field-format.seg button, .subtabs button {
     min-width: 44px; min-height: 44px;
   }
   .topbar nav a { min-height: 44px; display: inline-flex; align-items: center; }
   /* Large touch targets must not overflow the segmented control's desktop-height frame. */
-  .topbar .env, .topbar select, .theme-toggle { height: 46px; min-height: 46px; }
+  .topbar .env, .topbar .adaptive-select, .theme-toggle { height: 46px; min-height: 46px; }
+  /* The format switch and the two field pickers beside it share one touch height: 44px buttons in a
+     1px + 1px frame. */
+  .field-format.seg { height: auto; padding: 1px; }
+  .field-pill.adaptive-select { min-height: 48px; }
   .theme-toggle { padding: 0; }
   .theme-toggle button { width: 44px; height: 44px; }
   .footer-qr-toggle, .footer-qr-caption button { min-height: 44px; min-width: 44px; }
@@ -3985,10 +3783,10 @@ button.swap-seam:active:not(:disabled) { transform: none; }
 @media (pointer: coarse) and (max-width: 720px) {
   /* Keep touch-sized settings on one aligned row instead of stranding the language picker. */
   .topbar nav, .topbar .library-entry { order: 0; }
-  .topbar .env, .theme-toggle, .topbar select { order: 2; }
+  .topbar .env, .theme-toggle, .topbar .adaptive-select { order: 2; }
   .topbar .env { flex: none; margin-left: 0; }
   .theme-toggle { flex: none; }
-  .topbar select { flex: 1; min-width: 0; max-width: none; }
+  .topbar .adaptive-select { flex: 1; min-width: 0; max-width: none; }
   .topbar .library-entry { position: static; }
   .library-discovery-hint { top: calc(100% + 8px); right: 10px; }
 }

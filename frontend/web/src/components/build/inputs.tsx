@@ -1,256 +1,24 @@
 /** Shared building blocks for the calc page's tools (damage, bulk tune, set inference, speed line)
- * and the build editors elsewhere: the mon picker, the item input and nature options, the
- * SP/status/aura vocabularies, and their observed-build-first auto-fill. */
+ * and the build editors elsewhere: searchable pickers and observed-build-first auto-fill.
+ * Worker-safe configuration values and transformations live in lib/buildState.ts. */
 import type {
-  CombatantDto, FormatId, MetaDetailDto, NatureDto, OppSetCatalogDto, OppSetDto, SpSpread, Status,
+  FormatId, MetaDetailDto, OppSetCatalogDto, OppSetDto,
 } from "@pokemon-champions/protocol";
-import { STAT_KEYS } from "@pokemon-champions/protocol";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BuildPicker, type BuildPickerSection } from "../BuildPicker.tsx";
-import { GameImage } from "../GameImage.tsx";
-import { PLACEHOLDERS } from "../../assets/icons.ts";
-import {
-  AdaptiveCombobox, type ComboboxCommitReason,
-} from "../AdaptiveCombobox.tsx";
+import { AdaptiveCombobox } from "../AdaptiveCombobox.tsx";
+import { OptionRow } from "../OptionRow.tsx";
 import { loadOppSetsCached, useDexIndex, useItems } from "../../hooks.ts";
 import { displayName, useLang, type MsgKey } from "../../i18n.ts";
 import { useSharedT } from "../messages.ts";
 import { useRuntime } from "../../runtime/context.tsx";
-import { HttpError, type DexIndexEntry } from "../../runtime/adapter.ts";
+import { HttpError } from "../../runtime/adapter.ts";
 import type { ItemRef } from "../../runtime/projection.ts";
-import { dexLookup, megaFor } from "../../lib/lookup.ts";
 import { shareLabel, splitByUsage, type MetaUsage } from "../../lib/metaUsage.ts";
-
-export { dexLookup, megaFor } from "../../lib/lookup.ts";
-
-export const STATUSES = [
-  "Healthy", "Burned", "Paralyzed", "Poisoned", "Badly Poisoned", "Asleep", "Frozen",
-] as const;
-export const BOOST_KEYS = ["atk", "def", "spa", "spd", "spe"] as const;
-
-// Doubles partner auras the calc engine models as side flags (snake_case). Attacker-side buff the
-// attacker; the defender-side one protects the defender. (Fairy/Dark Aura are NOT here — the engine
-// only applies them when a COMBATANT itself carries the ability, not a partner — see design TODO.)
-export const ATTACKER_AURAS = [
-  ["helping_hand", "calc.helpingHand"], ["battery", "calc.battery"],
-  ["power_spot", "calc.powerSpot"], ["steely_spirit", "calc.steelySpirit"],
-] as const;
-export const DEFENDER_AURAS = [["friend_guard", "calc.friendGuard"]] as const;
-
-export interface SideState {
-  slug: string;
-  ability: string;
-  item: string;
-  nature: string;
-  sps: Partial<Record<(typeof STAT_KEYS)[number], number>>;
-  status: string;
-  boosts: Partial<Record<(typeof BOOST_KEYS)[number], number>>;
-  /** Explicit custom/environment picks are complete even when fields are blank. Auto-fill must not
-   * replace those deliberate blanks. */
-  pinned?: boolean;
-}
-export const EMPTY_SIDE: SideState = {
-  slug: "", ability: "", item: "", nature: "", sps: {}, status: "", boosts: {}, pinned: false,
-};
-
-export function natureLabel(n: NatureDto, lang: "zh" | "en" | "ja"): string {
-  const statNames = {
-    zh: { hp: "HP", atk: "攻击", def: "防御", spa: "特攻", spd: "特防", spe: "速度" },
-    en: { hp: "HP", atk: "Atk", def: "Def", spa: "SpA", spd: "SpD", spe: "Spe" },
-    ja: { hp: "HP", atk: "攻撃", def: "防御", spa: "特攻", spd: "特防", spe: "素早さ" },
-  } as const;
-  const mod = n.upStat && n.downStat
-    ? `（${statNames[lang][n.upStat]}↑／${statNames[lang][n.downStat]}↓）` : "";
-  return `${displayName(n, lang)}${mod}`;
-}
-
-/** A nature select's options: the metagame's natures for this Pokémon first, most used on top with
- * their share, a faint rule, then every other nature in the usual order. */
-export function NatureOptions({ natures, usage }: { natures: readonly NatureDto[]; usage: MetaUsage | null }) {
-  const { lang } = useLang();
-  const { meta, rest } = useMemo(() => splitByUsage(natures, (nature) => nature.name, usage?.natures),
-    [natures, usage]);
-  return (
-    <>
-      <option value="">—</option>
-      {meta.map(({ item, share }) => (
-        <option key={item.name} value={item.name}>{`${natureLabel(item, lang)}  ${shareLabel(share)}`.trim()}</option>
-      ))}
-      {meta.length > 0 && rest.length > 0 && <option disabled value="-">────────────</option>}
-      {rest.map((nature) => <option key={nature.name} value={nature.name}>{natureLabel(nature, lang)}</option>)}
-    </>
-  );
-}
-
-/** Coerce a number input to [lo, hi], treating a cleared/NaN field as `lo` (so wiping a box to retype
- * never propagates NaN into an SP spread and shows dirty verdicts downstream). */
-export function clampNum(raw: string, lo: number, hi: number): number {
-  const n = Number(raw);
-  return Number.isNaN(n) ? lo : Math.max(lo, Math.min(hi, n));
-}
-
-export function spSum(sps: SideState["sps"]): number {
-  return STAT_KEYS.reduce((n, k) => n + (sps[k] ?? 0), 0);
-}
-
-/** Colour bucket for an SP total against the 66-point budget: under-spent / exactly full / illegal. */
-export function spSumClass(n: number): string {
-  return n > 66 ? "over" : n === 66 ? "full" : "under";
-}
-
-/** True when a side carries no user/environment config yet (just a species, or nothing). The auto-fill
- * effects only overwrite a BARE side, so a configured side swapped/pasted in keeps its build while a
- * fresh pick (or a species switch, which resets to EMPTY_SIDE) still gets its environment fill. */
-export function sideIsBare(s: SideState): boolean {
-  return !s.pinned && !s.ability && !s.item && !s.nature && !s.status
-    && !Object.keys(s.sps).length && !Object.keys(s.boosts).length;
-}
-
-// Boost stages high→low so the dropdown reads +6 … 0 … −6 top-to-bottom.
-export const BOOST_STAGES = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6] as const;
-export const boostLabel = (n: number): string => (n > 0 ? `+${n}` : String(n));
-
-/** A label-on-top / checkbox-below field cell, so screens/auras line up with the weather/terrain
- * selects in the calc field bar (label row aligns with their labels, box row with the selects). */
-export function FieldCheck({ label, checked, onChange, title }: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  title?: string;
-}) {
-  return (
-    <label className="fld-chk" title={title}>
-      <span className="cap">{label}</span>
-      <span className="box"><input type="checkbox" checked={checked}
-        onChange={(e) => onChange(e.target.checked)} /></span>
-    </label>
-  );
-}
-
-/** CombatantDto for the calc CLI: only the non-default fields are sent (an all-zero SP spread or a
- * "Healthy" status stays implicit so the engine applies its own defaults). */
-export function cleanSide(s: SideState, name: string): CombatantDto {
-  const sps: SpSpread = {};
-  for (const k of STAT_KEYS) if (s.sps[k]) sps[k] = s.sps[k]!;
-  const boosts: Partial<Record<(typeof BOOST_KEYS)[number], number>> = {};
-  for (const k of BOOST_KEYS) if (s.boosts[k]) boosts[k] = s.boosts[k]!;
-  return {
-    name,
-    ...(s.ability ? { ability: s.ability } : {}),
-    ...(s.item ? { item: s.item } : {}),
-    ...(s.nature ? { nature: s.nature } : {}),
-    ...(Object.keys(sps).length ? { sps } : {}),
-    ...(s.status ? { status: s.status as Status } : {}),
-    ...(Object.keys(boosts).length ? { boosts } : {}),
-  };
-}
-
-export interface ModalSet {
-  ability: string;
-  item: string;
-  nature: string;
-  sps: Partial<Record<(typeof STAT_KEYS)[number], number>>;
-  moves: string[];
-}
-
-/** One concrete choice shown by the environment-build picker. Observed configurations keep their
- * joint item/ability/nature/moves/SP fields intact; the old marginal-mode Meta stitch is appended
- * only as an explicit fallback. */
-export interface BuildOption {
-  key: string;
-  source: "aggregate" | "meta";
-  coverage: number | null;
-  isModal: boolean;
-  modal: ModalSet;
-  set: OppSetDto;
-}
-
-/** Convert one drawer/environment card into a calculator side. A null option is the deliberately
- * blank Custom card, so both paths are pinned against background environment auto-fill. */
-export function sideFromBuild(slug: string, option: BuildOption | null): SideState {
-  if (!option) return { ...EMPTY_SIDE, slug, sps: {}, boosts: {}, pinned: true };
-  return {
-    ...EMPTY_SIDE,
-    slug,
-    ability: option.modal.ability,
-    item: option.modal.item,
-    nature: option.modal.nature,
-    sps: { ...option.modal.sps },
-    boosts: {},
-    pinned: true,
-  };
-}
-
-/** Apply facts that belong to the literal dex form selected by the user. Meta detail falls back
- * from a Mega form to its ranked base species, so its stitched modal set can carry the base
- * ability. The stone is form-specific already; the ability must be form-specific too or an
- * explicit Mega Salamence request silently reaches the engine without Aerilate. */
-export function modalForEntry(modal: ModalSet, entry: DexIndexEntry | undefined,
-                              stone: ItemRef | undefined): ModalSet {
-  return {
-    ...modal,
-    ...(stone ? { item: stone.name } : {}),
-    ...(entry?.isMega ? { ability: entry.abilities[0]?.name ?? "" } : {}),
-  };
-}
-
-/** A convenience STARTING build for the calc tools, stitched from a mon's meta panels: the top
- * ability / item / nature / SP spread + top-4 damaging moves, each the marginal mode of its own
- * panel. These fields have NO joint-distribution guarantee — this combination may never have been
- * played together (dev/design.md §8 forbids treating such a stitch as a real set). It exists only to
- * seed the form so the user isn't typing from scratch; the UI labels it as an unverified default
- * (calc.fillDisclaimer) and the user is expected to adjust. Precise tuning routes through the skill
- * `tune` operator, which grounds on real joint samples instead. */
-export function toModalSet(d: MetaDetailDto): ModalSet {
-  return {
-    ability: d.panels.abilities[0]?.name ?? "",
-    item: d.panels.items[0]?.name ?? "",
-    nature: d.panels.natures[0]?.name ?? "",
-    sps: { ...(d.panels.spreads[0]?.spread ?? {}) },
-    moves: d.panels.moves.filter((m) => m.category !== "Status").slice(0, 4).map((m) => m.name),
-  };
-}
-
-/** Signature of a side's auto-fillable fields + its picked move(s). Two sides with the same signature
- * are indistinguishable to the auto-fill, so on a FORMAT switch a side still matching its last auto-fill
- * (the user never edited it) can be safely re-filled from the new format's modal set, while a user-edited
- * or swapped-in side is left alone. This replaces the `sideIsBare` heuristic, which couldn't tell an
- * unedited auto-fill from a deliberate build and so froze the wrong-format set on a switch (audit 2026-07-14). */
-export function autofillSig(s: SideState, moves: string[] = []): string {
-  const sps = STAT_KEYS.map((k) => `${k}:${s.sps[k] ?? 0}`).join(",");
-  const boosts = BOOST_KEYS.map((k) => `${k}:${s.boosts[k] ?? 0}`).join(",");
-  return JSON.stringify([s.ability, s.item, s.nature, sps, s.status, boosts, moves]);
-}
-
-/** The signature a side WOULD carry right after an auto-fill from `m` with `moves` — compare a live
- * side against this (via autofillSig) to tell whether it still holds an untouched auto-fill. */
-export function modalSig(m: ModalSet, moves: string[]): string {
-  return autofillSig(
-    { slug: "", ability: m.ability, item: m.item, nature: m.nature, sps: m.sps, status: "", boosts: {} },
-    moves);
-}
-
-/** Identity of the configuration printed on a build card. Battle-only state (status, current HP,
- * boosts) is deliberately absent: changing the current turn must not relabel an otherwise exact
- * environment build as custom. Four fixed move slots make a two-move build different from the
- * same prefix with a third hand-edited move. */
-export function buildConfigSig(build: {
-  ability: string;
-  item: string;
-  nature: string;
-  sps: Partial<Record<(typeof STAT_KEYS)[number], number>>;
-  moves: string[];
-}): string {
-  const moves = [...build.moves.slice(0, 4)];
-  while (moves.length < 4) moves.push("");
-  return JSON.stringify([
-    build.ability,
-    build.item,
-    build.nature,
-    STAT_KEYS.map((key) => build.sps[key] ?? 0),
-    moves,
-  ]);
-}
+import { itemOrder } from "../../lib/buildLabels.ts";
+import { ItemLock } from "./FieldLabels.tsx";
+import { useLocalizedDraft } from "./useLocalizedDraft.ts";
+import { modalForEntry, observedBuildOptions, toModalSet, type BuildOption, type ModalSet } from "../../lib/buildState.ts";
 
 /** Cached Meta fallback loader. A 404 (unranked this period) resolves to null; observed builds can
  * still be offered independently by `useBuildOptions`.
@@ -308,59 +76,6 @@ function useMetaFill(): (slug: string, fmt: FormatId) => Promise<ModalSet | null
   };
 }
 
-function modalFromObserved(set: OppSetDto): ModalSet {
-  return {
-    ability: set.ability ?? "",
-    item: set.item ?? "",
-    nature: set.nature ?? "",
-    sps: { ...(set.sps ?? {}) },
-    moves: [...(set.moves ?? [])].slice(0, 4),
-  };
-}
-
-/** Convert the lightweight opponent-set catalog into the calculator's ordered choices. The source
- * rows are already modal-first, but sorting here makes the user-facing contract independent of
- * serialization order: highest observed share wins every automatic fill. */
-export function observedBuildOptions(
-  catalog: OppSetCatalogDto | null,
-  slug: string,
-  dex: DexIndexEntry[],
-  items: ItemRef[],
-): BuildOption[] {
-  if (!catalog) return [];
-  const entry = dex.find((e) => e.slug === slug);
-  const base = entry?.isMega && entry.baseSpecies
-    ? dex.find((e) => e.name === entry.baseSpecies) : entry;
-  const row = catalog.species.find((s) => s.slug === (base?.slug ?? slug));
-  if (!row) return [];
-  const stone = entry?.isMega
-    ? items.find((i) => i.requiredBy?.includes(entry.name)) : undefined;
-  return [...(row.variants ?? [])]
-    .map((variant) => ({ variant, set: catalog.sets[variant.key] }))
-    .filter((pair): pair is { variant: NonNullable<typeof pair.variant>; set: OppSetDto } =>
-      !!pair.set && (!entry?.isMega || pair.set.runForm === entry.name))
-    .sort((a, b) => (b.variant.coverage ?? -1) - (a.variant.coverage ?? -1)
-      || Number(b.variant.isModal) - Number(a.variant.isModal))
-    .map(({ variant, set }) => {
-      const modal = modalForEntry(modalFromObserved(set), entry, stone);
-      return {
-        key: variant.key,
-        source: "aggregate" as const,
-        coverage: variant.coverage ?? set.coverage ?? null,
-        isModal: variant.isModal,
-        modal,
-        set: {
-          ...set,
-          ability: modal.ability || null,
-          item: modal.item || null,
-          nature: modal.nature || null,
-          moves: modal.moves,
-          sps: modal.sps,
-        },
-      };
-    });
-}
-
 /** Cached build-choice loader shared by manual pickers and automatic fills. It reads the small set
  * catalog, never the multi-megabyte matchup matrix. Meta remains the final card even when observed
  * builds exist, and becomes the sole card for a species absent from the catalog. */
@@ -409,13 +124,6 @@ export function useBuildOptions(): (
       set: fallback,
     }];
   };
-}
-
-/** Automatic fills use exactly the first card the manual picker would show: the modal/highest-share
- * observed build, or the Meta fallback when no observed configuration exists. */
-export function useModalFill(): (slug: string, fmt: FormatId) => Promise<ModalSet | null> {
-  const loadOptions = useBuildOptions();
-  return async (slug: string, fmt: FormatId) => (await loadOptions(slug, fmt))[0]?.modal ?? null;
 }
 
 /** The environment-build control a mon card wears: one button that loads THIS species'
@@ -487,7 +195,7 @@ export function BuildPickerButton({
 
   return (
     <>
-      <button ref={anchor} type="button" className={className} onClick={toggle}
+      <button ref={anchor} type="button" className={`${className} build-picker-trigger`} onClick={toggle}
         disabled={disabled || !slug} aria-expanded={open}
         title={t("calc.metaSetHint")}>{label ?? t("calc.metaSet")}</button>
       {open && (
@@ -506,39 +214,9 @@ export function BuildPickerButton({
   );
 }
 
-/** Engine-facing view of a side: the Mega form (with its own legal ability) when the held
- * stone matches, else the side as-is. `entry` is what the request should be issued for. */
-export function withMega<S extends { slug: string; item: string }>(
-  s: S, dex: DexIndexEntry[], items: ItemRef[],
-): { state: S; entry: DexIndexEntry | undefined; mega: boolean } {
-  const base = dexLookup(dex).bySlug.get(s.slug);
-  const mega = base?.isMega ? base : megaFor(s.slug, s.item, dex, items);
-  if (!mega) return { state: s, entry: base, mega: false };
-  const state = { ...s };
-  const withAbility = state as S & { ability?: string };
-  if ("ability" in state && withAbility.ability !== undefined
-      && !mega.abilities.some((a) => a.name === withAbility.ability)) {
-    withAbility.ability = mega.abilities[0]?.name ?? "";
-  }
-  return { state, entry: mega, mega: true };
-}
-
-/** Item-category display order (52poke's taxonomy): battle staples first, the 75 Mega
- * stones last so they never bury the everyday picks. */
-export const ITEM_CATEGORY_ORDER: Record<string, number> = {
-  battle: 0, type_boost: 1, berry: 2, mega_stone: 3,
-};
-export function itemOrder(a: { category?: string; name: string },
-                          b: { category?: string; name: string }): number {
-  const ca = ITEM_CATEGORY_ORDER[a.category ?? ""] ?? 9;
-  const cb = ITEM_CATEGORY_ORDER[b.category ?? ""] ?? 9;
-  return ca - cb || a.name.localeCompare(b.name);
-}
-
 /** Typeable trilingual item input, mirroring MonPicker: free text in any of the
  * three languages resolves to the English canonical; empty clears. */
 export function ItemCombo({ value, onChange, items, disabled, usage }: {
-  idKey: string;
   value: string;
   onChange: (canonical: string) => void;
   items: ItemRef[];
@@ -548,18 +226,18 @@ export function ItemCombo({ value, onChange, items, disabled, usage }: {
   usage?: MetaUsage | null;
 }) {
   const { lang } = useLang();
-  const [text, setText] = useState("");
-  useEffect(() => {
-    const cur = items.find((i) => i.name === value);
-    setText(cur ? displayName(cur, lang) : value);
-  }, [value, lang, items.length]);
+  const current = items.find((item) => item.name === value);
+  const [text, setText, resetText] = useLocalizedDraft(value, current ? displayName(current, lang) : value, lang);
   const options = useMemo(() => {
     const { meta, rest } = splitByUsage([...items].sort(itemOrder), (i) => i.name, usage?.items);
+    const option = (i: ItemRef, share: string | null) => ({
+      key: i.key, value: displayName(i, lang), searchText: `${i.name} ${i.nameZh ?? ""} ${i.nameJa ?? ""}`,
+      label: <OptionRow name={displayName(i, lang)} share={share} alias={lang === "en" ? null : i.name} />,
+    });
+    const blank = meta.length ? "" : null;
     return [
-      ...meta.map(({ item: i, share }) => ({
-        key: i.key, value: displayName(i, lang), secondary: i.name, group: "meta" as const, badge: shareLabel(share),
-      })),
-      ...rest.map((i) => ({ key: i.key, value: displayName(i, lang), secondary: i.name })),
+      ...meta.map(({ item: i, share }) => ({ ...option(i, shareLabel(share)), group: "meta" as const })),
+      ...rest.map((i) => option(i, blank)),
     ];
   }, [items, lang, usage]);
   const resolve = (q: string): string | null => {
@@ -577,13 +255,11 @@ export function ItemCombo({ value, onChange, items, disabled, usage }: {
   const commit = (raw: string) => {
     const hit = resolve(raw);
     if (hit !== null) { if (hit !== value) onChange(hit); }
-    else {
-      const cur = items.find((i) => i.name === value);
-      setText(cur ? displayName(cur, lang) : "");
-    }
+    resetText();
   };
   return (
-    <AdaptiveCombobox value={text} disabled={disabled} options={options} listbox
+    <ItemLock locked={disabled}>
+      <AdaptiveCombobox value={text} disabled={disabled} options={options} popupMinWidth={320}
         onValueChange={(next) => {
           setText(next);
           const q = next.trim();
@@ -593,107 +269,6 @@ export function ItemCombo({ value, onChange, items, disabled, usage }: {
           else if (!q && value !== "") onChange("");
         }}
         onCommit={commit} />
-  );
-}
-
-/** Trilingual mon input with suggestions + sprite. Typing is always literal; exact zh/ja/en names
- * and explicit option picks resolve locally, while fuzzy adapter resolution requires Enter.
- * Reused by the mon editors and the speed-ladder rows. The sprite always identifies the literal selected
- * entry; an activated held-stone form is disclosed by the adjacent MEGA badge. */
-export function MonPicker({ slug, onSlug, dex, placeholder, ariaLabel }: {
-  idKey: string;
-  slug: string;
-  onSlug: (slug: string) => void;
-  dex: DexIndexEntry[];
-  placeholder?: string;
-  ariaLabel?: string;
-}) {
-  const { lang } = useLang();
-  const t = useSharedT();
-  const { adapter } = useRuntime();
-  const entry = dex.find((e) => e.slug === slug);
-  const [text, setText] = useState("");
-  const resolveToken = useRef(0);
-  // Typing clears the slug on every keystroke that does not name an exact entry, so "slug is empty"
-  // alone cannot mean "blank the box" — that would erase the word being typed. Only an OUTSIDE
-  // clear (a blank roster slot, a reset) blanks it.
-  const typing = useRef(false);
-
-  useEffect(() => {
-    if (entry) { typing.current = false; setText(displayName(entry, lang)); return; }
-    if (!typing.current) setText("");
-  }, [lang, slug]);
-
-  const monOptions = useMemo(() => dex.map((e) => ({
-    key: e.key, value: displayName(e, lang),
-    secondary: `${e.name}${e.nameZh && lang !== "zh" ? ` · ${e.nameZh}` : ""}`,
-  })), [dex, lang]);
-
-  const localEntry = (value: string) => {
-    const q = value.trim();
-    if (!q) return undefined;
-    return dex.find((candidate) =>
-      candidate.name.toLowerCase() === q.toLowerCase() ||
-      candidate.nameZh === q ||
-      candidate.nameJa === q ||
-      candidate.slug === q.toLowerCase());
-  };
-
-  const edit = (value: string) => {
-    ++resolveToken.current;
-    typing.current = true;
-    setText(value);
-    const q = value.trim();
-    if (!q) { onSlug(""); return; }
-    const local = localEntry(value);
-    // Re-resolving the CURRENT mon would re-fire onSlug with the same slug, which an editor treats as
-    // a new species — resetting the build and wiping an auto-fill that won't re-apply. Skip it.
-    if (local) { if (local.slug !== slug) onSlug(local.slug); return; }
-    // Never keep calculating with the previous Pokémon while the visible text names no exact entry.
-    onSlug("");
-  };
-
-  const commit = (value: string, reason: ComboboxCommitReason) => {
-    typing.current = false;
-    const q = value.trim();
-    if (!q) { onSlug(""); return; }
-    const local = localEntry(value);
-    if (local) {
-      setText(displayName(local, lang));
-      if (local.slug !== slug) onSlug(local.slug);
-      return;
-    }
-    // Blur is not a user request to accept the first fuzzy match. Enter is.
-    if (reason === "blur") return;
-    const token = ++resolveToken.current;
-    adapter.resolve([q], "pokemon").then((entries) => {
-      if (token !== resolveToken.current) return;
-      const canonical = entries[0]?.ok ? entries[0].canonical : undefined;
-      const hit = canonical ? dex.find((e) => e.name === canonical) : undefined;
-      if (hit) {
-        setText(displayName(hit, lang));
-        if (hit.slug !== slug) onSlug(hit.slug);
-      } else {
-        onSlug("");
-      }
-    }).catch(() => {
-      if (token === resolveToken.current) onSlug("");
-    });
-  };
-
-  return (
-    <span className="mon-picker">
-      <span className="mon-picker-slot">
-        {entry
-          ? <GameImage assetKey={entry.key} role="card" alt={entry.name}
-              className="mini mon-picker-img" />
-          : <img className="mini mon-picker-img" src={PLACEHOLDERS.pokemon}
-              alt="" loading="lazy" aria-hidden />}
-      </span>
-      <AdaptiveCombobox value={text} options={monOptions}
-        onValueChange={edit} onCommit={commit}
-        aria-label={ariaLabel}
-        placeholder={placeholder ?? t("calc.pickHint")} />
-    </span>
+    </ItemLock>
   );
 }

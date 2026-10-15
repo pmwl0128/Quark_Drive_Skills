@@ -12,7 +12,7 @@ export type UsageDelta =
 
 /** Changes smaller than this many percentage points are still printed, but muted: at one decimal
  * of precision they are close to noise, and every row keeps its number so no panel looks empty. */
-export const DELTA_THRESHOLD = 0.5;
+const DELTA_THRESHOLD = 0.5;
 
 export function usageDelta(values: ReadonlyArray<number | null> | undefined): UsageDelta {
   if (!values || values.length < 2) return { kind: "none" };

@@ -2,6 +2,7 @@
  * from the engine's own sixteen rolls, and the control that pins it as a standing target. */
 import { memo } from "react";
 import { GameImage } from "../../../components/GameImage.tsx";
+import { AdaptiveSelect } from "../../../components/AdaptiveSelect.tsx";
 import { displayName, useLang } from "../../../i18n.ts";
 import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
@@ -47,12 +48,12 @@ function TargetSelect({ target, onTarget }: {
 }) {
   const t = useCalcT();
   return (
-    <select className="tw-target-select" value={target} aria-label={t("tune.ws.target")}
-      onChange={(event) => onTarget(event.target.value as GoalTarget)}>
+    <AdaptiveSelect className="tw-target-select" value={target} aria-label={t("tune.ws.target")}
+      onValueChange={(value) => onTarget(value as GoalTarget)}>
       {TARGETS.map((candidate) => (
         <option key={candidate.id} value={candidate.id}>{t(TARGET_LABEL[candidate.id])}</option>
       ))}
-    </select>
+    </AdaptiveSelect>
   );
 }
 

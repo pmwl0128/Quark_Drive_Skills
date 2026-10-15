@@ -26,6 +26,7 @@ import type {
 import { isErrorShape } from "@pokemon-champions/protocol";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BuildPicker, type BuildCardOption } from "../../components/BuildPicker.tsx";
+import { AdaptiveSelect } from "../../components/AdaptiveSelect.tsx";
 import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx";
 import { EntityHover } from "../../components/EntityHover.tsx";
 import { GameImage } from "../../components/GameImage.tsx";
@@ -36,14 +37,14 @@ import type { DexIndexEntry, RuntimeAdapter } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import type { ItemRef } from "../../runtime/projection.ts";
 import { useRoster } from "./roster.tsx";
-import {
-  buildConfigSig, observedBuildOptions, useBuildOptions, withMega, type BuildOption,
-} from "../../components/build/inputs.tsx";
+import { useBuildOptions } from "../../components/build/inputs.tsx";
+import { buildConfigSig, observedBuildOptions, withMega, type BuildOption } from "../../lib/buildState.ts";
 import { FieldPanel, useFieldOffers } from "./duel/FieldPanel.tsx";
 import { buildCardOptionForMon } from "./duel/MonEditor.tsx";
 import { monsFromPaste } from "./duel/paste.ts";
 import { SwapSeam } from "./duel/SwapSeam.tsx";
-import { DuelBar, TeamBar, TEAM_MAX, type ImportOutcome } from "./duel/TeamBar.tsx";
+import { DuelBar, TeamBar, type ImportOutcome } from "./duel/TeamBar.tsx";
+import { TEAM_SIZE } from "../../lib/battle.ts";
 import {
   applyBuildOption, effectiveEntry, makeMon, withoutMember, type MonState, type SharedFlagKey, type SideId,
 } from "./duel/state.ts";
@@ -590,7 +591,7 @@ export function SpeedTab({ dex, natures, items, onRailApi, active: visible = tru
     const team = teams[side];
     const activeEmpty = team[active[side]] && !team[active[side]]!.slug ? active[side] : -1;
     const emptyIndex = activeEmpty >= 0 ? activeEmpty : team.findIndex((candidate) => !candidate.slug);
-    if (emptyIndex < 0 && team.length >= TEAM_MAX) return { ok: false as const, reason: "full" as const };
+    if (emptyIndex < 0 && team.length >= TEAM_SIZE) return { ok: false as const, reason: "full" as const };
     const index = emptyIndex >= 0 ? emptyIndex : team.length;
     setTeams((previous) => ({ ...previous, [side]: emptyIndex >= 0
       ? previous[side].map((candidate, at) => at === emptyIndex ? mon : candidate)
@@ -626,8 +627,8 @@ export function SpeedTab({ dex, natures, items, onRailApi, active: visible = tru
     allowedFlags: SPEED_SIDE_FLAGS, inlineFlags: true,
     onIndex: (i: number) => setActive((p) => (p[side] === i ? p : { ...p, [side]: i })),
     onAdd: () => {
-      if (teams[side].length >= TEAM_MAX) return;
-      setTeams((p) => (p[side].length >= TEAM_MAX ? p : { ...p, [side]: [...p[side], makeMon()] }));
+      if (teams[side].length >= TEAM_SIZE) return;
+      setTeams((p) => (p[side].length >= TEAM_SIZE ? p : { ...p, [side]: [...p[side], makeMon()] }));
       setActive((p) => ({ ...p, [side]: teams[side].length }));
     },
     onRemove: (i: number) => {
@@ -717,12 +718,12 @@ export function SpeedTab({ dex, natures, items, onRailApi, active: visible = tru
       </DuelBar>
 
       <div className="spd-top swap-seam-host">
-        <SpeedCard label={t("speed.ours")} mon={mine} setMon={setMine} pickerKey="spd-a" dex={dex}
+        <SpeedCard label={t("speed.ours")} mon={mine} setMon={setMine} dex={dex}
           natures={natures} items={items} format={format} offense={offenseMine} input={mineInput}
           result={teamRun?.byUid[mine.uid] ?? null} scarf={scarfFor(mine, "a")}
           baseline={baselineOf(mine)} />
         <SwapSeam onSwap={swapSides} />
-        <SpeedCard label={t("speed.theirs")} mon={foe} setMon={setFoe} pickerKey="spd-b" dex={dex}
+        <SpeedCard label={t("speed.theirs")} mon={foe} setMon={setFoe} dex={dex}
           natures={natures} items={items} format={format} offense={offenseOf(foe, foeEntry, category)}
           input={speedInputOf(foe, field, "b", dex, items, neutral)}
           result={teamRun?.byUid[foe.uid] ?? null} scarf={scarfFor(foe, "b")}
@@ -735,9 +736,9 @@ export function SpeedTab({ dex, natures, items, onRailApi, active: visible = tru
         <h2 className="page-title" style={{ fontSize: 15, margin: 0 }}>{t("speed.env")}</h2>
         <span className="speed-tier-scope">
           <label><span>{t("speed.topN")}</span>
-            <select value={view.topN} onChange={(e) => setView((v) => ({ ...v, topN: Number(e.target.value) }))}>
+            <AdaptiveSelect value={view.topN} onValueChange={(value) => setView((v) => ({ ...v, topN: Number(value) }))}>
               {[30, 60, 100].map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
+            </AdaptiveSelect>
           </label>
         </span>
         <span className="speed-tier-tools">

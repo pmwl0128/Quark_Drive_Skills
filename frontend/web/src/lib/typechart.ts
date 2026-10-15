@@ -33,7 +33,7 @@ export function multiplier(atk: TypeName, defTypes: TypeName[]): number {
   return defTypes.reduce((mult, def) => mult * (CHART[atk]?.[def] ?? 1), 1);
 }
 
-export interface DefensiveProfile {
+interface DefensiveProfile {
   x4: TypeName[];
   x2: TypeName[];
   x05: TypeName[];
@@ -58,7 +58,7 @@ export function defensiveProfile(defTypes: TypeName[]): DefensiveProfile {
   return out;
 }
 
-export interface OffensiveProfile {
+interface OffensiveProfile {
   x2: TypeName[];   // a STAB hits it super-effectively
   x05: TypeName[];  // best STAB is resisted
   x0: TypeName[];   // every STAB is blocked (immune)

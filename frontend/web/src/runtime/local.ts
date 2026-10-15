@@ -5,14 +5,14 @@ import {
   ActualMatchupResponseDtoSchema, ArtifactAppendEventDtoSchema, CapabilitiesSchema,
   DamageBatchResultDtoSchema,
   DamageResultDtoSchema, MetaDetailDtoSchema,
-  OppCacheDtoSchema, OppCheckGridDtoSchema, OppKoGridDtoSchema, OppSetCatalogDtoSchema,
+  OppCheckGridDtoSchema, OppDetailsDtoSchema, OppKoGridDtoSchema, OppSetCatalogDtoSchema,
   PokemonCardDtoSchema,
   RankingDtoSchema, ResolveEntryDtoSchema, SessionDtoSchema, SessionWithLedgerDtoSchema,
   LearnersDtoSchema, MetaFacetsDtoSchema, MetaKoDtoSchema,
   MetaKoTrendDtoSchema, SpeedBatchResultDtoSchema, TrendDtoSchema, TuneResultDtoSchema,
-  UsageTrendDtoSchema,
+  TopMetaDetailDtoSchema, TopMetaRankingDtoSchema, UsageTrendDtoSchema,
   type ActualMatchupRequestDto, type Capabilities, type DamageRequestDto, type FormatId,
-  type SpeedInputDto,
+  type SpeedInputDto, type TopMetaScopeId,
 } from "@pokemon-champions/protocol";
 import { z } from "zod";
 import {
@@ -92,6 +92,16 @@ export class LocalAdapter implements RuntimeAdapter {
     return MetaFacetsDtoSchema.parse(await this.get(`/meta/facets?format=${format}`));
   }
 
+  async topRanking(format: FormatId, scope: TopMetaScopeId) {
+    return TopMetaRankingDtoSchema.parse(
+      await this.get(`/meta/top-ranking?format=${format}&scope=${scope}`));
+  }
+
+  async topDetail(format: FormatId, slug: string) {
+    return TopMetaDetailDtoSchema.parse(
+      await this.get(`/meta/top-detail?format=${format}&pokemon=${encodeURIComponent(slug)}`));
+  }
+
   /** The browse index is projection data on BOTH runtimes (same static layer). */
   dexIndex(): Promise<DexIndexEntry[]> {
     return loadProjectionDexIndex(this.cfg.projectionBase);
@@ -123,8 +133,9 @@ export class LocalAdapter implements RuntimeAdapter {
     return SpeedBatchResultDtoSchema.parse(await this.post("/calc/speedbatch", { items }));
   }
 
-  async oppCache(format: FormatId) {
-    return OppCacheDtoSchema.parse(await this.get(`/team/oppcache?format=${format}&view=matrix`));
+  async oppDetails(format: FormatId, slug: string) {
+    return OppDetailsDtoSchema.parse(await this.get(
+      `/team/oppcache?format=${format}&view=details&species=${encodeURIComponent(slug)}`));
   }
 
   async oppSets(format: FormatId) {

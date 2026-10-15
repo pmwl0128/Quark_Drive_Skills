@@ -1,8 +1,8 @@
 /** Completed matchup tables and cell inspection. Requests and history stay in the workspace. */
 import type { ActualDamageFactDto, ActualMatchupCellDto, ActualMatchupResponseDto, FormatId, OppSetDto, SpeciesRowDto } from "@pokemon-champions/protocol";
-import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { EntityHover } from "../../components/EntityHover.tsx";
+import { useCellHistory } from "../../lib/useCellHistory.ts";
 import { GameImage } from "../../components/GameImage.tsx";
 import { SegmentedControl } from "../../components/SegmentedControl.tsx";
 import { useDexByName, useOppSets } from "../../hooks.ts";
@@ -10,7 +10,7 @@ import { displayName, useLang } from "../../i18n.ts";
 import { useMatchupT } from "./messages.ts";
 import { koTone } from "../../lib/ko.ts";
 import { readTeamMembers, stashDamageFill, type TeamMemberish } from "../../lib/team.ts";
-import { CellInspector, type InspectorBuild, type InspectorDamage } from "../../components/CellInspector.tsx";
+import { CellInspector, InspectorMon, InspectorToolbar, type InspectorBuild, type InspectorDamage } from "../../components/CellInspector.tsx";
 import { activeKey, ColHead } from "../../components/MatchupHeads.tsx";
 import { slugify } from "../../components/team/MonChip.tsx";
 
@@ -19,20 +19,21 @@ const variantKey = (cell: { opponent_variant?: string }, fallback: string): stri
   cell.opponent_variant ?? fallback;
 
 type ResultView = "check" | "ko";
+const actualCellKey = (cell: { sourceId: string; cellId: string }) => JSON.stringify([cell.sourceId, cell.cellId]);
 
 /** Same markup as the reference grids' DetailMon (sprite + localized name in one hover chip), so a
  * cell inspector looks the same wherever it was opened. */
-function DetailMon({ name, lang }: { name: string; lang: string }) {
+function DetailMon({ name, lang, build }: { name: string; lang: string; build: InspectorBuild }) {
   const dex = useDexByName();
   const row = dex.get(name);
   return (
-    <EntityHover kind="pokemon" name={name}>
+    <InspectorMon build={build}>
       <span className="prose-mon">
         <GameImage assetKey={`pokemon:${row?.slug ?? slugify(name)}`} role="dense" alt=""
                    className="prose-mon-img" />
         {row ? displayName(row, lang as Parameters<typeof displayName>[1]) : name}
       </span>
-    </EntityHover>
+    </InspectorMon>
   );
 }
 
@@ -100,14 +101,15 @@ export const ActualResult = memo(function ActualResult({ response, format, sourc
   // table would also be the wrong shape here: sources are few and targets many, so the transpose
   // is very tall and very narrow.
   const [dir, setDir] = useState<"out" | "in">("out");
-  const [selected, setSelected] = useState<{ sourceId: string; cellId: string } | null>(null);
+  const history = useCellHistory<{ sourceId: string; cellId: string; view: ResultView; dir: "out" | "in" }>(response, actualCellKey);
+  const selected = history.selected;
+  const selectCell = (sourceId: string, cellId: string) => history.append({ sourceId, cellId, view, dir });
   // Which BUILD each opponent column is read as, keyed by dex slug — same model as the reference
   // grids. A ranked opponent expands into one cell per real build; showing them as adjacent columns
   // made the table several times wider and buried the species, so one species is one column and the
   // head switches which of its builds that column shows.
   const [colPicks, setColPicks] = useState<Record<string, string>>({});
   const [openCol, setOpenCol] = useState<string | null>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
   const result = response.result;
   const targets = result.members[0]?.cells ?? [];
   const byTarget = useMemo(() => new Map(result.members.map((row) =>
@@ -151,19 +153,9 @@ export const ActualResult = memo(function ActualResult({ response, format, sourc
       return { ...c, row: { ...c.row, variants } };
     });
   }, [targets, opp, dex]);
-  const selectedRow = selected ? result.members.find((row) => row.source_id === selected.sourceId) : null;
-  const cell = selectedRow?.cells.find((item) => item.cell_id === selected?.cellId) ?? null;
-  // The inspector shows whichever direction the grid is showing.
-  const detailCheck = cell ? (dir === "in" ? cell.reverse_check : cell.check) : null;
-  const source = selectedRow ? readTeamMembers(sourceTeam)[selectedRow.source_index] : null;
-  const selectedMemberName = selectedRow?.member_run_form ?? selectedRow?.member;
-  useEffect(() => {
-    if (!selected) return;
-    requestAnimationFrame(() => detailRef.current?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "center",
-    }));
-  }, [selected]);
+
+  const selectedTarget = selected ? result.members.find((row) => row.source_id === selected.sourceId)
+    ?.cells.find((cell) => cell.cell_id === selected.cellId)?.target_id : undefined;
 
   const mon = (name: string) => {
     const row = dex.get(name);
@@ -191,22 +183,22 @@ export const ActualResult = memo(function ActualResult({ response, format, sourc
           * readings. Layout stays members-as-rows either way; a real transpose here would be very
           * tall and very narrow (few sources, many targets). */}
         <button type="button" className="dir-swap"
-                onClick={() => { setDir((d) => d === "out" ? "in" : "out"); setSelected(null); }}
+                onClick={() => { setDir((d) => d === "out" ? "in" : "out"); }}
                 title={t("actual.swapHint")} aria-label={t("actual.swap")}>
           <span className="dir-side">{t(dir === "out" ? "matchup.member" : "matchup.opponent")}</span>
           <span className="dir-arrow" aria-hidden>⇄</span>
           <span className="dir-side">{t(dir === "out" ? "matchup.opponent" : "matchup.member")}</span>
         </button>
       </th>
-        {columns.map((col) => <ColHead key={col.slug} s={col.row} lang={lang} picks={colPicks}
+        {columns.map((col) => <ColHead selected={!!selected && col.cells.some((cell) => cell.target_id === selectedTarget)} key={col.slug} s={col.row} lang={lang} picks={colPicks}
           sets={sets} setsBusy={opp.status === "loading"}
           open={openCol === col.slug}
           onToggle={() => setOpenCol((k) => (k === col.slug ? null : col.slug))}
           onClose={() => setOpenCol(null)}
-          onPick={(key) => { setColPicks((m) => ({ ...m, [col.slug]: key })); setSelected(null); }} />)}
+          onPick={(key) => { setColPicks((m) => ({ ...m, [col.slug]: key })); }} />)}
       </tr></thead>
       <tbody>{result.members.map((row) => { const info = mon(row.member_run_form ?? row.member); return <tr key={row.source_id}>
-        <th className="row-head" title={row.member_run_form ? `${row.member} → ${info.label}` : info.label}><span className="row-head-inner">
+        <th className={`row-head${selected?.sourceId === row.source_id ? " axis-selected" : ""}`} title={row.member_run_form ? `${row.member} → ${info.label}` : info.label}><span className="row-head-inner">
           <GameImage assetKey={`pokemon:${info.slug}`} role="dense" alt="" className="mini" />
           {/* No MEGA badge: the battery substitutes the Mega form silently, so `info.label` ALREADY
             * names it. Badging it again is a marker the reference grids don't carry. */}
@@ -221,7 +213,7 @@ export const ActualResult = memo(function ActualResult({ response, format, sourc
           const target = col.cells.find((c) => variantKey(c, col.slug) === key) ?? col.cells[0];
           const item = target && byTarget.get(row.source_id)?.get(target.target_id);
           if (!item) return <td key={col.slug} className="ko-none" />;
-          const on = selected?.cellId === item.cell_id;
+          const on = selected?.cellId === item.cell_id && selected.sourceId === row.source_id;
           const activeCheck = dir === "in" ? item.reverse_check : item.check;
           const grade = activeCheck?.grade;
           const wall = grade === "C0" && activeCheck?.c0_kind === "wall_no_ko";
@@ -238,18 +230,28 @@ export const ActualResult = memo(function ActualResult({ response, format, sourc
             className={`${cls}${view === "check" && wall ? " wall" : ""}${view === "check" && contested ? " contested" : ""}${on ? " on" : ""}`}
             title={view === "check" && contested ? t("matchup.contested") : undefined}
             role="button" tabIndex={0}
-            aria-pressed={on} onClick={() => setSelected({ sourceId: row.source_id, cellId: item.cell_id })}
+            aria-pressed={on} onClick={() => selectCell(row.source_id, item.cell_id)}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault(); setSelected({ sourceId: row.source_id, cellId: item.cell_id });
+              e.preventDefault(); selectCell(row.source_id, item.cell_id);
             } }}>{label}</td>;
         })}</tr>; })}</tbody>
     </table></div>
+    <InspectorToolbar onClear={history.clear} empty={!history.entries.length}>
     {view === "check" ? <div className="legend"><span className="chip grade-C2">C2</span><span className="muted">{t("matchup.c2")}</span>
       <span className="chip grade-C1">C1</span><span className="muted">{t("matchup.c1")}</span>
       <span className="chip grade-C0">C0</span><span className="muted">{t("matchup.c0")}</span></div>
       : <div className="legend"><span className="muted">{t("matchup.koLegend")}:</span>{["ohkoG", "2hko", "3hko", "4hko", "slow"].map((tone, i) =>
         <span key={tone} className={`chip ko-${tone}`}>{i === 0 ? "OHKO" : i === 4 ? "5+" : `${i + 1}HKO`}</span>)}</div>}
-    {cell && selectedRow && (() => {
+    </InspectorToolbar>
+    <div className="matchup-details">{history.entries.map(({ id, value: selected }) => {
+      const { view, dir } = selected;
+      const selectedRow = result.members.find((row) => row.source_id === selected.sourceId);
+      const cell = selectedRow?.cells.find((item) => item.cell_id === selected.cellId) ?? null;
+      // Keep the reading captured by this click, even if the table direction later changes.
+      const detailCheck = cell ? (dir === "in" ? cell.reverse_check : cell.check) : null;
+      const source = selectedRow ? readTeamMembers(sourceTeam)[selectedRow.source_index] : null;
+      const selectedMemberName = selectedRow?.member_run_form ?? selectedRow?.member;
+      if (!cell || !selectedRow) return null;
       const ours = mon(selectedMemberName!), theirs = mon(cell.opponent);
       const targetKey = variantKey(cell, theirs.slug);
       const targetSet = sets?.[targetKey];
@@ -291,10 +293,11 @@ export const ActualResult = memo(function ActualResult({ response, format, sourc
       ];
       return (
         <CellInspector
-          panelRef={detailRef}
-          head={<><DetailMon name={selectedMemberName!} lang={lang} />
+          key={id} onRemove={() => history.remove(id)}
+          panelRef={id === history.activeId ? history.panelRef : undefined}
+          head={<><DetailMon name={selectedMemberName!} lang={lang} build={builds[0]!} />
                  <span>{t("matchup.vs")}</span>
-                 <DetailMon name={cell.opponent} lang={lang} /></>}
+                 <DetailMon name={cell.opponent} lang={lang} build={builds[1]!} /></>}
           grade={view === "check" ? detailCheck?.grade ?? null : null}
           gradeFacts={view === "check" ? ([
             detailCheck?.c0_kind === "wall_no_ko"
@@ -329,6 +332,6 @@ export const ActualResult = memo(function ActualResult({ response, format, sourc
           }
         />
       );
-    })()}
+    })}</div>
   </section>;
 });

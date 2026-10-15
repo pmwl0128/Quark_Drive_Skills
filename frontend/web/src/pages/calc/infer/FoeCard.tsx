@@ -1,12 +1,16 @@
 /** Observable conditions of their Pokémon. All edits still go to the calc page's shared roster;
  * nature and SP belong to the inference result, not to this input card. */
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { displayName, useLang } from "../../../i18n.ts";
 import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import { BOOST_KEYS, STATUSES, boostLabel, megaFor } from "../../../components/build/inputs.tsx";
-import { MonNameRow, MonPortrait } from "../duel/MonEditor.tsx";
+import { megaFor } from "../../../lib/lookup.ts";
+import { BOOST_KEYS, boostLabel } from "../../../lib/buildState.ts";
+import { ItemFieldLabel, ItemLock, StatusFieldLabel } from "../../../components/build/FieldLabels.tsx";
+import { AdaptiveSelect } from "../../../components/AdaptiveSelect.tsx";
+import { StatusSelect } from "../../../components/build/StatusSelect.tsx";
+import { MonNameRow, MonPortrait } from "../../../components/build/MonIdentity.tsx";
 import { effectiveEntry, makeMon, type MonState } from "../duel/state.ts";
 import type { KnownFacts, SpaceInfo } from "./context.ts";
 import { useInferT } from "./messages.ts";
@@ -46,7 +50,7 @@ export function FoeCard({ foe, setFoe, dex, items, info, known, onKnown }: {
     const ref = (mega ?? literal)?.abilities.find((ability) => ability.name === value);
     return ref ? displayName(ref, lang) : value;
   };
-  const caption = (label: string, confirmed: boolean) => (
+  const caption = (label: ReactNode, confirmed: boolean) => (
     <span className="inf-cap">{label}<em>{ti(mega ? "infer.fact.fixed"
       : confirmed ? "infer.fact.confirmed" : "infer.fact.unknown")}</em></span>
   );
@@ -62,35 +66,31 @@ export function FoeCard({ foe, setFoe, dex, items, info, known, onKnown }: {
       <div className="mon-editor inf-foe-editor">
         <div className="mon-id">
           <MonPortrait entry={entry} name={name} />
-          <MonNameRow slug={foe.slug} item={foe.item} dex={dex} items={items} pickerKey="infer-foe"
+          <MonNameRow slug={foe.slug} item={foe.item} dex={dex} items={items}
             onSpecies={(slug) => setFoe((current) => (current.slug === slug ? current : makeMon(slug)))}
             onForme={(slug, dropStone) => setFoe((current) => ({ ...current, slug, ...(dropStone ? { item: "" } : {}) }))} />
         </div>
         <div className="mon-build-row inf-known-fields">
           <label>{caption(t("calc.ability"), !!known.ability)}
             {mega ? <span className="inf-fixed">{abilityName(mega.abilities[0]?.name ?? "")}</span> : (
-              <select value={known.ability ?? ""}
-                onChange={(event) => onKnown({ ...known, ability: event.target.value || undefined })}>
+              <AdaptiveSelect value={known.ability ?? ""}
+                onValueChange={(value) => onKnown({ ...known, ability: value || undefined })}>
                 <option value="">{ti("infer.unknown")}</option>
                 {abilityChoices.map((ability) => <option key={ability} value={ability}>{abilityName(ability)}</option>)}
-              </select>
+              </AdaptiveSelect>
             )}
           </label>
-          <label>{caption(t("calc.item"), !!known.item)}
-            {mega ? <span className="inf-fixed">{itemName(stone?.name ?? foe.item)}</span> : (
-              <select value={known.item ?? ""}
-                onChange={(event) => onKnown({ ...known, item: event.target.value || undefined })}>
+          <label>{caption(<ItemFieldLabel value={mega ? stone?.name ?? foe.item : known.item ?? ""} items={items} />, !!known.item)}
+            {mega ? <ItemLock locked><span className="inf-fixed">{itemName(stone?.name ?? foe.item)}</span></ItemLock> : (
+              <AdaptiveSelect value={known.item ?? ""}
+                onValueChange={(value) => onKnown({ ...known, item: value || undefined })}>
                 <option value="">{ti("infer.unknown")}</option>
                 {itemChoices.map((item) => <option key={item} value={item}>{itemName(item)}</option>)}
-              </select>
+              </AdaptiveSelect>
             )}
           </label>
-          <label>{t("calc.status")}
-            <select value={foe.status} onChange={(event) => setFoe((current) => ({ ...current, status: event.target.value }))}>
-              {STATUSES.map((status) => (
-                <option key={status} value={status === "Healthy" ? "" : status}>{t(`status.${status}` as CalcMsgKey)}</option>
-              ))}
-            </select>
+          <label><StatusFieldLabel value={foe.status} />
+            <StatusSelect value={foe.status} onChange={(status) => setFoe((current) => ({ ...current, status }))} />
           </label>
         </div>
         <details className="inf-boosts">

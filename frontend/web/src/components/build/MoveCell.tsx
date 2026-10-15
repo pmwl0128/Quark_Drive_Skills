@@ -1,14 +1,31 @@
 /** A move slot as the result grids show it: the move is typed in a short box, the rest of the cell is
  * what you press to select it, and the reading it produced sits on the right. The damage calculator
  * and the bulk tool use the same cell, so a move reads — and is edited — the same way on both tabs. */
-import type { LearnsetDto } from "@pokemon-champions/protocol";
-import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
+import { MOVE_CATEGORIES, TYPE_NAMES, type LearnsetDto } from "@pokemon-champions/protocol";
+import { memo, useMemo, useRef, useState, type ReactNode } from "react";
 import { AdaptiveCombobox } from "../AdaptiveCombobox.tsx";
-import { TypeBadge, typeLabel } from "../TypeBadge.tsx";
+import { CategoryBadge, TypeBadge, typeLabel } from "../TypeBadge.tsx";
 import { typeColor } from "../../assets/icons.ts";
 import { displayName, useLang } from "../../i18n.ts";
+import { useMovesByName } from "../../hooks.ts";
+import { useLocalizedDraft } from "./useLocalizedDraft.ts";
 import { useSharedT } from "../messages.ts";
 import { shareLabel, splitByUsage, type MetaUsage } from "../../lib/metaUsage.ts";
+import { OptionRow } from "../OptionRow.tsx";
+import { TypeFilter, toggleType } from "./TypeFilter.tsx";
+import "./styles.move.css";
+
+type LearnMove = LearnsetDto["moves"][number];
+const TYPE_ORDER = new Map<string, number>(TYPE_NAMES.map((type, at) => [type, at]));
+const CATEGORY_ORDER = new Map<string, number>(MOVE_CATEGORIES.map((category, at) => [category, at]));
+
+/** Below the metagame's own picks, a learnset reads by type, then category, then power. */
+function moveOrder(a: LearnMove, b: LearnMove): number {
+  return (TYPE_ORDER.get(a.type) ?? 99) - (TYPE_ORDER.get(b.type) ?? 99)
+    || (CATEGORY_ORDER.get(a.category) ?? 9) - (CATEGORY_ORDER.get(b.category) ?? 9)
+    || (b.power ?? -1) - (a.power ?? -1)
+    || a.name.localeCompare(b.name);
+}
 
 /** A learnset-restricted move input: typing resolves against this mon's own legal moves in any of
  * the three languages, so a slot can never hold a move the calc would reject. */
@@ -22,26 +39,39 @@ export function MoveSlot({ value, onChange, learnset, index, usage }: {
 }) {
   const { lang } = useLang();
   const t = useSharedT();
-  const [text, setText] = useState("");
+  const vocab = useMovesByName();
   const moves = learnset?.moves ?? [];
-
-  useEffect(() => {
-    const hit = moves.find((m) => m.name === value);
-    setText(hit ? displayName(hit, lang) : value);
-  }, [value, lang, moves.length]);
+  const current = moves.find((m) => m.name === value) ?? vocab.get(value);
+  const label = current ? displayName(current, lang) : value;
+  const [text, setText, resetText] = useLocalizedDraft(value, label, lang);
+  const rootRef = useRef<HTMLSpanElement>(null);
+  // Like the dex's move filter: any number of picks per row of icons, a move of ANY picked type and
+  // ANY picked category is listed; the two filters narrow each other.
+  const [types, setTypes] = useState<readonly string[]>([]);
+  const [categories, setCategories] = useState<readonly string[]>([]);
 
   const options = useMemo(() => {
-    const { meta, rest } = splitByUsage(moves, (m) => m.name, usage?.moves);
-    const option = (m: (typeof moves)[number]) => ({
+    const shown = moves.filter((m) => (!types.length || types.includes(m.type))
+      && (!categories.length || categories.includes(m.category)));
+    const { meta, rest } = splitByUsage(shown, (m) => m.name, usage?.moves);
+    const option = (m: LearnMove, share: string | null) => ({
       key: m.name,
       value: displayName(m, lang),
-      secondary: `${typeLabel(m.type, lang)}${m.power != null ? ` · ${m.power}` : ""}`,
+      searchText: `${m.name} ${m.nameZh ?? ""} ${m.nameJa ?? ""} ${typeLabel(m.type, lang)}`,
+      label: <OptionRow name={displayName(m, lang)} share={share} alias={lang === "en" ? null : m.name}>
+        <span className="move-option-facts">
+          <TypeBadge type={m.type} iconOnly />
+          <CategoryBadge category={m.category} />
+          <span className="move-option-power num">{m.power ?? ""}</span>
+        </span>
+      </OptionRow>,
     });
+    const blank = meta.length ? "" : null;
     return [
-      ...meta.map(({ item, share }) => ({ ...option(item), group: "meta" as const, badge: shareLabel(share) })),
-      ...rest.map(option),
+      ...meta.map(({ item, share }) => ({ ...option(item, shareLabel(share)), group: "meta" as const })),
+      ...[...rest].sort(moveOrder).map((m) => option(m, blank)),
     ];
-  }, [moves, lang, usage]);
+  }, [moves, lang, usage, types, categories]);
 
   const resolve = (raw: string): string | null => {
     const q = raw.trim();
@@ -55,14 +85,23 @@ export function MoveSlot({ value, onChange, learnset, index, usage }: {
     return part ? part.name : null;
   };
 
-  const current = moves.find((m) => m.name === value);
   return (
     <div className="move-slot">
       <span className="move-slot-mark">
         {current ? <TypeBadge type={current.type} iconOnly /> : <span className="move-slot-dot" />}
       </span>
-      <AdaptiveCombobox value={text} options={options} title={text || undefined} listbox
-        placeholder={`${t("calc.move")} ${index + 1}`}
+      <span className="move-slot-input" ref={rootRef}>
+      <AdaptiveCombobox value={text} options={options} title={text || undefined} popupMinWidth={360}
+        placeholder={`${t("calc.move")} ${index + 1}`} emptyMessage={t("picker.noMove")}
+        popupHeader={<TypeFilter value={types}
+          onToggle={(type) => setTypes((current) => toggleType(current, type, Infinity))}
+          categories={{ value: categories,
+            onToggle: (category) => setCategories((current) => toggleType(current, category, Infinity)) }}
+          onClear={() => {
+            setTypes([]);
+            setCategories([]);
+            rootRef.current?.querySelector("input")?.focus({ preventScroll: true });
+          }} />}
         onValueChange={(next) => {
           setText(next);
           const hit = resolve(next);
@@ -72,8 +111,9 @@ export function MoveSlot({ value, onChange, learnset, index, usage }: {
         onCommit={(raw) => {
           const hit = resolve(raw);
           if (hit !== null) { if (hit !== value) onChange(hit); }
-          else setText(current ? displayName(current, lang) : "");
+          resetText();
         }} />
+      </span>
     </div>
   );
 }

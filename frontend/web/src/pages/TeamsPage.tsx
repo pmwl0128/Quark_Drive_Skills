@@ -11,7 +11,7 @@ import {
   SegmentedControl, segmentedPanelId, segmentedTabId,
 } from "../components/SegmentedControl.tsx";
 import { useLibrary, useLibraryLimits } from "../lib/library/hooks.ts";
-import { stashDiagnoseFill } from "../lib/team.ts";
+import { stashDiagnoseFill } from "../lib/diagnoseHandoff.ts";
 import { useRuntime } from "../runtime/context.tsx";
 import { BoxShelf } from "../components/library/BoxShelf.tsx";
 import { useLibraryT } from "../components/library/messages.ts";

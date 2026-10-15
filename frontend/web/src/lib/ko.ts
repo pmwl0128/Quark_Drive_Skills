@@ -1,7 +1,7 @@
 /** Shared KO-severity bucketing + color tone, used by BOTH the calc matrix and the opponent
  * matchup grid so a "2HKO" reads the same amber in either place. Purely a display bucket — the
  * underlying facts (roll band, recovery-aware ko_chance, caveats) stay on the cell. */
-export type KoTone = "ohkoG" | "ohko" | "2hko" | "3hko" | "4hko" | "slow" | "immune" | "none";
+type KoTone = "ohkoG" | "ohko" | "2hko" | "3hko" | "4hko" | "slow" | "immune" | "none";
 
 /** `turns` = turns-to-KO (1 = OHKO); `guaranteed` = worst-roll certain; `maxPercent` is the cell's
  * best-roll damage, or **null when the cell has no computed result at all**.

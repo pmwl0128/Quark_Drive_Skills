@@ -5,7 +5,7 @@
  * the Web DTO shapes — the browser twin of the bridge's mappers.map_damage / map_speedline, so the
  * OnlineAdapter returns byte-identical DTOs to what `pcui serve` would. */
 
-export type EngineLane = "interactive" | "inference";
+type EngineLane = "interactive" | "inference";
 interface EngineReply { output: unknown; exit: number }
 interface Client {
   worker: Worker;

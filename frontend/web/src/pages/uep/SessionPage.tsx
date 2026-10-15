@@ -22,6 +22,7 @@ import { useRuntime } from "../../runtime/context.tsx";
 import { renderArtifactCard } from "./artifacts.tsx";
 import { KindBadge, localTime, prettyPayload, shortHash } from "./kinds.tsx";
 import { TeamCard } from "../../components/team/TeamCard.tsx";
+import { AdaptiveSelect } from "../../components/AdaptiveSelect.tsx";
 import { useTransferT } from "../../lib/library/transferMessages.ts";
 import { useLibrarySource } from "../../lib/library/workspace.tsx";
 import { toTeamDoc } from "../../lib/teamDoc.ts";
@@ -219,9 +220,9 @@ function DecisionForm({ sessions, session, checkpoint, onCommitted }: {
         <label className="decision-field">
           {t("uep.checkpoint.candidate")}
           {survivorOpts.length > 0 ? (
-            <select value={candidateIndex} onChange={(e) => setCandidateIndex(Number(e.target.value))}>
+            <AdaptiveSelect value={candidateIndex} onValueChange={(value) => setCandidateIndex(Number(value))}>
               {survivorOpts.map((idx) => <option key={idx} value={idx}>#{idx}</option>)}
-            </select>
+            </AdaptiveSelect>
           ) : (
             <input type="number" min={0} value={candidateIndex}
                    onChange={(e) => setCandidateIndex(Math.max(0, Number(e.target.value) || 0))} />

@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -136,6 +137,8 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
     learners_cache: dict[str, Any] = {"doc": None}      # read-only dex data: build once per process
     # format -> (mtime, raw KO doc, row-by-slug, mapped per-Pokemon DTOs)
     ko_cache: dict[str, tuple[float, dict, dict, dict[str, Any]]] = {}
+    # format -> (input mtimes, {docs, mapped rankings by scope, mapped details by slug})
+    top_meta_cache: dict[str, tuple[tuple, dict[str, Any]]] = {}
     # format -> ((details mtime, ko mtime), facets DTO)
     facets_cache: dict[str, tuple[tuple[float, float], Any]] = {}
     # (season, format) -> {English canonical: usage rank}; the KO panels pair each opponent with
@@ -448,6 +451,73 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
             raise HTTPException(404, f"no KO data for {pokemon} in {format}")
         return dto
 
+    def _top_meta(format: str) -> dict[str, Any] | None:
+        """Both Top Meta scopes for one format, recomputed only when the shipped table or the in-game
+        snapshot it is compared with changes. The comparison itself is the team skill's."""
+        current = json.loads((META_DATA / "current.json").read_text(encoding="utf-8"))["current"]
+        season, rule = current["season"], current["rule"]
+        table = mappers._topmeta_mod().table_path(format, rule)
+        if not table.exists():
+            return None
+        inputs = (table, META_DATA / f"ranking_{season}_{format}.json",
+                  META_DATA / f"details_{season}_{format}.json")
+        stamp = tuple(p.stat().st_mtime if p.exists() else None for p in inputs)
+        cached = top_meta_cache.get(format)
+        if cached is None or cached[0] != stamp:
+            docs = mappers.top_meta_docs(format, META_DATA, season, rule)
+            cached = (stamp, {"docs": docs, "ranking": {}, "detail": {}})
+            top_meta_cache[format] = cached
+        return cached[1] if cached[1]["docs"] is not None else None
+
+    @app.get("/api/meta/top-ranking")
+    async def meta_top_ranking(format: str, scope: str = "season"):
+        if format not in ("single", "double") or scope not in ("season", "rule"):
+            raise HTTPException(400, "format must be single|double and scope season|rule")
+
+        def _load() -> Any:
+            state = _top_meta(format)
+            if state is None:
+                return None
+            if scope not in state["ranking"]:
+                state["ranking"][scope] = mappers.map_top_ranking(
+                    state["docs"][scope], state["docs"]["slug_of"])
+            return state["ranking"][scope]
+
+        try:
+            dto = await asyncio.to_thread(_load)
+        except mappers.MappingError as exc:
+            raise HTTPException(502, {"error": {"code": "not_found", "message": str(exc)}}) from exc
+        if dto is None:
+            raise HTTPException(404, f"no Top Meta table for {format}")
+        return dto
+
+    @app.get("/api/meta/top-detail")
+    async def meta_top_detail(format: str, pokemon: str):
+        if format not in ("single", "double"):
+            raise HTTPException(400, "format must be single|double")
+        slug = str(pokemon)[:200]
+
+        def _load() -> Any:
+            state = _top_meta(format)
+            if state is None:
+                return None
+            name = state["docs"]["by_slug"].get(slug)
+            if name is None:
+                return None
+            if slug not in state["detail"]:
+                docs = state["docs"]
+                state["detail"][slug] = mappers.map_top_detail(
+                    docs["season"], docs["rule"], name, docs["slug_of"])
+            return state["detail"][slug]
+
+        try:
+            dto = await asyncio.to_thread(_load)
+        except mappers.MappingError as exc:
+            raise HTTPException(502, {"error": {"code": "not_found", "message": str(exc)}}) from exc
+        if dto is None:
+            raise HTTPException(404, f"no Top Meta data for {pokemon} in {format}")
+        return dto
+
     @app.get("/api/meta/facets")
     async def meta_facets(format: str):
         """Inverted index for the filter rail. Built once per format and cached on the shipped
@@ -553,11 +623,13 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
     # -- team: opponent matchup cache (KO matrix + derived check grid) -------------------
 
     @app.get("/api/team/oppcache")
-    async def team_oppcache(format: str = "single", view: str = "matrix"):
+    async def team_oppcache(format: str = "single", view: str = "matrix", species: str | None = None):
         if format not in ("single", "double"):
             raise HTTPException(400, "format must be single|double")
-        if view not in ("matrix", "ko", "checks", "sets"):
-            raise HTTPException(400, "view must be matrix|ko|checks|sets")
+        if view not in ("matrix", "ko", "checks", "sets", "details"):
+            raise HTTPException(400, "view must be matrix|ko|checks|sets|details")
+        if view == "details" and not species:
+            raise HTTPException(400, "species is required for details")
 
         def _load() -> Any:
             # Read + map off the event loop; reuse the mapped DTO until the cache file's mtime
@@ -568,10 +640,12 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
                 / "opponent_cache" / f"{rule}_{format}.json"
             if not path.exists():
                 return None
-            key = f"{format}:{view}"
+            key = f"{format}:{'matrix' if view == 'details' else view}"
             mtime = path.stat().st_mtime
             cached = oppcache_cache.get(key)
-            if cached is None or cached[0] != mtime:
+            expiry = cached[1].get("teamEvidenceExpiresAt") if cached else None
+            expired = expiry is not None and datetime.now(timezone.utc) >= datetime.fromisoformat(expiry)
+            if cached is None or cached[0] != mtime or expired:
                 cache = mappers.load_oppcache(format, rule)
                 if view == "checks":
                     dto = mappers.map_oppcheck_grid(cache, mappers.derive_oppcheck_grid(cache))
@@ -583,7 +657,7 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
                     dto = mappers.map_oppcache(cache)
                 cached = (mtime, dto)
                 oppcache_cache[key] = cached
-            return cached[1]
+            return mappers.map_oppdetails(cached[1], species) if view == "details" else cached[1]
 
         try:
             dto = await asyncio.to_thread(_load)

@@ -21,11 +21,11 @@ import type { Capabilities, FormatId, SourceFingerprints } from "@pokemon-champi
 import type { Lang } from "../i18n.ts";
 
 export type AssistKind = "qa" | "build" | "diagnose" | "matchup";
-export type AssistStatus = "running" | "done" | "failed";
+type AssistStatus = "running" | "done" | "failed";
 
 /** The data a result was computed against: the rule, and per format the meta panel and real-team
  * library hashes (`environment.sourceFingerprints`, which change only when that data changes). */
-export interface AssistSnapshot {
+interface AssistSnapshot {
   season: string;
   rule: string;
   asOf: string | null;
@@ -291,10 +291,6 @@ function prune(kind: AssistKind): void {
 export function isCutOff(record: AssistRecord): boolean {
   return record.status === "running" && record.kind !== "build" && !beating.has(record.id)
     && Date.now() - (record.beatAt ?? record.updatedAt) > CUT_OFF_MS;
-}
-
-export function getRecord(id: string): AssistRecord | undefined {
-  return cache.get(id);
 }
 
 function subscribe(kind: AssistKind, listener: () => void) {

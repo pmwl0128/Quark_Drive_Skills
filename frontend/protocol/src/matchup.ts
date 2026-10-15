@@ -154,11 +154,19 @@ export const OppCacheDtoSchema = z.object({
 });
 export type OppCacheDto = z.infer<typeof OppCacheDtoSchema>;
 
+/** Lazy detail shard for one species and all of its builds. Contains its outgoing cells and the
+ * reverse cells needed for both damage directions, with identical variant keys and facts. Names
+ * and processed builds come from the shared set catalog, not a duplicate copy in each shard. */
+export const OppDetailsDtoSchema = OppCacheDtoSchema.pick({
+  teamEvidenceExpiresAt: true, format: true, matrix: true,
+});
+export type OppDetailsDto = z.infer<typeof OppDetailsDtoSchema>;
+
 // --- lean KO overview -------------------------------------------------------------------------
 
 /** The facts needed to paint one KO cell before its detail panel is opened. The full offense,
- * speed line and processed sets remain in `OppCacheDto` and are loaded on demand; keeping this
- * overview separate avoids parsing the multi-megabyte detail matrix on the default page. */
+ * speed line load on demand through `OppDetailsDto`; processed sets use the shared catalog.
+ * Keeping this overview separate avoids parsing the multi-megabyte detail matrix on the page. */
 export const OppKoSummaryDtoSchema = z.tuple([
   z.number(),                    // 0 minPercent
   z.number(),                    // 1 maxPercent

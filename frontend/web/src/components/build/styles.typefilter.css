@@ -1,0 +1,54 @@
+/* The type filter (TypeFilter.tsx) is a compact band above a picker's list. A pick becomes a solid
+   chip of its own colour (the icon's disc merges into it). A wide list adds a short name. */
+.type-filter {
+  container: type-filter / inline-size;
+  flex: none; display: flex; align-items: stretch; gap: 3px;
+  margin: -4px -4px 3px; padding: 3px 4px;
+  border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--panel-2) 60%, var(--panel));
+}
+.type-filter-grid, .type-filter-side { display: grid; gap: 1px 2px; }
+.type-filter-grid { flex: 1; grid-template-columns: repeat(9, minmax(0, 1fr)); }
+/* A list's own filter in more columns of the same cells, the clear button in the last one: a move
+   list's categories (Physical, Special / Status, clear), a Pokémon list's Mega marker (Mega / clear). */
+.type-filter[class*="side-"] .type-filter-grid { flex: 9 1 0; }
+.type-filter-side { padding-left: 3px; border-left: 1px solid var(--line); }
+/* A touch wider than a type cell, so the Mega cell holds its name as soon as the types do. */
+.side-1 .type-filter-side { flex: 1.12 1 0; grid-template-columns: minmax(0, 1fr); }
+.side-2 .type-filter-side { flex: 2 1 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.adaptive-listbox.rich .type-filter button {
+  min-height: 24px; padding: var(--tf-pad, 0 2px); gap: 3px; justify-content: center; border-radius: 6px;
+  background: transparent; color: var(--sub);
+  transition: background-color 100ms ease, box-shadow 100ms ease, color 100ms ease;
+}
+.type-filter button img { flex: none; width: var(--tf-icon, 18px); height: var(--tf-icon, 18px); object-fit: contain; }
+.type-filter-name {
+  display: var(--tf-name, none); min-width: 0; overflow: hidden; font: 600 11px/1 var(--font-ui); white-space: nowrap;
+}
+.type-filter-name:lang(en) { font-size: 10px; letter-spacing: 0.04em; }
+.adaptive-listbox.rich .type-filter button:hover:not(:disabled) {
+  color: var(--ink); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line);
+}
+.adaptive-listbox.rich .type-filter button[aria-pressed="true"],
+.adaptive-listbox.rich .type-filter button[aria-pressed="true"]:hover {
+  color: #fff; background: var(--tc); box-shadow: 0 1px 2px rgb(16 26 47 / 0.22);
+}
+.type-filter button[aria-pressed="true"] .type-filter-name { font-weight: 700; text-shadow: 0 1px 1px rgb(0 0 0 / 0.28); }
+.adaptive-listbox.rich .type-filter .type-filter-clear { flex: none; width: 24px; padding: 0; color: var(--ink); }
+.adaptive-listbox.rich .type-filter-side .type-filter-clear { width: auto; }
+.adaptive-listbox.rich .type-filter .type-filter-clear:disabled { color: var(--line-strong); cursor: default; }
+.type-filter button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* A short name fits once a cell can hold the longest one (two CJK characters, three or four
+   capitals): nine cells need 470px, ten 495px, eleven 580px. */
+@container type-filter (min-width: 470px) {
+  .type-filter:not([class*="side-"]) > * { --tf-name: block; --tf-icon: 15px; --tf-pad: 0 2px 0 3px; }
+}
+@container type-filter (min-width: 495px) {
+  .type-filter.side-1 > * { --tf-name: block; --tf-icon: 15px; --tf-pad: 0 2px 0 3px; }
+}
+@container type-filter (min-width: 580px) {
+  .type-filter.side-2 > * { --tf-name: block; --tf-icon: 15px; --tf-pad: 0 2px 0 3px; }
+}
+.type-filter-side .type-filter-name:lang(en) { letter-spacing: 0; }
+@media (pointer: coarse) {
+  .adaptive-listbox.rich .type-filter button { min-height: 32px; }
+}

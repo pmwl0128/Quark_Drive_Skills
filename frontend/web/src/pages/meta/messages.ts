@@ -1,5 +1,5 @@
 /** Copy of the metagame detail page (usage card, KO card, share image), in its lazy chunk. */
-import { defineMessages, type ScopedKey } from "../../i18n.ts";
+import { defineMessages } from "../../i18n.ts";
 import { SHARED_MESSAGES } from "../../components/messages.ts";
 
 const META_MESSAGES = {
@@ -38,18 +38,18 @@ const META_MESSAGES = {
     ja: "期間初めは上位10位圏外、期間中に新たに入った" },
   "mc.deltaTitle": { zh: "较 {date}：{v} 个百分点", en: "vs {date}: {v} pts", ja: "{date}比：{v}ポイント" },
   "mc.baseTotal": { zh: "合计", en: "Total", ja: "合計" },
-  "mc.baseNote": { zh: "种族值 · 悬停看 50 级实际值", en: "base stats · hover for Lv.50 values",
-                   ja: "種族値 · ホバーでLv.50実数値" },
+  "mc.baseNote": { zh: "种族值 · 查看 50 级实际值", en: "Base stats · Lv.50 ranges",
+                   ja: "種族値 · Lv.50実数値" },
   "mc.statRange": { zh: "50 级实际值 {min}–{max}", en: "Lv.50 actual {min}–{max}", ja: "Lv.50実数値 {min}–{max}" },
   "mc.formatSwitch": { zh: "切换赛制", en: "Switch format", ja: "形式を切り替え" },
   "mc.spNote": {
-    zh: "每行一种配置 · 格内为 SP · 前 {n} 种合计 {sum}%",
-    en: "one spread per row · SP in each cell · top {n} total {sum}%",
-    ja: "1行1配分 · マス内はSP · 上位{n}種の合計 {sum}%" },
+    zh: "SP 配分 · 前 {n} 种占 {sum}%",
+    en: "SP spreads · top {n}: {sum}%",
+    ja: "SP配分 · 上位{n}種で{sum}%" },
   "mc.partnersNote": {
-    zh: "角标为共现顺序 · 下方为环境名次",
-    en: "corner: co-occurrence order · below: usage rank",
-    ja: "左上は共起順 · 下は採用率順位" },
+    zh: "左上：队友排名 · 下方：环境排名",
+    en: "Corner: partner rank · below: usage rank",
+    ja: "左上：相方順位 · 下：採用率順位" },
   "mc.share": { zh: "保存分享图", en: "Save image", ja: "画像を保存" },
   "mc.set.modal": { zh: "主流配置", en: "Common set", ja: "最頻構成" },
   "mc.set.nth": { zh: "配置 {n}", en: "Set {n}", ja: "構成 {n}" },
@@ -59,6 +59,34 @@ const META_MESSAGES = {
   "mc.ko.reusedFrom": { zh: "暂用 {season} 的采集值，本赛季 KO 数据尚未采集", en: "Using the {season} capture; this season's KO data is not collected yet", ja: "{season}の採取値を暫定使用（今シーズンのKOは未採取）" },
   "mc.ko.zeroRetained": { zh: "本期该方向为零记录，沿用 {season} · {time} 的采集值", en: "No current records in this direction; retaining {season} · {time}", ja: "今期この方向は記録なし。{season} · {time}の採取値を使用" },
   "mc.ko.movesAbsent": { zh: "招式占比待采集", en: "Move shares not collected yet", ja: "わざの採用率は未取得" },
+  "mc.pctVsTop": { zh: "占比 · 较竞技环境", en: "share · vs Top Meta", ja: "採用率 · 上位環境比" },
+  "mc.topSample": { zh: "{n} 套配置", en: "{n} builds", ja: "{n}型" },
+  "mc.topSampleSp": { zh: "{n} 套有 SP", en: "{n} with SP", ja: "SP記録{n}型" },
+  "mc.topFew": { zh: "{sample} · 计数", en: "{sample} · counts", ja: "{sample} · 件数" },
+  "mc.vsOfficial": { zh: "较官方数据", en: "vs official", ja: "公式比" },
+  "mc.vsCurrentOfficial": { zh: "较当前官方数据", en: "vs current official", ja: "現在の公式比" },
+  "mc.compare": { zh: "对比", en: "vs", ja: "比較" },
+  "mc.topRank": { zh: "该宝可梦在竞技环境中的名次", en: "this Pokémon's Top Meta rank", ja: "上位環境での順位" },
+  "mc.topNone": { zh: "竞技环境中暂无该宝可梦的样本", en: "No Top Meta sample for this Pokémon", ja: "上位環境にこのポケモンのサンプルはありません" },
+  "mc.topPartnersNote": {
+    zh: "左上：队友排名 · 下方：竞技排名",
+    en: "Corner: partner rank · below: Top Meta rank",
+    ja: "左上：相方順位 · 下：上位環境の順位" },
+  "cmp.topValue": { zh: "竞技环境 {v}（{k}/{n}）", en: "Top Meta {v} ({k}/{n})", ja: "上位環境 {v}（{k}/{n}）" },
+  "cmp.ingameValue": { zh: "官方数据 {v}", en: "Official {v}", ja: "公式データ {v}" },
+  "cmp.ingameBelow": { zh: "官方数据前十外（低于 {v}）", en: "Outside the official top 10 (below {v})", ja: "公式データ上位10位圏外（{v}未満）" },
+  "cmp.ingameAbsent": { zh: "官方数据无此项", en: "No official data", ja: "公式データなし" },
+  "cmp.outside": { zh: "外", en: "out", ja: "圏外" },
+  "cmp.unseen": {
+    zh: "按官方占比，样本里一次都没出现的可能性很小",
+    en: "Unlikely to be absent at its official share",
+    ja: "公式の採用率からみて、未観測となる確率はごく小さい" },
+  "cmp.fewSamples": { zh: "不足 5 个样本，不计差值", en: "Below 5 samples: no difference", ja: "5件未満のため差は非表示" },
+  "cmp.withinNoise": { zh: "差值在抽样误差内", en: "within sampling noise", ja: "標本誤差の範囲内" },
+  "cmp.partnerIngame": { zh: "官方数据队友第 {r} 位", en: "Official partner #{r}", ja: "公式データの相方 {r}位" },
+  "cmp.partnerTop": { zh: "竞技环境队友第 {r} 位", en: "Top Meta teammate #{r}", ja: "上位環境相方 {r}位" },
+  "cmp.partnerUnlisted": { zh: "官方数据队友前十外", en: "Outside the official top-10 partners", ja: "公式データの相方上位10位圏外" },
+  "cmp.partnerAbsentTop": { zh: "竞技环境中少于 3 队", en: "Fewer than 3 Top Meta teams", ja: "上位環境では3チーム未満" },
   "share.title": { zh: "保存分享图", en: "Save as image", ja: "画像として保存" },
   "share.content": { zh: "内容", en: "Content", ja: "内容" },
   "share.usage": { zh: "使用率卡", en: "Usage card", ja: "採用率カード" },
@@ -83,5 +111,3 @@ const META_MESSAGES = {
 };
 
 export const useMetaT = defineMessages(META_MESSAGES);
-export const optionalMetaKey = useMetaT.optionalKey;
-export type MetaMsgKey = ScopedKey<typeof META_MESSAGES>;

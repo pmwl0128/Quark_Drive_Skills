@@ -5,7 +5,7 @@ import { Modal } from "../Modal.tsx";
 import { useLibraryT } from "./messages.ts";
 import { parseTags } from "./shared.tsx";
 
-export interface EditValues {
+interface EditValues {
   label: string;
   notes: string;
   tags: string[];

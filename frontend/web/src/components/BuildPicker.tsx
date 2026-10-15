@@ -15,6 +15,7 @@ import type { LibraryOrigin } from "../lib/library/records.ts";
 import { KeepMonButton } from "./KeepMonButton.tsx";
 import { TypeBadge } from "./TypeBadge.tsx";
 import { SetOriginBadge, buildSourceOrigin } from "./SetOrigin.tsx";
+import { useOutsidePress } from "../lib/popover.ts";
 
 export interface BuildCardOption {
   key: string;
@@ -85,7 +86,9 @@ export function BuildSetSummary({ option, index, selected = false, title, keep, 
   const moveSlots = Array.from({ length: MOVE_SLOTS }, (_, index) => set.moves?.[index] ?? "");
 
   return (
-    <span className={`build-card-body${selected ? " selected" : ""}`}>
+    <span className={`build-card-body${selected ? " selected" : ""}`}
+      data-export-pending={!maps.item.size || !maps.nature.size || !maps.ability.size || !moves.size || !dex.size
+        ? "" : undefined}>
       <span className="build-card-top">
         <SetOriginBadge origin={buildSourceOrigin(option.source)} label={tag} className="build-card-tag" />
         <span className="build-card-primary">
@@ -185,6 +188,7 @@ export function BuildPicker({
   const t = useSharedT();
   useEscapeLayer(true, onClose, 50);
   const ref = useRef<HTMLDivElement>(null);
+  useOutsidePress(true, [ref, anchorRef], onClose);
   const [pos, setPos] = useState<CSSProperties>({ visibility: "hidden" });
   const [split, setSplit] = useState(false);
 
@@ -211,22 +215,16 @@ export function BuildPicker({
     };
     place();
     const frame = window.requestAnimationFrame(place);
-    const away = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (!ref.current?.contains(target) && !anchorRef.current?.contains(target)) onClose();
-    };
     const scrollAway = (event: Event) => {
       // The list itself may need to scroll to reach a Meta fallback. Only movement of the page or
       // an enclosing grid invalidates the fixed anchor position.
       const target = event.target;
       if (!(target instanceof Node) || !ref.current?.contains(target)) onClose();
     };
-    document.addEventListener("pointerdown", away);
     window.addEventListener("resize", onClose);
     window.addEventListener("scroll", scrollAway, true);
     return () => {
       window.cancelAnimationFrame(frame);
-      document.removeEventListener("pointerdown", away);
       window.removeEventListener("resize", onClose);
       window.removeEventListener("scroll", scrollAway, true);
     };

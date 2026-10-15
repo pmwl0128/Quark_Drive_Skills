@@ -14,7 +14,7 @@ import { useToast } from "../Toast.tsx";
 import { useDexByName, useDexIndex, useItems, useNatures } from "../../hooks.ts";
 import { displayName, useLang } from "../../i18n.ts";
 import { useLibrarySnapshot } from "../../lib/library/hooks.ts";
-import { TEAM_SIZE } from "../../lib/library/records.ts";
+import { TEAM_SIZE } from "../../lib/battle.ts";
 import {
   addManyToBox, boxById, freeCells, freeTeamSlots, planTeamSave, removeBoxRecord, saveTeam, teamDocOf,
   undoSaveTeam, type BoxPosition, type LibraryState,

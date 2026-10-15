@@ -12,7 +12,7 @@ import {
 import { teamToCalcMembers } from "../../lib/team.ts";
 import { toTeamDoc } from "../../lib/teamDoc.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
-import { TEAM_MAX } from "./duel/TeamBar.tsx";
+import { TEAM_SIZE } from "../../lib/battle.ts";
 import { monToMember, type MonState, type SideId } from "./duel/state.ts";
 import { fromCalcMember, useRoster } from "./roster.tsx";
 
@@ -28,13 +28,26 @@ function memberMon(member: TeamMemberDoc, dex: DexIndexEntry[]): MonState | null
   return mon?.slug ? mon : null;
 }
 
+/** A drop fills its blank destination first. Dock actions use the selected blank, then another
+ * free slot; only a side with no blanks needs to grow. Existing builds are never overwritten. */
+export function placeLibraryMon(team: MonState[], mon: MonState, activeIndex: number, targetIndex?: number)
+  : { team: MonState[]; index: number } | null {
+  const blank = (index: number | undefined): index is number =>
+    index !== undefined && Number.isInteger(index) && !!team[index] && !team[index]!.slug;
+  const empty = blank(targetIndex) ? targetIndex : blank(activeIndex) ? activeIndex
+    : team.findIndex((candidate) => !candidate.slug);
+  if (empty < 0 && team.length >= TEAM_SIZE) return null;
+  const index = empty >= 0 ? empty : team.length;
+  return { index, team: empty >= 0 ? team.map((current, at) => at === index ? mon : current) : [...team, mon] };
+}
+
 export function CalcLibraryTransfers({ dex }: { dex: DexIndexEntry[] }) {
   const t = useTransferT();
   const { teams, active, field, setTeams, setActive, setSlot, setField } = useRoster();
 
   const fillSide = (side: SideId, doc: TeamDoc): ReceiveResult => {
     const mons = teamToCalcMembers(doc).map((member) => fromCalcMember(member, dex))
-      .filter((mon) => mon.slug).slice(0, TEAM_MAX);
+      .filter((mon) => mon.slug).slice(0, TEAM_SIZE);
     if (!mons.length) return { ok: false, message: t("transfer.unreadable") };
     setTeams((previous) => ({ ...previous, [side]: mons }));
     setActive((previous) => ({ ...previous, [side]: 0 }));
@@ -43,16 +56,14 @@ export function CalcLibraryTransfers({ dex }: { dex: DexIndexEntry[] }) {
     return { ok: true };
   };
 
-  const joinSide = (side: SideId, member: TeamMemberDoc): ReceiveResult => {
+  const joinSide = (side: SideId, member: TeamMemberDoc, targetIndex?: number): ReceiveResult => {
     const mon = memberMon(member, dex);
     if (!mon) return { ok: false, message: t("transfer.unreadable") };
-    const list = teams[side];
-    // A side that is still one empty slot takes the Pokémon there instead of beside it.
-    const replaceBlank = list.length === 1 && !list[0]!.slug;
-    if (!replaceBlank && list.length >= TEAM_MAX) return { ok: false, message: t("transfer.calc.full") };
-    const index = replaceBlank ? 0 : list.length;
-    setTeams((previous) => ({ ...previous, [side]: replaceBlank ? [mon] : [...previous[side], mon] }));
-    setActive((previous) => ({ ...previous, [side]: index }));
+    const placed = placeLibraryMon(teams[side], mon, active[side], targetIndex);
+    if (!placed) return { ok: false, message: t("transfer.calc.full") };
+    setTeams((previous) => ({ ...previous, [side]: placed.team }));
+    setActive((previous) => ({ ...previous, [side]: placed.index }));
+    setSlot((previous) => ({ ...previous, [side]: 0 }));
     return { ok: true };
   };
 
@@ -61,9 +72,9 @@ export function CalcLibraryTransfers({ dex }: { dex: DexIndexEntry[] }) {
   useLibraryReceiver({ id: "calc-team-b", kind: "team", label: t("transfer.calc.teamTheirs"),
     receive: ({ doc }) => fillSide("b", doc) });
   useLibraryReceiver({ id: "calc-mon-a", kind: "pokemon", label: t("transfer.calc.monOurs"),
-    receive: ({ member }) => joinSide("a", member) });
+    receive: ({ member }, targetIndex) => joinSide("a", member, targetIndex) });
   useLibraryReceiver({ id: "calc-mon-b", kind: "pokemon", label: t("transfer.calc.monTheirs"),
-    receive: ({ member }) => joinSide("b", member) });
+    receive: ({ member }, targetIndex) => joinSide("b", member, targetIndex) });
   // The Pokémon each side has up, one at a time, ahead of the whole teams.
   const upMon = (side: SideId) => {
     const mon = teams[side][Math.min(active[side], teams[side].length - 1)];

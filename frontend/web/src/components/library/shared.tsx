@@ -65,7 +65,7 @@ export function useBoxName() {
   return (layout: LibraryLayout, index: number): string => layout.boxes[index]?.name || defaultName(index);
 }
 
-export interface RuleChange {
+interface RuleChange {
   saved: string;
   current: string;
 }

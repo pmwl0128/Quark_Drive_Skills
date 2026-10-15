@@ -1,6 +1,6 @@
 /** Copy shared by components that several lazy routes use (build inputs, team cards, hover
  * cards, trend views). It loads with the first lazy route, never with the entry shell. */
-import { defineMessages, type ScopedKey } from "../i18n.ts";
+import { defineMessages } from "../i18n.ts";
 
 export const SHARED_MESSAGES = {
   "results.more": { zh: "显示更多", en: "Show more", ja: "さらに表示" },
@@ -25,18 +25,34 @@ export const SHARED_MESSAGES = {
                        en: "Copy failed. Select the cards and copy again.",
                        ja: "コピーできませんでした。カードを選択して再度コピーしてください。" },
   "trend.description": {
-    zh: "最多展示近 10 次数据刷新（同日只取最新一次）：包含期间进过前 30 的全部宝可梦，以及进过前 60 且排名大幅变动的宝可梦；30 名以后压缩显示。",
-    en: "Shows up to the latest 10 refreshes (only the latest per day): every Pokémon that reached the top 30, plus major movers that reached the top 60. Ranks past 30 are compressed.",
-    ja: "直近最大10回の更新（同日は最新の1回のみ）を対象に、期間中に30位以内へ入った全ポケモンと、60位以内へ入り順位が大きく動いたポケモンを表示します。31位以下は圧縮表示です。" },
+    zh: "近 10 期（每日最新）：曾进前 30 的宝可梦，以及前 60 中的大幅变动者。31 名起压缩显示。",
+    en: "Last 10 snapshots, one per day: top-30 entrants and major top-60 movers. Ranks 31+ are compressed.",
+    ja: "直近10回（各日の最新）：30位以内に入ったポケモンと、60位以内の大幅変動。31位以下は圧縮表示。" },
   "trend.singleSnapshot": {
-    zh: "当前只有一次数据快照，暂时没有可比较的趋势；下次刷新后将显示趋势线。以下为本次排名。",
-    en: "Only one data snapshot is available, so there is no trend to compare yet. Trend lines will appear after the next refresh; the current ranking is shown below.",
-    ja: "現在はデータスナップショットが1回分のみのため、比較できるトレンドはまだありません。次回更新後に推移線を表示します。以下は今回の順位です。" },
+    zh: "目前仅一期，先显示排名；下次更新后显示趋势。",
+    en: "One snapshot so far. Rankings are shown now; trends follow the next update.",
+    ja: "現在は1回分の順位を表示。次回更新から推移を表示。" },
   "trend.scrollHint": { zh: "左右滑动查看完整趋势图", en: "Swipe sideways to view the full chart", ja: "左右にスワイプしてグラフ全体を表示" },
   "calc.name": { zh: "名称", en: "Name", ja: "名前" },
   "calc.move": { zh: "招式", en: "Move", ja: "わざ" },
   "calc.nature": { zh: "性格", en: "Nature", ja: "せいかく" },
+  "calc.natureNeutral": { zh: "能力不变", en: "No stat changes", ja: "補正なし" },
   "calc.item": { zh: "道具", en: "Item", ja: "もちもの" },
+  "calc.status": { zh: "状态", en: "Status", ja: "状態" },
+  "status.Healthy": { zh: "无异常", en: "Healthy", ja: "なし" },
+  "status.Burned": { zh: "灼伤", en: "Burned", ja: "やけど" },
+  "status.Paralyzed": { zh: "麻痹", en: "Paralyzed", ja: "まひ" },
+  "status.Poisoned": { zh: "中毒", en: "Poisoned", ja: "どく" },
+  "status.Badly Poisoned": { zh: "剧毒", en: "Badly Poisoned", ja: "もうどく" },
+  "status.Asleep": { zh: "睡眠", en: "Asleep", ja: "ねむり" },
+  "status.Frozen": { zh: "冰冻", en: "Frozen", ja: "こおり" },
+  "calc.itemLocked": { zh: "Mega 道具已锁定", en: "Mega item locked", ja: "メガストーン固定" },
+  "calc.itemLockedHint": {
+    zh: "当前 Mega 形态必须携带对应的进化石，道具已锁定。若要更换道具，请先在形态中切回普通形态。",
+    en: "This Mega form requires its Mega Stone, so the item is locked. Switch Forme back to the base form to change the item.",
+    ja: "このメガ形態には対応するメガストーンが必要なため、もちものを固定しています。変更するにはフォルムを通常の姿に戻してください。" },
+  "library.importSaved": { zh: "导入已保存队伍", en: "Import saved team", ja: "保存済みチームを読み込む" },
+  "library.importReplace": { zh: "选择一支队伍，替换当前一侧。", en: "Choose a team to replace this side.", ja: "チームを選ぶと、この側のチームを置き換えます。" },
   "calc.ability": { zh: "特性", en: "Ability", ja: "とくせい" },
   "calc.damageLine": { zh: "{attacker} 使用 {move} 攻击 {defender}",
                        en: "{attacker}'s {move} into {defender}",
@@ -99,6 +115,14 @@ export const SHARED_MESSAGES = {
                                      ja: "次のターンの状態で再計算してください" },
   "calc.pickHint": { zh: "支持中 / 日 / 英名称", en: "Any language works",
                      ja: "中・日・英名対応" },
+  "picker.typeFilter": { zh: "属性筛选", en: "Filter by type", ja: "タイプで絞り込み" },
+  "picker.clearType": { zh: "清除属性筛选", en: "Clear type filter", ja: "タイプ絞り込みを解除" },
+  "picker.categoryFilter": { zh: "分类筛选", en: "Filter by category", ja: "分類で絞り込み" },
+  "picker.clearFilters": { zh: "清除筛选", en: "Clear filters", ja: "絞り込みを解除" },
+  "picker.mega": { zh: "只看超级进化", en: "Mega Evolutions only", ja: "メガシンカのみ" },
+  "picker.megaShort": { zh: "超级", en: "MEGA", ja: "メガ" },
+  "picker.noPokemon": { zh: "没有匹配的宝可梦", en: "No matching Pokémon", ja: "該当するポケモンなし" },
+  "picker.noMove": { zh: "没有匹配的招式", en: "No matching move", ja: "該当するわざなし" },
   "calc.helpingHand": { zh: "帮助", en: "Helping Hand", ja: "てだすけ" },
   "calc.battery": { zh: "蓄电池", en: "Battery", ja: "バッテリー" },
   "calc.powerSpot": { zh: "能量点", en: "Power Spot", ja: "パワースポット" },
@@ -106,7 +130,7 @@ export const SHARED_MESSAGES = {
   "calc.friendGuard": { zh: "友情防守", en: "Friend Guard", ja: "フレンドガード" },
   "calc.forme": { zh: "形态", en: "Forme", ja: "フォルム" },
   "calc.moveSlots": { zh: "招式", en: "Moves", ja: "わざ" },
-  "calc.metaSet": { zh: "环境配置", en: "Environment build", ja: "環境の型" },
+  "calc.metaSet": { zh: "环境配置", en: "Env", ja: "環境の型" },
   "calc.metaSetHint": {
     zh: "选择真实队伍聚合配置；列表末尾保留 Meta 回填。",
     en: "Choose an aggregated real-team build; the Meta fallback remains at the end.",
@@ -223,4 +247,3 @@ export const SHARED_MESSAGES = {
 
 export const useSharedT = defineMessages(SHARED_MESSAGES);
 export const optionalSharedKey = useSharedT.optionalKey;
-export type SharedMsgKey = ScopedKey<typeof SHARED_MESSAGES>;

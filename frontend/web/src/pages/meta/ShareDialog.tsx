@@ -154,14 +154,14 @@ export default function ShareDialog({ usage, ko, fileBase, snapshot, onClose }: 
       }>
         <div className="mc-share-options">
           <div className="mc-share-opt"><span>{t("share.content")}</span>
-            <SegmentedControl kind="radio" className="mc-share-seg" ariaLabel={t("share.content")}
+            <SegmentedControl kind="radio" className="seg mc-share-seg" ariaLabel={t("share.content")}
               items={contentItems} value={shown} onChange={setContent} /></div>
           <div className="mc-share-opt"><span>{t("share.theme")}</span>
-            <SegmentedControl kind="radio" className="mc-share-seg" ariaLabel={t("share.theme")}
+            <SegmentedControl kind="radio" className="seg mc-share-seg" ariaLabel={t("share.theme")}
               items={[{ id: "light", label: t("share.light") }, { id: "dark", label: t("share.dark") }]}
               value={theme} onChange={setTheme} /></div>
           <div className="mc-share-opt"><span>{t("share.ratio")}</span>
-            <SegmentedControl kind="radio" className="mc-share-seg" ariaLabel={t("share.ratio")}
+            <SegmentedControl kind="radio" className="seg mc-share-seg" ariaLabel={t("share.ratio")}
               items={[{ id: "wide", label: t("share.wide") }, { id: "tall", label: t("share.tall") }]}
               value={ratio} onChange={setRatio} /></div>
         </div>

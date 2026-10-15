@@ -65,6 +65,8 @@ import libsearch  # noqa: E402  (sample-library search: combined-condition query
 import observed  # noqa: E402  (UEP P7: observed-team retrieval, AI-facing evidence)
 import intake as intake_catalog_mod  # noqa: E402  (UEP P3: static question catalog)
 import oppcache  # noqa: E402  (M5 step 2: opponent observed-build matchup cache)
+import metalink  # noqa: E402
+import topmeta  # noqa: E402  (Top Meta: the library on the in-game fields + the symmetric comparison)
 import contracts  # noqa: E402
 import environment  # noqa: E402
 import worker  # noqa: E402
@@ -1290,6 +1292,60 @@ def cmd_observed(fmt: str, game_format: str | None, season: str | None, context_
     return 0
 
 
+def _topmeta_ingame(game_format: str) -> dict:
+    """The in-game snapshot through the meta CLI (ranking + every detail row in one batch), panel
+    names resolved through the dex in one strict batch per kind."""
+    rc, raw = metalink._meta_run(["ranking", "--format", game_format, "--limit", "1000",
+                                  "--output", "json"])
+    if rc != 0 or not raw.strip():
+        raise MetaUnavailable("meta ranking query failed")
+    ranking = json.loads(raw)
+    names = [r["pokemon_en"] for r in ranking.get("rows") or [] if r.get("pokemon_en")]
+    details = [d for d in metalink._details_batch(names, game_format).values() if d]
+
+    def resolve_batch(kind: str, values: list[str]) -> dict[str, str | None]:
+        rows = resolve_names(values, kind, fuzzy=False) if values else {}
+        return {v: (r.get("canonical") if r.get("ok") else None) for v, r in rows.items()}
+
+    return topmeta.ingame_from_meta(ranking, details, resolve_batch)
+
+
+def cmd_topmeta(game_format: str | None, scope: str | None, species: list[str] | None) -> int:
+    """Top Meta: one scope of the shipped table joined with the in-game snapshot (JSON only)."""
+    scope = scope or "season"
+    if game_format not in ("single", "double") or scope not in topmeta.SCOPES:
+        print(json.dumps({"ok": False, "query": "topmeta", "error": {
+            "code": "bad_input", "message": "topmeta needs --game-format single|double and "
+                                            "--scope season|rule"}}, ensure_ascii=False))
+        return 2
+    rule = environment.CURRENT_RULE
+    table = topmeta.load_table(game_format, rule)
+    if table is None:
+        print(json.dumps({"ok": False, "query": "topmeta", "error": {
+            "code": "not_found",
+            "message": f"no Top Meta table for {rule}/{game_format}"}}, ensure_ascii=False))
+        return 0
+    try:
+        ingame = _topmeta_ingame(game_format)
+    except (MetaUnavailable, ValueError) as exc:
+        print(json.dumps({"ok": False, "query": "topmeta", "error": {
+            "code": "engine_unavailable", "message": str(exc)}}, ensure_ascii=False))
+        return 1
+    wanted = None
+    if species:
+        resolved = resolve_names(list(dict.fromkeys(species)), "pokemon", fuzzy=False)
+        wanted = []
+        for name in species:
+            rec = resolved.get(name) or {}
+            canon = rec.get("canonical") if rec.get("ok") else None
+            if canon:
+                wanted.append(rec.get("base_species") if rec.get("is_mega") else canon)
+    out = topmeta.compare(table, scope, ingame, species=wanted)
+    out["environment"], _ = environment.resolve(data_rule=rule, data_seasons=out["partitions"])
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_slate_evaluate(path: str, fmt: str, top_k: int, frame_output_path: str | None = None,
                        view: str = "full") -> int:
     """UEP P5: the candidate fact-matrix gate. `path` = slate.json {context, audit_receipt,
@@ -2471,7 +2527,20 @@ TEAM_SCHEMA = {
                      "line per ordered pair); attacker rows only for real-team-backed species; EVERY cell "
                      "low confidence (vs-observed-build); a reference grid, NOT your team (match live). "
                      "--as-checks derives the C2/C1/C0 grid (attacker x attacker reference view)",
-        "search": "--game-format single|double [--season|--season all] [--limit N] [--collapse] + EITHER --query "
+        "topmeta": "--game-format single|double [--scope season|rule] [--species A B] -> JSON only. Top "
+                   "Meta: the real-team library counted on the in-game metagame's fields (species "
+                   "presence, moves/items/abilities/natures/spreads, partners) over dedup units (one "
+                   "player's distinct composition / distinct build), joined with the in-game snapshot. "
+                   "Every entry is ONE record carrying both sides: count/share + ingame "
+                   "{kind: pct|bound|absent|rank|unlisted} + top_minus_ingame (null below "
+                   f"{topmeta.COUNT_TIER_BELOW} units, a lower bound when delta_is_floor) + within_noise "
+                   "(Wilson 95%, a muting aid, not significance) + count-tier markers "
+                   "outside_ingame_top / unseen_in_top. Panel `tier` count|low|reliable decides "
+                   "presentation, never existence. The rule scope spans seasons and compares with the "
+                   "CURRENT in-game snapshot (compared_with.window: current_snapshot — the "
+                   "two sides cover different time ranges; say so). A VIEW of the team library, not "
+                   "a second metagame authority; no score field.",
+        "search":"--game-format single|double [--season|--season all] [--limit N] [--collapse] + EITHER --query "
                   "'<json>' OR convenience flags (--species A B / --has-move / --has-item / --has-ability). "
                   "Query = list of member SLOTS; each slot is a conjunction {species?, move(s)?, item?, "
                   "ability?, nature?} and every slot must match a DISTINCT member. Values are dex-resolved "
@@ -2799,7 +2868,7 @@ def main() -> int:
     p.add_argument("command",
                    choices=["parse", "validate", "diagnose", "tune", "select", "matchup", "fill", "replace",
                             "context-audit", "frame", "slate-evaluate", "checkpoint", "answer-audit", "draft-init", "landscape", "observed",
-                            "intake", "repset", "oppmatrix", "search", "show", "session", "schema", "vocab"])
+                            "intake", "repset", "oppmatrix", "topmeta", "search", "show", "session", "schema", "vocab"])
     p.add_argument("file", nargs="?",
                    help="team-json/Showdown file; for `repset` it is the SPECIES name, for `oppmatrix` "
                         "the (optional) attacker species, for `show` the team id")
@@ -2831,6 +2900,10 @@ def main() -> int:
     p.add_argument("--game-format", choices=["single", "double"],
                    help="repset/oppmatrix/landscape/observed: which metagame to read (never mixed; landscape and observed REQUIRE it)")
     p.add_argument("--vs", help="oppmatrix: defender species for a single (attacker -> defender) cell")
+    p.add_argument("--scope", choices=list(topmeta.SCOPES),
+                   help="topmeta: season (the current season, compared with its in-game snapshot) or "
+                        "rule (every current-rule partition, compared with the current in-game "
+                        "snapshot — different time ranges). Default season")
     p.add_argument("--slate", help="answer-audit: the ORIGINAL slate.json the candidates were slated with")
     p.add_argument("--slate-output", dest="slate_output",
                    help="answer-audit: the SAVED slate-evaluate output JSON (its slate_receipt is re-bound)")
@@ -2892,7 +2965,7 @@ def main() -> int:
         return cmd_vocab(ns.format)
     # oppmatrix species / search query are optional; context-audit audits a bare context (team
     # optional); landscape reads the library, no team file at all; vocab/schema take no file.
-    if not ns.file and ns.command not in ("oppmatrix", "search", "context-audit", "frame", "landscape", "observed", "intake", "vocab", "draft-init"):
+    if not ns.file and ns.command not in ("oppmatrix", "topmeta", "search", "context-audit", "frame", "landscape", "observed", "intake", "vocab", "draft-init"):
         target = {"repset": "species (for command 'repset')",
                   "show": "team id (for command 'show')",
                   "fill": "team file (for command 'fill'; pass a partial or full team-json, plus --context containing need)",
@@ -2941,6 +3014,8 @@ def main() -> int:
     if ns.command == "oppmatrix":
         return cmd_oppmatrix(ns.file, ns.game_format, ns.season, ns.vs, ns.format,
                              as_checks=ns.as_checks)
+    if ns.command == "topmeta":
+        return cmd_topmeta(ns.game_format, ns.scope, ns.species)
     if ns.command == "search":
         return cmd_search(ns.query, ns.species, ns.has_move, ns.has_item, ns.has_ability,
                           ns.game_format, ns.season, ns.limit, ns.collapse, ns.format, where=ns.where)

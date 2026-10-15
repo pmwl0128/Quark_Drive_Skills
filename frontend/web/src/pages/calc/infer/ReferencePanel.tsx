@@ -1,7 +1,9 @@
 /** Environment references are secondary to inference. Applying one edits the same shared MonState
  * used by all four calc tools; browsing or expanding this panel never writes to it. */
 import type { FormatId, NatureDto } from "@pokemon-champions/protocol";
-import { BuildPickerButton, natureLabel, type BuildOption } from "../../../components/build/inputs.tsx";
+import { BuildPickerButton } from "../../../components/build/inputs.tsx";
+import { natureLabel } from "../../../lib/buildLabels.ts";
+import { type BuildOption } from "../../../lib/buildState.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
 import { effectiveEntry, finalStat, maxHPOf, type MonState } from "../duel/state.ts";

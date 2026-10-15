@@ -1,0 +1,21 @@
+/* Reserve the icon slot even when the item is empty or the Pokémon is healthy. */
+.build-field-label { display: inline-flex; align-items: center; gap: 5px; min-width: 0; height: 19px; white-space: nowrap; }
+.build-field-label > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.build-field-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 18px; height: 18px; }
+.build-field-icon img { display: block; width: 18px; height: 18px; object-fit: contain; }
+
+.item-control { position: relative; display: block; min-width: 0; }
+.item-control.locked { cursor: help; border-radius: var(--radius-sm); }
+.item-control.locked input:disabled, .item-control.locked .inf-fixed {
+  padding-right: 32px; border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+  background: var(--brand-soft); color: var(--brand-strong); font-weight: 600; opacity: 1;
+  -webkit-text-fill-color: var(--brand-strong); cursor: help; pointer-events: none;
+}
+.item-lock-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; color: var(--brand-strong); pointer-events: none; }
+.item-control.locked:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.item-lock-tip { z-index: 2050; padding: 9px 11px;
+  border: 1px solid var(--line-strong); border-radius: 9px; background: var(--panel); color: var(--ink);
+  box-shadow: var(--shadow-raised); font: 500 12px/1.5 var(--font-ui); text-align: left; white-space: normal;
+  pointer-events: none;
+}

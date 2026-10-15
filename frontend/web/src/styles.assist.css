@@ -35,7 +35,6 @@
   border-radius: 10px; padding: 9px 12px; background: var(--panel);
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
-.assist-surface .builder-field > input:focus, .assist-surface .builder-field > textarea:focus,
 #diag-text { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; min-height: 180px; }
 
 /* Tactics are toggles: the pill itself carries the state, the checkbox stays for keyboards. */
@@ -104,7 +103,6 @@
   border-color: color-mix(in srgb, var(--brand) 30%, transparent); background: var(--brand-soft);
   color: var(--brand-strong);
 }
-.assist-surface .qa-answer { gap: 12px; padding: 18px 22px; border-radius: 14px; }
 .assist-surface .qa-answer-text { font-size: 14.5px; line-height: 1.95; }
 .assist-surface .qa-sources { gap: 6px 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 .assist-surface .qa-source { padding: 2px 10px; border-radius: 999px; background: var(--panel-2); }

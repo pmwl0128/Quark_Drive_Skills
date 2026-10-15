@@ -1,9 +1,16 @@
 /** Copy of the simulation pages (reference grid and actual matchups), in their lazy chunk. */
-import { defineMessages, type ScopedKey } from "../../i18n.ts";
+import { defineMessages } from "../../i18n.ts";
 import { SHARED_MESSAGES } from "../../components/messages.ts";
 
 const MATCHUP_MESSAGES = {
   ...SHARED_MESSAGES,
+  "matchup.removeDetail": { zh: "移除详情卡", en: "Remove detail card", ja: "詳細カードを削除" },
+  "matchup.clear": { zh: "清空", en: "Clear", ja: "クリア" },
+  "matchup.clearDetails": { zh: "清空全部详情卡", en: "Clear all detail cards", ja: "すべての詳細カードをクリア" },
+  "matchup.resultLimit": { zh: "最多同时展示12条结果对比", en: "Compare up to 12 results at once", ja: "同時に比較できる結果は最大12件" },
+  "matchup.exportBuilds": { zh: "图片包含配置", en: "Include builds in image", ja: "画像に型を含める" },
+  "matchup.exportBrief": { zh: "简略", en: "Brief", ja: "簡略" },
+  "matchup.exportFull": { zh: "完整", en: "Full", ja: "詳細" },
   "actual.textTooMany": { zh: "一次最多计算 6 只宝可梦，请删减后再计算。", en: "Use at most 6 Pokémon per calculation. Remove the extra members first.", ja: "一度に計算できるのは6匹までです。余分なメンバーを削除してください。" },
   "actual.textInvalid": { zh: "文字中有无法识别的配置，请检查后再计算或保存。", en: "Some builds could not be read. Check the text before calculating or saving.", ja: "読み取れない型があります。計算や保存の前に入力を確認してください。" },
   "matchup.cellHint": {
@@ -143,5 +150,3 @@ const MATCHUP_MESSAGES = {
 };
 
 export const useMatchupT = defineMessages(MATCHUP_MESSAGES);
-export const optionalMatchupKey = useMatchupT.optionalKey;
-export type MatchupMsgKey = ScopedKey<typeof MATCHUP_MESSAGES>;

@@ -7,12 +7,13 @@
 import type {
   CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode,
 } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAbilitiesByName, useDexByName, useItemsByName, useMovesByName } from "../hooks.ts";
 import { displayName, effectText, useLang } from "../i18n.ts";
 import { useSharedT } from "./messages.ts";
+import { useOutsidePress } from "../lib/popover.ts";
 import { GameImage } from "./GameImage.tsx";
 import { CategoryBadge, TypeBadge } from "./TypeBadge.tsx";
 
@@ -71,17 +72,7 @@ export function EntityHover({
   const ability = kind === "ability" ? abilities.get(name) : undefined;
   const hasPreview = Boolean(mon || move || item || ability || previewAddon);
 
-  useEffect(() => {
-    if (!pinned) return;
-    const closeOutside = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (!anchorRef.current?.contains(target) && !popRef.current?.contains(target)) {
-        setPinned(false);
-      }
-    };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [pinned]);
+  useOutsidePress(pinned, [anchorRef, popRef], () => setPinned(false));
 
   useLayoutEffect(() => {
     if (!open || !hasPreview) return;

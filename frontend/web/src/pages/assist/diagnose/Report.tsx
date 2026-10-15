@@ -8,7 +8,7 @@ import { displayName, useLang } from "../../../i18n.ts";
 import { optionalAssistKey, useAssistT } from "../messages.ts";
 import { useNavigate } from "react-router-dom";
 import { useDamageText } from "../../../lib/damageText.tsx";
-import { useAbilitiesByName, useItemsByName, useOppCache } from "../../../hooks.ts";
+import { useAbilitiesByName, useItemsByName, useOppSets } from "../../../hooks.ts";
 import { readTeamMembers, stashCalcTeams, stashDamageFill, stashMatchupFill, teamToCalcMembers } from "../../../lib/team.ts";
 import { MemberHover, slugify, useMemberProse, useMemberSets } from "../../../components/team/MonChip.tsx";
 import type { TeamMemberish } from "../../../lib/team.ts";
@@ -83,10 +83,9 @@ function CheckRowDetail({ row, team, format }: {
   const damageText = useDamageText();
   const navigate = useNavigate();
   // Every retained observed variant is an independent opponent. Its exact set is keyed by
-  // variantId in the shipped cache; never silently substitute the species representative.
-  const cacheState = useOppCache(format);
-  const setFor = (variantId: string) => cacheState.status === "ready"
-    ? cacheState.data.sets?.[variantId] : undefined;
+  // variantId in the shipped build catalog; never silently substitute the species representative.
+  const catalog = useOppSets(format);
+  const setFor = (variantId: string) => catalog.status === "ready" ? catalog.data.sets[variantId] : undefined;
   const members = readTeamMembers(team);
   const toCalc = (cell: NonNullable<CheckRow["cells"]>[number]) => {
     const member = members.find((m) => m.species === cell.member);

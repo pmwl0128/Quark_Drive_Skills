@@ -2,14 +2,19 @@
  * captured as a picture — the usage card (ranking/details clock) and the KO card (its own snapshot
  * clock). Reached from the ranking grid and from the dex page's rank chips. */
 import type { FormatId } from "@pokemon-champions/protocol";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { MetaRail, useMetaRails } from "../components/MetaRails.tsx";
 import { RailHandle } from "../components/SideRail.tsx";
 import {
   useDetail, useDexByName, useKo, useKoTrend, useOppSets, usePokemonCard, useRanking,
-  useUsageTrend,
+  useTopDetail, useTopRanking, useUsageTrend,
 } from "../hooks.ts";
+import {
+  CompareToggle, MetaNotes, ScopeSwitch, SourceSwitch,
+} from "../components/MetaSourceBar.tsx";
+import { useTopT } from "../components/metaMessages.ts";
+import { metaViewQuery, readMetaView } from "../lib/metaView.ts";
 import { displayName, useLang, useT } from "../i18n.ts";
 import { realSetsFor } from "../lib/realSets.ts";
 import { useTransferT } from "../lib/library/transferMessages.ts";
@@ -20,16 +25,9 @@ import { KoCard } from "./meta/KoCard.tsx";
 import type { MetaForm } from "./meta/MetaHero.tsx";
 import { UsageCard, type UsageCardProps } from "./meta/UsageCard.tsx";
 import "../styles.meta.css";
+import { preloadable } from "../lib/preloadable.ts";
 
-const ShareDialog = lazy(() => import("./meta/ShareDialog.tsx"));
-
-/** The host printed on the share image's brand line. A loopback or LAN-less address names nothing a
- * viewer of the picture could visit, so it is left out. */
-function publicHost(): string | undefined {
-  const host = window.location.hostname;
-  return !host || host === "localhost" || host === "::1" || host === "[::1]"
-    || /^127\./.test(host) || host === "0.0.0.0" ? undefined : host;
-}
+const ShareDialog = preloadable(() => import("./meta/ShareDialog.tsx"));
 
 export function MetaPage() {
   const { slug: routeSlug = "" } = useParams();
@@ -66,8 +64,15 @@ export function MetaPage() {
   const [koTrendWanted, setKoTrendWanted] = useState(false);
   const koTrend = useKoTrend(format, slug, koTrendWanted && Boolean(slug));
   const oppSets = useOppSets(format);
+  // Top Meta: the panels when that source is on screen, the comparison records when the in-game
+  // card compares; the two rankings feed the hero's per-format ranks and the teammate tiles.
+  const metaView = readMetaView(params);
+  const isTop = metaView.source === "top";
+  const top = useTopDetail(format, slug, isTop || metaView.compare);
+  const topSingle = useTopRanking("single", metaView.scope, isTop);
+  const topDouble = useTopRanking("double", metaView.scope, isTop);
+  const tt = useTopT();
   const rails = useMetaRails();
-  const [, setAllowed] = useState<Set<string> | null>(null);
   const dexByName = useDexByName();
   const { lang } = useLang();
   const t = useT();
@@ -85,9 +90,13 @@ export function MetaPage() {
   const [sharing, setSharing] = useState(false);
 
   const activeRanking = format === "single" ? singleRanking : doubleRanking;
-  const usageRank = useMemo(() => new Map(
-    activeRanking.status === "ready"
-      ? activeRanking.data.rows.map((r) => [r.name, r.rank] as const) : []), [activeRanking]);
+  const activeTop = format === "single" ? topSingle : topDouble;
+  const usageRank = useMemo(() => new Map(isTop
+    ? activeTop.status === "ready" && activeTop.data
+      ? activeTop.data.rows.map((r) => [r.name, r.rank] as const) : []
+    : activeRanking.status === "ready"
+      ? activeRanking.data.rows.map((r) => [r.name, r.rank] as const) : []),
+  [isTop, activeTop, activeRanking]);
   const sets = useMemo(() => detail.status === "ready" && oppSets.status === "ready"
     ? realSetsFor(oppSets.data, detail.data.name) : [], [detail, oppSets]);
 
@@ -107,8 +116,7 @@ export function MetaPage() {
   const rail = (
     <>
       <RailHandle state={rails} label={t("rail.search")} />
-      <MetaRail state={rails} format={format} ranking={activeRanking} activeSlug={slug}
-        onAllowed={setAllowed} />
+      <MetaRail state={rails} format={format} ranking={activeRanking} activeSlug={slug} />
     </>
   );
   if (card.status === "loading") {
@@ -122,9 +130,11 @@ export function MetaPage() {
     ? megaCard.data : base;
   const rankOf = (r: typeof singleRanking) =>
     r.status === "ready" ? r.data.rows.find((row) => row.slug === slug)?.rank ?? null : null;
-  const ranks: Array<[FormatId, number | null]> = [
-    ["single", rankOf(singleRanking)], ["double", rankOf(doubleRanking)],
-  ];
+  const topRankOf = (r: typeof topSingle) =>
+    r.status === "ready" && r.data ? r.data.rows.find((row) => row.slug === slug)?.rank ?? null : null;
+  const ranks: Array<[FormatId, number | null]> = isTop
+    ? [["single", topRankOf(topSingle)], ["double", topRankOf(topDouble)]]
+    : [["single", rankOf(singleRanking)], ["double", rankOf(doubleRanking)]];
   const forms: MetaForm[] | undefined = megaList.length > 0 ? [
     { key: "base", label: displayName(base, lang), assetKey: base.key, active: formIdx === 0,
       onSelect: () => setFormIdx(0) },
@@ -140,11 +150,21 @@ export function MetaPage() {
   const env = detail.status === "ready" ? detail.data : capabilities.environment;
   const cardProps: UsageCardProps = {
     mon, forms, format, ranks, detail, trend: usageTrend, usageRank, sets,
-    setIndex: setIdx,
+    setIndex: setIdx, view: metaView, top, linkQuery: metaViewQuery(params),
   };
+  const topScope = top.status === "ready" && top.data
+    ? top.data.scopes[isTop ? metaView.scope : "season"] : null;
   // The page names the snapshot in its top bar; the share image has no top bar, so its frame does.
-  const snapshot = [env.season, env.rule, capabilities.environment.asOf].filter(Boolean).join(" · ");
-  const fileBase = [base.slug, format, env.season, capabilities.environment.asOf]
+  // The brand line names the source/scope; the frame adds the sample and snapshot clock.
+  const shareSample = isTop && topScope ? tt("top.sample")
+    .replace("{teams}", topScope.sample.teams.toLocaleString())
+    .replace("{sets}", topScope.sample.sets.toLocaleString()) : null;
+  const shareSource = `${tt(isTop ? "top.source.top" : "top.source.ingame")} ${
+    isTop && metaView.scope === "rule" ? env.rule : env.season}`;
+  const snapshot = [shareSample, env.season, env.rule, capabilities.environment.asOf]
+    .filter(Boolean).join(" · ");
+  const fileBase = [base.slug, format, isTop ? `top-${metaView.scope}` : null, env.season,
+    capabilities.environment.asOf]
     .filter(Boolean).join("_");
 
   return (
@@ -152,15 +172,24 @@ export function MetaPage() {
       {rail}
       <div className="mc-page">
         <UsageCard {...cardProps} onFormat={setFormat} onSetIndex={setSetIdx}
-                   onShare={() => setSharing(true)} />
-        <KoCard ko={ko} trend={koTrend} format={format} onPreviewOpen={() => setKoTrendWanted(true)} />
+                   controls={<>
+                     <div className="mc-view-switches">
+                       <SourceSwitch />
+                       {isTop && <ScopeSwitch />}
+                       <CompareToggle />
+                     </div>
+                     <MetaNotes className="mc-view-notes" sample={isTop && topScope ? topScope.sample : undefined} />
+                   </>}
+                   onShare={() => setSharing(true)} onShareIntent={() => void ShareDialog.preload().catch(() => {})} />
+        {/* The KO axis is official all-rank telemetry with no Top Meta counterpart. */}
+        {!isTop && (
+          <KoCard ko={ko} trend={koTrend} format={format} onPreviewOpen={() => setKoTrendWanted(true)} />
+        )}
       </div>
       {sharing && (
-        <Suspense fallback={null}>
-          <ShareDialog fileBase={fileBase} snapshot={snapshot} onClose={() => setSharing(false)}
-            usage={<UsageCard {...cardProps} host={publicHost()} />}
-            ko={ko.status === "ready" ? <KoCard ko={ko} trend={koTrend} format={format} /> : null} />
-        </Suspense>
+        <ShareDialog fileBase={fileBase} snapshot={snapshot} onClose={() => setSharing(false)}
+          usage={<UsageCard {...cardProps} shareSource={shareSource} />}
+          ko={!isTop && ko.status === "ready" ? <KoCard ko={ko} trend={koTrend} format={format} /> : null} />
       )}
     </>
   );

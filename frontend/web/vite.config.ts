@@ -22,6 +22,24 @@ function bookmarkIcon(): Plugin {
   };
 }
 
+/** Numerical workers must not inherit editor UI, React or DOM-dependent styles via shared helpers. */
+function workerBoundary(): Plugin {
+  return {
+    name: "quark-drive-worker-boundary",
+    generateBundle(_options, bundle) {
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type !== "chunk") continue;
+        const leaked = Object.keys(chunk.modules).filter(id => {
+          const path = id.replace(/\\/g, "/");
+          return /\/src\/components\/|\/node_modules\/(react|react-dom|react-router|scheduler)\//.test(path)
+            || /\.(tsx|css)(?:\?|$)/.test(path);
+        });
+        if (leaked.length) this.error(`UI modules leaked into a calculation worker: ${leaked.join(", ")}`);
+      }
+    },
+  };
+}
+
 // Fingerprint the vendored calc engine THIS build embeds into the worker chunk, and inline it as a
 // build-time constant (__ENGINE_DIGEST__). At boot the online runtime compares it against the
 // projection's manifest.calcEngineDigest, so a projection rebuilt on a newer engine than the SPA
@@ -120,6 +138,7 @@ export default defineConfig({
   // Disabling Vite's public-dir copy keeps dist byte-identical across local and online runtimes.
   publicDir: false,
   plugins: [localRuntimeConfig(), bookmarkIcon(), react()],
+  worker: { plugins: () => [workerBoundary()] },
   define: { __ENGINE_DIGEST__: JSON.stringify(calcEngineDigest()) },
   server: {
     fs: { allow: [REPO_ROOT] },

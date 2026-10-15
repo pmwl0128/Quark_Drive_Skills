@@ -3,7 +3,7 @@
 import type { DamageRequestDto, MetaDetailDto } from "@pokemon-champions/protocol";
 import type { MoveRef } from "../../../runtime/projection.ts";
 import { maxHPOf, natureMult, type FieldState, type MonState } from "../duel/state.ts";
-import type { BuildOption } from "../../../components/build/inputs.tsx";
+import type { BuildOption } from "../../../lib/buildState.ts";
 import { pressedStat, requestKey, type Rolls } from "../tune/model.ts";
 import { bulkRequest, offenseRequest, liveFrame, survivesAtOne, type HitFrame,
   type Observation, type RequestKit, type SpaceInfo } from "./context.ts";

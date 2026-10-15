@@ -308,7 +308,7 @@ export function secondaryName(
 /** Read the saved language. Accessing localStorage THROWS (not just returns null) in browsers
  * with site data blocked or in a sandboxed iframe — swallow it so the app falls back to
  * navigator.language instead of white-screening on first render. */
-export function readSavedLang(): Lang | null {
+function readSavedLang(): Lang | null {
   try {
     const saved = localStorage.getItem("pc-lang");
     return saved === "zh" || saved === "en" || saved === "ja" ? saved : null;

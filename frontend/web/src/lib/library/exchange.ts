@@ -82,7 +82,7 @@ function wholeNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
 }
 
-export interface PlannedBoxRecord {
+interface PlannedBoxRecord {
   fileId: string | null;
   member: TeamMemberDoc;
   meta: ImportMeta;
@@ -91,7 +91,7 @@ export interface PlannedBoxRecord {
   existing: BoxRecord | null;
 }
 
-export interface PlannedTeam {
+interface PlannedTeam {
   format: FormatId;
   slot: number | null;
   meta: ImportMeta;
@@ -188,7 +188,7 @@ export async function planImport(text: string): Promise<ImportPlan | ParseFailur
   };
 }
 
-export interface ImportResult {
+interface ImportResult {
   teams: number;
   box: number;
   /** Already stored, and not kept as second copies. */

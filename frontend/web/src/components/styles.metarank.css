@@ -1,0 +1,67 @@
+:root, [data-theme="light"] {
+  --rank-top-from: #8b50e2;
+  --rank-top-to: #6a3ccf;
+  --rank-indigo: #5b4be0;
+  --rank-blue: #1f6fe0;
+}
+:root[data-theme="dark"], [data-theme="dark"] {
+  --rank-top-from: #8150d8;
+  --rank-top-to: #6338c2;
+  --rank-indigo: #9d8dff;
+  --rank-blue: #5fa8ff;
+}
+
+/* The rank hangs from the card's top edge as a small flag. Its tier steps the hue from violet through
+   blue to colourless: a solid violet flag for the top ten, indigo and blue tints for 11–30 and
+   31–60, a pale flag for 61–100 and a grey one past that. */
+.rank-badge[class*="tier-"] {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 31px; padding: 3px 5px 6px; border-radius: 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 5px), 0 100%);
+  background: var(--rank-flag); color: var(--rank-ink);
+  font: 700 12px/1 var(--font-num, var(--font-ui)); font-variant-numeric: tabular-nums;
+}
+/* Above the card's hover ring, so the ring does not cut across the flag. */
+.dex-card.ranked .rank-badge[class*="tier-"] { z-index: 1; top: 0; left: 12px; min-width: 24px; }
+.rank-badge.tier-S {
+  --rank-flag: linear-gradient(160deg, var(--rank-top-from), var(--rank-top-to)); --rank-ink: #fff;
+}
+.rank-badge.tier-A { --rank-flag: color-mix(in srgb, var(--rank-indigo) 20%, var(--panel)); --rank-ink: var(--rank-indigo); }
+.rank-badge.tier-B { --rank-flag: color-mix(in srgb, var(--rank-blue) 15%, var(--panel)); --rank-ink: var(--rank-blue); }
+.rank-badge.tier-C {
+  --rank-flag: color-mix(in srgb, var(--rank-blue) 6%, var(--panel-2)); --rank-ink: var(--ink); font-weight: 600;
+}
+.rank-badge.tier-D { --rank-flag: var(--panel-2); --rank-ink: var(--sub); font-weight: 550; }
+
+/* Change magnitude in three steps: small = the number takes the direction colour, medium = a tinted
+   pill, large = the pill with a double arrow. Changes within sampling noise keep their step but soften
+   the colour, and a pill keeps only its outline. */
+.rank-dl {
+  display: inline-flex; align-items: center; justify-content: center; gap: 2px; height: 20px; padding: 0 6px;
+  border-radius: 10px; color: var(--sub);
+  font: 500 11.5px/1 var(--font-num, var(--font-ui)); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.rank-dl.up { --rank-hue: var(--success); }
+.rank-dl.down { --rank-hue: var(--danger); }
+.rank-dl[data-degree] { --rank-signal: var(--rank-hue); color: var(--rank-signal); font-weight: 650; }
+.rank-dl.minor { --rank-signal: color-mix(in srgb, var(--rank-hue) 50%, var(--sub)); }
+.rank-dl .ar { font-size: 8px; }
+.rank-dl[data-degree="large"] .ar { letter-spacing: -1.5px; margin-right: 1.5px; }
+.rank-dl[data-degree="medium"], .rank-dl[data-degree="large"] {
+  font-weight: 750; background: color-mix(in srgb, var(--rank-signal) 15%, transparent);
+}
+.rank-dl.minor[data-degree] { font-weight: 550; }
+.rank-dl.minor[data-degree="medium"], .rank-dl.minor[data-degree="large"] {
+  background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rank-hue) 35%, transparent);
+}
+.rank-dl.flat { font-size: 13px; }
+.rank-dl.none { color: color-mix(in srgb, var(--sub) 55%, transparent); }
+/* Level with the flag's number. */
+.dex-card .rank-dl { position: absolute; top: 4px; right: 7px; }
+
+/* Share remains available beside the type icons without adding a third coloured badge. */
+.dex-card .types { align-items: center; }
+.dex-card .top-share {
+  margin-left: 3px; color: var(--sub); font: 500 11.5px/1 var(--font-num, var(--font-ui));
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}

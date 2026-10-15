@@ -1,6 +1,6 @@
 /** "导出": a panel as text on the clipboard, or as a PNG of the panel at three sizes (its own width at
  * 1x, 2x and 3x). The team card and the matchup inspector both export through this one menu. */
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useSharedT } from "./messages.ts";
 import { copyText, saveBlob } from "../lib/download.ts";
 import { roveFocus, useFocusOnOpen, usePopover } from "../lib/popover.ts";
@@ -14,7 +14,7 @@ async function settle(root: HTMLElement): Promise<void> {
   const deadline = performance.now() + 6000;
   while (performance.now() < deadline) {
     const images = Array.from(root.querySelectorAll("img"));
-    if (!root.querySelector("[data-img-pending]") && images.every((img) => img.complete)) break;
+    if (!root.querySelector("[data-img-pending], [data-export-pending]") && images.every((img) => img.complete)) break;
     await new Promise((resolve) => setTimeout(resolve, 60));
   }
 }
@@ -26,7 +26,8 @@ export interface ExtraExport {
   run: () => void;
 }
 
-export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, className = "" }: {
+export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, imageOptions,
+  prepareShot, imageWidth, onExportActiveChange, className = "" }: {
   /** The text to copy; read when chosen. */
   text: string | (() => string);
   textHint?: string;
@@ -36,6 +37,12 @@ export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, cla
   /** Selector of parts of `shot` the picture leaves out (the menu's own button row). */
   exclude?: string;
   extra?: ExtraExport;
+  imageOptions?: ReactNode;
+  /** Optional offscreen export layout. Dispose it even if capture or download fails. */
+  prepareShot?: (node: HTMLElement) => { node: HTMLElement; dispose: () => void };
+  imageWidth?: (width: number) => number;
+  /** Mount export-only content while the menu or an image capture needs it. */
+  onExportActiveChange?: (active: boolean) => void;
   className?: string;
 }) {
   const t = useSharedT();
@@ -43,7 +50,26 @@ export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, cla
   const list = useRef<HTMLDivElement>(null);
   useFocusOnOpen(pop.open, list, "button");
   const [status, setStatus] = useState<"idle" | "copied" | "saved" | "working" | "failed">("idle");
+  const exportActive = pop.open || status === "working";
+  useLayoutEffect(() => { onExportActiveChange?.(exportActive); }, [exportActive, onExportActiveChange]);
   const [width, setWidth] = useState(0);
+  const [above, setAbove] = useState(false);
+  useLayoutEffect(() => {
+    if (!pop.open) return;
+    const place = () => {
+      const anchor = pop.trigger.current?.getBoundingClientRect();
+      const menu = list.current?.getBoundingClientRect();
+      if (!anchor || !menu) return;
+      setAbove(window.innerHeight - anchor.bottom < menu.height + 12 && anchor.top > menu.height + 12);
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [pop.open, pop.trigger]);
   useEffect(() => {
     if (pop.open) setWidth(Math.round(shot.current?.getBoundingClientRect().width ?? 0));
   }, [pop.open, shot]);
@@ -52,16 +78,23 @@ export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, cla
     if (next !== "working") window.setTimeout(() => setStatus("idle"), 1800);
   };
   const copy = async () => {
+    if (onExportActiveChange) setStatus("working");
     pop.setOpen(false);
+    if (onExportActiveChange && shot.current) await settle(shot.current);
     flash(await copyText(typeof text === "function" ? text() : text) ? "copied" : "failed");
   };
   const save = async (scale: number) => {
-    const node = shot.current;
+    let node = shot.current;
     pop.setOpen(false);
     if (!node) return;
     setStatus("working");
+    let prepared: ReturnType<NonNullable<typeof prepareShot>> | undefined;
     try {
       const { domToBlob } = await import("modern-screenshot");
+      // Export-only React content can still be localizing. Settle it before freezing a DOM clone.
+      if (prepareShot) await settle(node);
+      prepared = prepareShot?.(node);
+      node = prepared?.node ?? node;
       await settle(node);
       const background = getComputedStyle(node).getPropertyValue("--panel").trim() || "#ffffff";
       const blob = await domToBlob(node, {
@@ -73,6 +106,8 @@ export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, cla
     } catch (error) {
       console.error("image export failed:", error);
       flash("failed");
+    } finally {
+      prepared?.dispose();
     }
   };
   const label = status === "copied" ? t("team.copied") : status === "saved" ? t("team.export.saved")
@@ -88,6 +123,7 @@ export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, cla
       {status === "failed" && <span className="muted team-export-failed">{t("team.copyFailed")}</span>}
       {pop.open && (
         <div ref={list} className="team-export-pop" role="menu" aria-label={t("team.export")}
+             style={above ? { top: "auto", bottom: "calc(100% + 6px)" } : undefined}
              onKeyDown={(event) => roveFocus(event, "button")}>
           <button type="button" role="menuitem" className="team-export-row" onClick={() => void copy()}>
             <b>{t("team.export.text")}</b>
@@ -101,12 +137,12 @@ export function ExportMenu({ text, textHint, shot, fileName, exclude, extra, cla
             </button>
           )}
           <div className="team-export-sep" role="separator" />
-          <div className="team-export-cap">{t("team.export.image")}</div>
+          <div className="team-export-cap"><span>{t("team.export.image")}</span>{imageOptions}</div>
           {EXPORT_SCALES.map((scale) => (
             <button key={scale} type="button" role="menuitem" className="team-export-row"
                     onClick={() => void save(scale)}>
               <b>{t(TIER_KEY[scale])}</b>
-              {width > 0 && <small className="num">{width * scale} px</small>}
+              {width > 0 && <small className="num">{(imageWidth?.(width) ?? width) * scale} px</small>}
             </button>
           ))}
         </div>

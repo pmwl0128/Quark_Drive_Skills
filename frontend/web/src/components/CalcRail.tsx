@@ -14,12 +14,13 @@ import { useLearners } from "../hooks.ts";
 import { displayName, useLang } from "../i18n.ts";
 import { useCalcT } from "../pages/calc/messages.ts";
 import type { DexIndexEntry } from "../runtime/adapter.ts";
-import { useBuildOptions, type BuildOption } from "./build/inputs.tsx";
+import { useBuildOptions } from "./build/inputs.tsx";
+import { type BuildOption } from "../lib/buildState.ts";
 
-export type CalcRailTab = "damage" | "speed" | "tune" | "infer" | "actual" | "teams";
+type CalcRailTab = "damage" | "speed" | "tune" | "infer" | "actual" | "teams";
 export type CalcRailTarget = "primary" | "secondary";
 
-export interface CalcRailPickResult {
+interface CalcRailPickResult {
   ok: boolean;
   reason?: "full";
   /** The page's own words for what happened, in place of the calculator's "added to {side}". */

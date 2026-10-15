@@ -1,0 +1,50 @@
+/* Only MonEditor uses this table: the calculator and inference's known, own-side build. */
+.stat-investment-table { --sp-capsule-width: 90px; gap: 5px; }
+.stat-investment-table .stat-head-sp { width: var(--sp-capsule-width); justify-self: start; }
+.stat-head-investment { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.stat-head-investment .stat-head-sp { flex: none; }
+.stat-presets { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center;
+  gap: 1px; flex: 1; min-width: 0; padding: 2px; border: 1px solid var(--line);
+  border-radius: 7px; background: var(--panel-2); }
+.stat-presets button { min-width: 0; min-height: 20px; padding: 2px 3px;
+  border: 0; border-radius: 4px; background: transparent; color: var(--sub);
+  font: 600 10px/1.2 var(--font-ui); letter-spacing: 0; text-transform: none; white-space: nowrap; cursor: pointer; }
+.stat-presets button:hover:not(:disabled) { color: var(--brand-strong); background: var(--brand-soft); }
+.stat-presets button.on { background: var(--panel); color: var(--brand-strong);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 12%, transparent); }
+.stat-presets button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.stat-presets button:disabled { opacity: .45; cursor: default; }
+.stat-investment-table .stat-table-head,
+.stat-investment-table .stat-table-row {
+  grid-template-columns: 28px 32px minmax(0, 1fr) 58px 44px 46px; gap: 8px;
+}
+.stat-investment-table .tw-stage-sel { height: 28px; }
+.stat-hp-percent { display: flex; align-items: center; height: 28px; min-width: 0;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--sub); }
+.stat-investment-table .stat-hp-percent input {
+  width: 100%; min-width: 0; height: 26px; padding: 0 0 0 3px; border: 0; background: transparent;
+  font-size: 12px; font-weight: 650; appearance: textfield; -moz-appearance: textfield;
+}
+.stat-hp-percent > span { padding-right: 5px; font-size: 10px; }
+.stat-investment-table .stat-hp-percent input:focus { outline: none; box-shadow: none; }
+.stat-hp-percent:focus-within { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-soft); }
+.stat-investment-table input.stat-cur.hp-cur { height: 28px; font-size: 12px; }
+@container mon-stats (max-width: 480px) {
+  .stat-investment-table { --sp-capsule-width: 74px; }
+  .stat-investment-table .stat-table-head,
+  .stat-investment-table .stat-table-row { grid-template-columns: 24px 30px minmax(0, 1fr) 44px 34px 36px; gap: 4px; }
+  .stat-investment-table .stat-table-head { font-size: 9px; letter-spacing: 0; }
+  .stat-investment-table .stat-head-sp { gap: 4px; }
+  .stat-hp-percent > span { padding-right: 3px; }
+}
+.stat-hp-percent input::-webkit-inner-spin-button,
+.stat-hp-percent input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+@container mon-stats (max-width: 560px) {
+  .stat-investment-table .stat-table-head { row-gap: 6px; }
+  .stat-head-investment { display: contents; }
+  .stat-presets { grid-column: 3 / -1; grid-row: 1; }
+  .stat-investment-table .stat-head-sp { grid-column: 3; grid-row: 2; }
+  .stat-investment-table .stat-table-head > span:nth-child(4) { grid-column: 4; grid-row: 2; }
+  .stat-investment-table .stat-table-head > span:nth-child(5) { grid-column: 5; grid-row: 2; }
+  .stat-investment-table .stat-table-head > span:nth-child(6) { grid-column: 6; grid-row: 2; }
+}

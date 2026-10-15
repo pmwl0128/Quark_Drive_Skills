@@ -34,16 +34,25 @@ def mega_count_bucket(count: int) -> str:
 
 
 def mega_slot_distribution(profiles: list[dict[str, Any]]) -> dict[str, Any]:
-    """Distribution of registered Mega-option counts across observed profiles."""
-    sample = len(profiles)
+    """Exact registration counts only; unpublished sets never become zero-Mega samples.
+
+    Profiles predating the observability field retain their explicit mega_usage contract.
+    Newly computed profiles always state whether their count is known.
+    """
+    observed = [p for p in profiles
+                if (p.get("mega_registration") or {}).get("count", registered_mega_count(p))
+                is not None]
+    sample = len(observed)
     counts: Counter[str] = Counter()
     total_slots = 0
-    for p in profiles:
+    for p in observed:
         n = registered_mega_count(p)
         total_slots += n
         counts[mega_count_bucket(n)] += 1
     return {
         "sample_count": sample,
+        "unknown_sample_count": len(profiles) - sample,
+        "total_sample_count": len(profiles),
         "buckets": {
             b: {"count": counts.get(b, 0), "share": round(counts.get(b, 0) / sample, 3) if sample else 0.0}
             for b in BUCKETS
@@ -85,6 +94,8 @@ def observed_registration_reference(distribution: dict[str, Any] | None) -> dict
     reliable = sample >= OBSERVED_NORM_MIN_SAMPLE
     return {
         "sample_count": sample,
+        "unknown_sample_count": int(d.get("unknown_sample_count") or 0),
+        "total_sample_count": int(d.get("total_sample_count") or sample),
         "reliable": reliable,
         "confidence": "medium" if reliable else "low",
         "modal_buckets": modal,

@@ -1,6 +1,6 @@
 /** Resolve simultaneous field-setting abilities once, above all four calculator tools. */
 import type { SpeedInputDto, Terrain, Weather } from "@pokemon-champions/protocol";
-import { withMega } from "../../../components/build/inputs.tsx";
+import { withMega } from "../../../lib/buildState.ts";
 import type { DexIndexEntry, RuntimeAdapter } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
 import { speedInputOf } from "../speed/lens.ts";

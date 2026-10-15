@@ -9,7 +9,8 @@
  * Conditions live with the side they belong to rather than in one shared flyout: each chip clears
  * itself, and the wing's own button opens that side's toggles right under the roster it affects. */
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import { useLibraryDrop, useLibraryWorkspace } from "../../../lib/library/workspace.tsx";
 import { copyText } from "../../../lib/download.ts";
@@ -19,6 +20,16 @@ import type { ItemRef } from "../../../runtime/projection.ts";
 import { MonAvatar } from "./MonEditor.tsx";
 import { roveFocus, useFocusOnOpen, usePopover } from "../../../lib/popover.ts";
 import { SIDE_FLAGS, effectiveEntry, type FieldState, type MonState, type SideId } from "./state.ts";
+import { useAnchoredPopover } from "../../../components/useAnchoredPopover.ts";
+
+import { preloadable } from "../../../lib/preloadable.ts";
+
+const SavedTeamPicker = preloadable(() => import("../../../components/library/SavedTeamPicker.tsx"), <SavedTeamLoading />);
+
+function SavedTeamLoading() {
+  const t = useCalcT();
+  return <p className="muted">{t("state.loading")}</p>;
+}
 
 /** Gap between condition chips; mirrors `.team-conds { gap }`. */
 const COND_GAP = 5;
@@ -73,8 +84,7 @@ export interface ImportOutcome {
   rescaledEvs: boolean;
 }
 
-import { TEAM_SIZE as TEAM_MAX } from "../../../lib/battle.ts";
-export { TEAM_SIZE as TEAM_MAX } from "../../../lib/battle.ts";
+import { TEAM_SIZE } from "../../../lib/battle.ts";
 
 /** A roster Pokémon as a Showdown block, in English canonicals: the block is read by other tools,
  * so it is a join-key document, not a display (design §2.1). Null for a slot with no species. */
@@ -87,7 +97,7 @@ function pasteOf(mon: MonState, dex: DexIndexEntry[], items: ItemRef[]): string 
   });
 }
 
-export function Caret() {
+function Caret() {
   return (
     <svg className="duel-caret" viewBox="0 0 10 10" aria-hidden>
       <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" strokeWidth="1.6"
@@ -156,10 +166,20 @@ export function TeamBar({
   librarySide?: SideId;
 }) {
   const t = useCalcT();
-  const drop = useLibraryDrop(librarySide ? [`calc-team-${librarySide}`, `calc-mon-${librarySide}`] : []);
+  const drop = useLibraryDrop(librarySide ? [`calc-team-${librarySide}`, `calc-mon-${librarySide}`] : [],
+    (event) => {
+      const slot = (event.target as Element).closest<HTMLElement>("[data-team-slot]");
+      return slot && event.currentTarget.contains(slot) ? Number(slot.dataset.teamSlot) : undefined;
+    });
   const { requestSave } = useLibraryWorkspace("requestSave");
   const menu = usePopover();
+  // The saved-team picker's code arrives while the menu is open, so choosing it renders at once.
+  useEffect(() => { if (menu.open && librarySide) void SavedTeamPicker.preload().catch(() => {}); },
+    [menu.open, librarySide]);
   const paste = usePopover(menu.trigger);
+  const saved = usePopover(menu.trigger);
+  const savedPosition = useAnchoredPopover(saved.open, menu.trigger, saved.wrap,
+    { minWidth: 380, matchAnchor: false, align: mirrored ? "end" : "start", maxHeight: 440 });
   const conds = usePopover();
   const menuList = useRef<HTMLDivElement>(null);
   const condList = useRef<HTMLDivElement>(null);
@@ -214,15 +234,15 @@ export function TeamBar({
     .replace("{n}", String(active.length))
     .replace("{flags}", active.map(({ flag }) => flagName(flag)).join("、"));
 
-  const slots = Array.from({ length: TEAM_MAX }, (_, i) => {
+  const slots = Array.from({ length: TEAM_SIZE }, (_, i) => {
     const mon = team[i];
     if (mon) {
-      return <MonAvatar key={mon.uid || i} mon={mon} dex={dex} items={items} active={i === index}
+      return <MonAvatar key={mon.uid || i} mon={mon} dex={dex} items={items} active={i === index} slot={i}
         onClick={() => onIndex(i)} onRemove={() => onRemove(i)} />;
     }
     if (i === team.length) {
       return (
-        <button key={i} type="button" className="team-slot-add" onClick={onAdd}
+        <button key={i} type="button" className="team-slot-add" onClick={onAdd} data-team-slot={i}
           aria-label={t("calc.addMon")} title={t("calc.addMon")}>
           <PlusGlyph />
         </button>
@@ -237,18 +257,22 @@ export function TeamBar({
         <button ref={menu.trigger} type="button"
           className={`team-who-btn${menu.open ? " open" : ""}`}
           aria-haspopup="menu" aria-expanded={menu.open}
-          aria-label={`${teamLabel} ${team.length}/${TEAM_MAX}`}
+          aria-label={`${teamLabel} ${team.length}/${TEAM_SIZE}`}
           title={t("calc.teamMenuHint")} onClick={menu.toggle}>
           <b>{label}<Caret /></b>
-          <span className="num">{team.length}/{TEAM_MAX}</span>
+          <span className="num">{team.length}/{TEAM_SIZE}</span>
         </button>
         {menu.open && (
           <div ref={menuList} className="duel-pop duel-menu" role="menu" aria-label={teamLabel}
             onKeyDown={(event) => roveFocus(event, "[role=menuitem]")}>
             <button type="button" role="menuitem" className="duel-menu-row"
-              onClick={() => { menu.setOpen(false); setOutcome(null); paste.setOpen(true); }}>
+              onClick={() => { menu.setOpen(false); saved.setOpen(false); setOutcome(null); paste.setOpen(true); }}>
               {t("calc.importPaste")}…
             </button>
+            {librarySide && <button type="button" role="menuitem" className="duel-menu-row"
+              onClick={() => { menu.setOpen(false); paste.setOpen(false); saved.setOpen(true); }}>
+              {t("library.importSaved")}…
+            </button>}
             <button type="button" role="menuitem" className="duel-menu-row" disabled={!activeNamed}
               onClick={() => void copy("mon")}>
               {copied === "mon" ? t("calc.copied") : t("calc.copyActive")}
@@ -362,6 +386,14 @@ export function TeamBar({
         </div>
       )}
 
+      {saved.open && librarySide && createPortal(
+        <div className="duel-pop saved-team-pop" ref={saved.wrap} onBlur={saved.onBlur}
+          style={savedPosition} role="dialog" aria-label={`${teamLabel} · ${t("library.importSaved")}`}>
+          <SavedTeamPicker format={field.format} receiverId={`calc-team-${librarySide}`}
+            title={`${teamLabel} · ${t("library.importSaved")}`}
+            onClose={() => { saved.setOpen(false); menu.trigger.current?.focus(); }} />
+        </div>, document.body,
+      )}
       {paste.open && (
         <div className="duel-pop paste-pop" ref={paste.wrap} onBlur={paste.onBlur}
           role="dialog" aria-label={`${teamLabel} · ${t("calc.importPaste")}`}>

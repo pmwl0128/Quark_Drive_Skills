@@ -1,0 +1,61 @@
+/* Source controls, comparison toggle and source/sample explanations shared by metagame pages. */
+
+/* A pressed-state chip: the comparison toggle and the official trend view. */
+.meta-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius: 11px;
+  background: color-mix(in srgb, var(--panel) 65%, var(--panel-2));
+  color: var(--sub); font: 600 12.5px var(--font-ui); white-space: nowrap; cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+.meta-chip svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round; }
+.meta-chip:hover { color: var(--ink); border-color: var(--line-strong); }
+.meta-chip[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--brand) 26%, var(--line));
+  background: color-mix(in srgb, var(--brand) 7%, var(--panel));
+  color: color-mix(in srgb, var(--brand) 40%, var(--ink));
+}
+.meta-chip-track { flex: none; display: inline-flex; align-items: center; width: 23px; height: 14px;
+  padding: 2px; border-radius: 999px; background: color-mix(in srgb, var(--sub) 27%, var(--panel-2));
+  transition: background-color 160ms ease; }
+.meta-chip-track i { width: 10px; height: 10px; border-radius: 50%; background: var(--panel);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.16); transition: transform 160ms var(--ease-out); }
+.meta-chip[aria-pressed="true"] .meta-chip-track { background: color-mix(in srgb, var(--brand) 72%, var(--sub)); }
+.meta-chip[aria-pressed="true"] .meta-chip-track i { transform: translateX(9px); background: #fff; }
+.meta-src-info {
+  display: inline-grid; place-items: center; width: 32px; height: 36px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; color: var(--sub);
+}
+.meta-src-info svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+.meta-src-info:hover, .meta-src-info:focus-visible { color: var(--ink); background: var(--panel-2); }
+/* The note is portalled to the body and placed against the viewport (useAnchoredPopover). */
+.meta-src-tip {
+  z-index: 2050; overflow: auto; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 10px;
+  background: var(--panel); color: var(--ink); box-shadow: var(--shadow-raised);
+  font: 500 12.5px/1.7 var(--font-ui); text-align: left; white-space: pre-line; pointer-events: none;
+}
+.meta-src-sample { color: var(--sub); font: 500 12px/1.5 var(--font-num, var(--font-ui)); }
+.meta-ranking-header .page-title-group { min-width: 0; flex-wrap: wrap; gap: 10px 16px; }
+.meta-ranking-sources { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+/* As tall as the page-tab segmented controls in the same row (34px buttons in a 3px + 1px frame). */
+.meta-ranking-sources .meta-chip { min-height: 42px; border-radius: 12px; }
+.meta-ranking-header .page-heading-actions { flex-shrink: 0; gap: 8px 12px; }
+.meta-source-notes { display: flex; align-items: center; justify-content: flex-end; min-width: 0; gap: 8px; }
+.meta-source-notes .meta-src-info { flex: none; }
+.meta-ranking-notes .meta-src-sample { max-width: 280px; text-align: right; }
+@media (max-width: 1040px) {
+  .meta-ranking-header .page-title-group { flex-basis: 100%; }
+  .meta-ranking-header .page-heading-actions { flex-basis: 100%; flex-wrap: wrap; overflow: visible; justify-content: flex-end; }
+  .meta-ranking-header .page-tabs { flex: none; }
+}
+@media (max-width: 520px) {
+  .meta-ranking-header .page-heading-actions { gap: 8px; }
+  .meta-ranking-notes { flex: 1; min-width: 0; justify-content: flex-end; }
+  .meta-ranking-header .page-heading-actions > .seg { align-self: flex-end; }
+}
+@media (pointer: coarse) {
+  .meta-chip, .meta-src-info { min-height: 44px; }
+  .meta-ranking-sources .meta-chip { min-height: 52px; }
+  .meta-src-info { min-width: 44px; }
+}

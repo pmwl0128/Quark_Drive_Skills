@@ -14,9 +14,9 @@ import { useMetaT } from "./messages.ts";
 
 /** Past this usage rank a Pokemon is a rare pick, so its position here is a signal rather than
  * exposure — worth marking, because that distinction is why the usage rank is shown at all. */
-export const RARE_USAGE_RANK = 60;
+const RARE_USAGE_RANK = 60;
 
-export interface TileEntry {
+interface TileEntry {
   rank: number;
   name: string;
   nameZh?: string;
@@ -29,11 +29,17 @@ export interface TileEntry {
   formCollapsed?: boolean;
 }
 
-export function MonTile({ entry, format, addon, onPreviewOpen }: {
+export function MonTile({ entry, format, addon, onPreviewOpen, mark, useTitle, linkQuery = "" }: {
   entry: TileEntry;
   format: FormatId;
   addon: ReactNode;
   onPreviewOpen?: () => void;
+  /** A corner mark (the comparison chip); the form-collapse mark takes precedence. */
+  mark?: ReactNode;
+  /** What the number under the name is, when it is not this format's in-game usage rank. */
+  useTitle?: string;
+  /** Extra query for the link, so the next page opens in the same metagame view. */
+  linkQuery?: string;
 }) {
   const { lang } = useLang();
   const t = useMetaT();
@@ -42,16 +48,16 @@ export function MonTile({ entry, format, addon, onPreviewOpen }: {
   const assetKey = entry.key ?? (entry.slug ? `pokemon:${entry.slug}` : "pokemon:");
   return (
     <EntityHover kind="pokemon" name={entry.name} link={Boolean(entry.slug)}
-                 href={entry.slug ? `/meta/${entry.slug}?format=${format}` : undefined}
+                 href={entry.slug ? `/meta/${entry.slug}?format=${format}${linkQuery}` : undefined}
                  previewAddon={addon} onPreviewOpen={onPreviewOpen}>
       <span className="mc-tile">
         <span className="mc-tile-rank">{entry.rank}</span>
-        {entry.formCollapsed && (
+        {entry.formCollapsed ? (
           <span className="mc-tile-fc" title={t("ko.formCollapsed")} aria-label={t("ko.formCollapsed")}>形</span>
-        )}
+        ) : mark && <span className="mc-tile-mark">{mark}</span>}
         <GameImage assetKey={assetKey} role="dense" alt="" className="mc-tile-img" />
         <span className="mc-tile-name">{label}</span>
-        <span className={`mc-tile-use${rare ? " rare" : ""}`} title={t("ko.usageRank")}>
+        <span className={`mc-tile-use${rare ? " rare" : ""}`} title={useTitle ?? t("ko.usageRank")}>
           {entry.usageRank != null ? `#${entry.usageRank}` : "—"}
         </span>
       </span>

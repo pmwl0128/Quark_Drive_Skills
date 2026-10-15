@@ -12,18 +12,18 @@ import type {
 import "../styles.matchup.css";
 import type { ReactNode } from "react";
 import {
-  lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction,
+  lazy, memo, Suspense, useMemo, useState, type Dispatch, type SetStateAction,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { stashDamageFill } from "../lib/team.ts";
 import { FormatTabs } from "../components/FormatTabs.tsx";
-import { EntityHover } from "../components/EntityHover.tsx";
+import { useCellHistory } from "../lib/useCellHistory.ts";
 import { GameImage } from "../components/GameImage.tsx";
 import { activeKey, ColHead, RowHead } from "../components/MatchupHeads.tsx";
 import { PageHeader } from "../components/PageHeader.tsx";
 import { SegmentedControl, segmentedPanelId, segmentedTabId }
   from "../components/SegmentedControl.tsx";
-import { useOppCache, useOppChecks, useOppKo, useOppSets } from "../hooks.ts";
+import { useOppChecks, useOppDetails, useOppKo, useOppSets } from "../hooks.ts";
 import { useRuntime } from "../runtime/context.tsx";
 import { displayName, useLang, type Lang } from "../i18n.ts";
 import { useMatchupT } from "./matchup/messages.ts";
@@ -31,7 +31,7 @@ import { useDamageText } from "../lib/damageText.tsx";
 import { koTone } from "../lib/ko.ts";
 import { populatedAxes } from "../lib/matchupGrid.ts";
 import {
-  CellInspector, type InspectorBuild, type InspectorDamage,
+  CellInspector, InspectorMon, InspectorToolbar, type InspectorBuild, type InspectorDamage,
 } from "../components/CellInspector.tsx";
 
 // Actual-set input owns large editors, vocabularies and the shared search rail. Keep all of it out
@@ -55,7 +55,7 @@ function inspectorDamage(off: OppOffenseDto | null | undefined,
                          t: (k: never) => string,
                          damageText: ReturnType<typeof useDamageText>): InspectorDamage | null {
   if (!off) return null;
-  const caveats: ReactNode[] = [];
+  const caveats: string[] = [];
   if (off.disguiseAdjusted) caveats.push(t("calc.disguiseAdjusted" as never));
   for (const cv of off.koCaveats ?? []) caveats.push(damageText.caveat(cv));
   return {
@@ -80,7 +80,7 @@ const speciesSlug = (key: string, set: OppSetDto | undefined): string => {
 
 /** stashDamageFill side coordinates from an opponent-cache set. Cache keys may be variant ids;
  * the calculator coordinate must always be the dex species/form slug. */
-export function fillFromSet(key: string, set: OppSetDto | undefined) {
+function fillFromSet(key: string, set: OppSetDto | undefined) {
   return {
     slug: speciesSlug(key, set),
     ...(set?.ability ? { ability: set.ability } : {}),
@@ -117,15 +117,15 @@ function CellCalculate({ sets, aSlug, bSlug, format, move }: {
   );
 }
 
-function DetailMon({ s, lang }: { s: SpeciesRowDto; lang: Lang }) {
+function DetailMon({ s, lang, build }: { s: SpeciesRowDto; lang: Lang; build: InspectorBuild }) {
   return (
-    <EntityHover kind="pokemon" name={s.name}>
+    <InspectorMon build={build}>
       <span className="prose-mon">
         <GameImage assetKey={`pokemon:${s.slug}`} role="dense" alt=""
                    className="prose-mon-img" />
         {displayName(s, lang)}
       </span>
-    </EntityHover>
+    </InspectorMon>
   );
 }
 
@@ -178,6 +178,46 @@ function inspectorBuilds(sets: Record<string, OppSetDto> | undefined,
   ];
 }
 
+/** Mount the destination immediately so scrolling never waits for a network request or schema
+ * validation. Each card subscribes to a shared species shard; adding one does not reload the
+ * matrix or the other cards. Keep its heading and two direction lines stable while loading. */
+function ReferenceDetail({ format, a, d, left, right, sets, check, onRemove, panelRef }: {
+  format: FormatId; a: string; d: string; left: SpeciesRowDto; right: SpeciesRowDto;
+  sets: Record<string, OppSetDto> | undefined;
+  check?: CheckCell;
+  onRemove: () => void;
+  panelRef?: (node: HTMLDivElement | null) => void;
+}) {
+  const state = useOppDetails(format, left.slug);
+  const cache = state.status === "ready" ? state.data : null;
+  const cell = cache?.matrix[a]?.[d];
+  const { lang } = useLang();
+  const t = useMatchupT();
+  const damageText = useDamageText();
+  const builds = inspectorBuilds(sets, a, d, left, right, lang);
+  return <CellInspector
+    onRemove={onRemove} panelRef={panelRef} loading={state.status === "loading"}
+    head={<><DetailMon s={left} lang={lang} build={builds[0]!} /> {t("matchup.vs")}{" "}
+           <DetailMon s={right} lang={lang} build={builds[1]!} /></>}
+    grade={check?.grade}
+    gradeFacts={[
+      check?.c0Kind === "wall_no_ko" ? <>· {t("matchup.c0Kind.wall_no_ko")}</> : null,
+      check?.contested ? <>· {t("matchup.resolvability.contested")}</> : null,
+    ].filter(Boolean) as ReactNode[]}
+    directions={[
+      { label: t("matchup.ourKo"), damage: inspectorDamage(cell?.offense, t, damageText) },
+      { label: t("matchup.incoming"), damage: inspectorDamage(cache?.matrix[d]?.[a]?.offense, t, damageText) },
+    ]}
+    speed={{ mine: cell?.speed.attacker ?? null, theirs: cell?.speed.defender ?? null,
+      fasterName: cell?.speed.faster === "attacker" ? displayName(left, lang)
+        : cell?.speed.faster === "defender" ? displayName(right, lang) : null }}
+    builds={builds}
+    calculate={cell && <CellCalculate sets={sets} aSlug={a} bSlug={d}
+      format={format} move={cell.offense?.move} />}
+    extra={state.status === "error" ? <span role="alert">{t("state.errorDetail")}</span> : undefined}
+  />;
+}
+
 
 
 
@@ -204,9 +244,9 @@ interface GridRowProps<Cell> {
   setPicks: Dispatch<SetStateAction<Record<string, string>>>;
 }
 
-function GridRowHead({ r, lang, picks, sets, setsBusy, open, setOpenPicker, setPicks }: GridRowProps<unknown>) {
+function GridRowHead({ r, lang, picks, sets, setsBusy, open, setOpenPicker, setPicks, selCol }: GridRowProps<unknown>) {
   return (
-    <RowHead s={r} lang={lang} picks={picks} sets={sets} setsBusy={setsBusy} showSetHover open={open}
+    <RowHead selected={selCol !== null} s={r} lang={lang} picks={picks} sets={sets} setsBusy={setsBusy} showSetHover open={open}
              onToggle={() => setOpenPicker((k) => k === `row:${r.slug}` ? null : `row:${r.slug}`)}
              onPick={(key) => setPicks((p) => ({ ...p, [r.slug]: key }))}
              onClose={() => setOpenPicker(null)} />
@@ -214,7 +254,7 @@ function GridRowHead({ r, lang, picks, sets, setsBusy, open, setOpenPicker, setP
 }
 
 const KoRow = memo(function KoRow(props: GridRowProps<OppKoSummaryDto> & {
-  setSel: Dispatch<SetStateAction<{ a: string; d: string } | null>>;
+  setSel: (value: { a: string; d: string }) => void;
 }) {
   const { rk, cols, colKeys, cells, selCol, lang, setSel } = props;
   const damageText = useDamageText();
@@ -283,7 +323,7 @@ const KoRow = memo(function KoRow(props: GridRowProps<OppKoSummaryDto> & {
 type CheckCell = OppCheckGridDto["grid"][string][string];
 
 const CheckRow = memo(function CheckRow(props: GridRowProps<CheckCell> & {
-  setSel: Dispatch<SetStateAction<{ m: string; o: string } | null>>;
+  setSel: (value: { m: string; o: string }) => void;
 }) {
   const { rk, cols, colKeys, cells, selCol, setSel } = props;
   const t = useMatchupT();
@@ -321,34 +361,24 @@ const CheckRow = memo(function CheckRow(props: GridRowProps<CheckCell> & {
 
 // -- KO / offense grid --------------------------------------------------------------------------
 
+const koCellKey = (cell: { a: string; d: string }) => JSON.stringify([cell.a, cell.d]);
+const checkCellKey = (cell: { m: string; o: string }) => JSON.stringify([cell.m, cell.o]);
+
 function KoGrid({ format }: { format: FormatId }) {
   const state = useOppKo(format);
   const buildState = useOppSets(format);
   const headerSets = buildState.status === "ready" ? buildState.data.sets : undefined;
   const { lang } = useLang();
   const t = useMatchupT();
-  const damageText = useDamageText();
-  const [sel, setSel] = useState<{ a: string; d: string } | null>(null);
-  // The overview paints every cell from a compact document. The full 7–14 MB cache is useful only
-  // for the selected cell's move, speed, caveats and sets, so defer it until selection.
-  const cacheState = useOppCache(format, sel !== null);
-  const detailCache = cacheState.status === "ready" ? cacheState.data : null;
+  const history = useCellHistory(format, koCellKey);
+  const sel = history.selected;
+  const setSel = history.append;
   // speciesSlug -> variantKey, kept SEPARATELY per axis: a Pokemon read as one build while
   // attacking and another while defending is a normal thing to want, and sharing one map made
   // picking an attacker build silently rewrite the defender column too.
   const [rowPicks, setRowPicks] = useState<Record<string, string>>({});
   const [colPicks, setColPicks] = useState<Record<string, string>>({});
   const [openPicker, setOpenPicker] = useState<string | null>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!sel) return;
-    const frame = requestAnimationFrame(() => detailRef.current?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "center",
-    }));
-    return () => cancelAnimationFrame(frame);
-  }, [sel, cacheState.status]);
 
   // The 40k-cell axis scan and variant index depend only on the downloaded overview. Build picks
   // merely select one key per species and must not redo that work on every picker click.
@@ -390,8 +420,6 @@ function KoGrid({ format }: { format: FormatId }) {
   }
   if (!view) return null;
   const { overview, cols, colKeys, rows, byVariant, omittedCols } = view;
-  const detailCell = sel ? detailCache?.matrix[sel.a]?.[sel.d] : null;
-  const detailOff = detailCell?.offense ?? null;
 
   return (
     <>
@@ -411,7 +439,7 @@ function KoGrid({ format }: { format: FormatId }) {
             <tr>
               <th className="corner">{t("matchup.attacker")} \ {t("matchup.defender")}</th>
               {cols.map((c) => (
-                <ColHead key={c.slug} s={c} lang={lang} picks={colPicks}
+                <ColHead selected={!!sel && activeKey(c, colPicks) === sel.d} key={c.slug} s={c} lang={lang} picks={colPicks}
                          sets={headerSets} setsBusy={buildState.status === "loading"} showSetHover
                          open={openPicker === `col:${c.slug}`}
                          onToggle={() => setOpenPicker((k) => k === `col:${c.slug}` ? null : `col:${c.slug}`)}
@@ -433,34 +461,16 @@ function KoGrid({ format }: { format: FormatId }) {
           </tbody>
         </table>
       </div>
-      <KoLegend />
-      {sel && cacheState.status === "loading" &&
-        <div className="spinner matchup-detail-loading">{t("state.loading")}</div>}
-      {sel && cacheState.status === "error" &&
-        <div className="notice">{t("state.errorDetail")}</div>}
-      {sel && detailOff && detailCell && detailCache && (() => {
-        // Both directions: the reverse cell is this same grid read the other way.
-        const back = detailCache.matrix[sel.d]?.[sel.a]?.offense ?? null;
-        const left = byVariant.get(sel.a)!;
-        const right = byVariant.get(sel.d)!;
-        return (
-          <CellInspector
-            panelRef={detailRef}
-            head={<><DetailMon s={left} lang={lang} /> {t("matchup.vs")}{" "}
-                   <DetailMon s={right} lang={lang} /></>}
-            directions={[
-              { label: t("matchup.ourKo"), damage: inspectorDamage(detailOff, t, damageText) },
-              { label: t("matchup.incoming"), damage: inspectorDamage(back, t, damageText) },
-            ]}
-            speed={{ mine: detailCell.speed.attacker, theirs: detailCell.speed.defender,
-                     fasterName: detailCell.speed.faster === "attacker" ? displayName(left, lang)
-                       : detailCell.speed.faster === "defender" ? displayName(right, lang) : null }}
-            builds={inspectorBuilds(detailCache.sets, sel.a, sel.d, left, right, lang)}
-            calculate={<CellCalculate sets={detailCache.sets} aSlug={sel.a} bSlug={sel.d}
-              format={format} move={detailOff.move} />}
-          />
-        );
-      })()}
+      <InspectorToolbar onClear={history.clear} empty={!history.entries.length}><KoLegend /></InspectorToolbar>
+      <div className="matchup-details">{history.entries.map(({ id, value: cell }) => {
+        const left = byVariant.get(cell.a), right = byVariant.get(cell.d);
+        // An expiry can remove handover-only builds while the format and history stay mounted.
+        if (!left || !right || !overview.grid[cell.a]?.[cell.d]) return null;
+        return <ReferenceDetail key={id} format={format} a={cell.a} d={cell.d}
+          left={left} right={right} sets={headerSets}
+          onRemove={() => history.remove(id)}
+          panelRef={id === history.activeId ? history.panelRef : undefined} />;
+      })}</div>
     </>
   );
 }
@@ -485,29 +495,14 @@ function CheckGrid({ format }: { format: FormatId }) {
   const state = useOppChecks(format);
   const buildState = useOppSets(format);
   const headerSets = buildState.status === "ready" ? buildState.data.sets : undefined;
-  const [sel, setSel] = useState<{ m: string; o: string } | null>(null);
-  // The compact grade grid is enough to render the page. The much larger KO matrix is fetched only
-  // after a cell is opened for its damage/speed detail, then remains session-cached.
-  const cacheState = useOppCache(format, sel !== null);
-  const sets = cacheState.status === "ready" && cacheState.data
-    ? cacheState.data.sets : undefined;
+  const history = useCellHistory(format, checkCellKey);
+  const sel = history.selected;
+  const setSel = history.append;
   const { lang } = useLang();
   const t = useMatchupT();
-  const damageText = useDamageText();
   const [rowPicks, setRowPicks] = useState<Record<string, string>>({});
   const [colPicks, setColPicks] = useState<Record<string, string>>({});
   const [openPicker, setOpenPicker] = useState<string | null>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
-  const koCache = cacheState.status === "ready" ? cacheState.data : null;
-
-  useEffect(() => {
-    if (!sel) return;
-    const frame = requestAnimationFrame(() => detailRef.current?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "center",
-    }));
-    return () => cancelAnimationFrame(frame);
-  }, [sel]);
 
   // Keep the full-grid preparation independent from the cheap active-build projection below.
   const prepared = useMemo(() => {
@@ -542,10 +537,6 @@ function CheckGrid({ format }: { format: FormatId }) {
   }
   if (!view) return null;
   const { checks, cols, colKeys, rows, byVariant, omittedCols } = view;
-  const selCell = sel ? checks.grid[sel.m]?.[sel.o] ?? null : null;
-  // Damage/speed for the selected pair come from the KO matrix — this grid intentionally does not
-  // duplicate them (they are derived from it).
-  const koCell = sel && koCache ? koCache.matrix[sel.m]?.[sel.o] ?? null : null;
 
   return (
     <>
@@ -565,7 +556,7 @@ function CheckGrid({ format }: { format: FormatId }) {
             <tr>
               <th className="corner">{t("matchup.member")} \ {t("matchup.opponent")}</th>
               {cols.map((c) => (
-                <ColHead key={c.slug} s={c} lang={lang}
+                <ColHead selected={!!sel && activeKey(c, colPicks) === sel.o} key={c.slug} s={c} lang={lang}
                          sets={headerSets} setsBusy={buildState.status === "loading"} showSetHover
                          picks={colPicks}
                          open={openPicker === `col:${c.slug}`}
@@ -588,39 +579,16 @@ function CheckGrid({ format }: { format: FormatId }) {
           </tbody>
         </table>
       </div>
-      <CheckLegend />
-      {sel && selCell && (() => {
-        const left = byVariant.get(sel.m)!;
-        const right = byVariant.get(sel.o)!;
-        return (
-        <CellInspector
-          panelRef={detailRef}
-          head={<><DetailMon s={left} lang={lang} /> {t("matchup.vs")}{" "}
-                 <DetailMon s={right} lang={lang} /></>}
-          grade={selCell.grade}
-          gradeFacts={[
-            selCell.c0Kind === "wall_no_ko"
-              ? <>· {t("matchup.c0Kind.wall_no_ko")}</> : null,
-            selCell.contested ? <>· {t("matchup.resolvability.contested")}</> : null,
-          ].filter(Boolean) as ReactNode[]}
-          // Numbers come from the KO matrix, which this page already holds — the check grid is
-          // derived from it and deliberately ships no duplicate damage/speed.
-          directions={[
-            { label: t("matchup.ourKo"), damage: inspectorDamage(koCell?.offense, t, damageText) },
-            { label: t("matchup.incoming"),
-              damage: inspectorDamage(koCache?.matrix[sel.o]?.[sel.m]?.offense, t, damageText) },
-          ]}
-          speed={koCell?.speed
-            ? { mine: koCell.speed.attacker, theirs: koCell.speed.defender,
-                fasterName: koCell.speed.faster === "attacker" ? displayName(left, lang)
-                  : koCell.speed.faster === "defender" ? displayName(right, lang) : null }
-            : null}
-          builds={inspectorBuilds(sets, sel.m, sel.o, left, right, lang)}
-          calculate={<CellCalculate sets={sets} aSlug={sel.m} bSlug={sel.o}
-            format={format} move={koCell?.offense?.move} />}
-        />
-        );
-      })()}
+      <InspectorToolbar onClear={history.clear} empty={!history.entries.length}><CheckLegend /></InspectorToolbar>
+      <div className="matchup-details">{history.entries.map(({ id, value: cell }) => {
+        const left = byVariant.get(cell.m), right = byVariant.get(cell.o);
+        if (!left || !right || !checks.grid[cell.m]?.[cell.o]) return null;
+        return <ReferenceDetail key={id} format={format} a={cell.m} d={cell.o}
+          left={left} right={right} sets={headerSets}
+          check={checks.grid[cell.m]?.[cell.o]}
+          onRemove={() => history.remove(id)}
+          panelRef={id === history.activeId ? history.panelRef : undefined} />;
+      })}</div>
     </>
   );
 }

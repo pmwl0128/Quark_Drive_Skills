@@ -1,6 +1,6 @@
 /** One combatant's editable build: species + forme, ability, nature, item, status and the SP /
  * boost / final-stat table with current HP. The four moves are edited in the result grid above it,
- * where their damage is read, and the portrait lives there too.
+ * where their damage is read. The portrait, types and Mega state live with the build here.
  *
  * The stat table shows base, investment and RESULT side by side because that is the number the calc
  * actually used — a spread that reads "32 Spe" tells you nothing about whether it clears a
@@ -17,10 +17,9 @@ import { displayName, useLang } from "../../../i18n.ts";
 import { useCalcT } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import {
-  BuildPickerButton, ItemCombo, NatureOptions, STATUSES, boostLabel, clampNum, megaFor,
-  buildConfigSig, spSum, spSumClass, type BuildOption,
-} from "../../../components/build/inputs.tsx";
+import { BuildPickerButton, ItemCombo } from "../../../components/build/inputs.tsx";
+import { megaFor } from "../../../lib/lookup.ts";
+import { clampNum, buildConfigSig, spSum, spSumClass, type BuildOption } from "../../../lib/buildState.ts";
 import { useMetaUsage } from "../../../lib/metaUsage.ts";
 import {
   boostedStat, curHPOf, effectiveEntry, finalStat, makeMon,
@@ -29,12 +28,18 @@ import {
 import { ABILITY_NEEDS_TRIGGER } from "../../../lib/calc-engine/semantics.ts";
 
 import { MonNameRow, MonPortrait } from "../../../components/build/MonIdentity.tsx";
-export { MonNameRow, MonPortrait } from "../../../components/build/MonIdentity.tsx";
+import { StageSelect } from "../../../components/build/StageSelect.tsx";
+import { SpControl } from "../../../components/build/SpControl.tsx";
+import { NatureCombo } from "../../../components/build/NatureCombo.tsx";
+import { ItemFieldLabel, StatusFieldLabel } from "../../../components/build/FieldLabels.tsx";
+import { AdaptiveSelect } from "../../../components/AdaptiveSelect.tsx";
+import { StatusSelect } from "../../../components/build/StatusSelect.tsx";
+import { SpreadPresets } from "./SpreadPresets.tsx";
+import "./styles.stats.css";
 
 export function MonEditor({
-  label, mon, setMon, dex, natures, items, format, onSetPick, keep = true,
+  mon, setMon, dex, natures, items, format, onSetPick, keep = true,
 }: {
-  label: string;
   mon: MonState;
   setMon: Dispatch<SetStateAction<MonState>>;
   dex: DexIndexEntry[];
@@ -130,8 +135,8 @@ export function MonEditor({
     <div className="mon-editor">
       <div className="mon-id">
         <MonPortrait entry={entry} name={name} member={member} />
-        <MonNameRow slug={mon.slug} item={mon.item} dex={dex} items={items} pickerKey={label}
-          actions={editorActions} identityShown
+        <MonNameRow slug={mon.slug} item={mon.item} dex={dex} items={items}
+          actions={editorActions}
           onSpecies={(slug) => setMon((s) => (s.slug === slug ? s : makeMon(slug)))}
           // A Mega picked here is stored as the Mega species; its stone is pinned by the effect
           // above, so the two controls can never disagree again.
@@ -140,31 +145,24 @@ export function MonEditor({
 
       <div className="mon-build-row">
         <label>{t("calc.ability")}
-          <select value={mon.ability}
-            onChange={(e) => setMon((s) => ({ ...s, ability: e.target.value, abilityOn: null }))}>
+          <AdaptiveSelect value={mon.ability}
+            onValueChange={(value) => setMon((s) => ({ ...s, ability: value, abilityOn: null }))}>
             <option value="">—</option>
             {(mega ?? literal)?.abilities.map((a) => (
               <option key={a.name} value={a.name}>{displayName(a, lang)}</option>
             ))}
-          </select>
+          </AdaptiveSelect>
         </label>
         <label>{t("calc.nature")}
-          <select value={mon.nature}
-            onChange={(e) => setMon((s) => ({ ...s, nature: e.target.value }))}>
-            <NatureOptions natures={natures} usage={usage} />
-          </select>
+          <NatureCombo value={mon.nature} natures={natures} usage={usage}
+            onChange={(nature) => setMon((s) => ({ ...s, nature }))} />
         </label>
-        <label>{t("calc.item")}
-          <ItemCombo idKey={label} value={mon.item} items={items} disabled={!!requiredStone} usage={usage}
+        <label><ItemFieldLabel value={mon.item} items={items} />
+          <ItemCombo value={mon.item} items={items} disabled={!!requiredStone} usage={usage}
             onChange={(item) => setMon((s) => s.item === item ? s : { ...s, item })} />
         </label>
-        <label>{t("calc.status")}
-          <select value={mon.status}
-            onChange={(e) => setMon((s) => ({ ...s, status: e.target.value }))}>
-            {STATUSES.map((st) => (
-              <option key={st} value={st === "Healthy" ? "" : st}>{t(`status.${st}`)}</option>
-            ))}
-          </select>
+        <label><StatusFieldLabel value={mon.status} />
+          <StatusSelect value={mon.status} onChange={(status) => setMon((s) => ({ ...s, status }))} />
         </label>
       </div>
 
@@ -176,13 +174,17 @@ export function MonEditor({
         </label>
       )}
 
-      <div className="stat-table">
+      <div className="stat-table stat-investment-table">
         <div className="stat-table-head">
           <span>{t("calc.stat")}</span>
           <span>{t("calc.base")}</span>
-          <span className="stat-head-sp">SP
-            <span className={`sp-sum num ${spSumClass(spTotal)}`}>{spTotal}/66</span>
-          </span>
+          <div className="stat-head-investment">
+            <span className="stat-head-sp">SP
+              <span className={`sp-sum num ${spSumClass(spTotal)}`}>{spTotal}/66</span>
+            </span>
+            <SpreadPresets base={entry?.stats} build={mon} natures={natures}
+              onPick={(preset) => setMon((current) => ({ ...current, ...preset }))} />
+          </div>
           <span>{t("calc.boosts")}</span>
           <span>{t("calc.final")}</span>
           <span>{t("calc.current")}</span>
@@ -191,55 +193,25 @@ export function MonEditor({
           <div className="stat-table-row" key={key}>
             <span className="stat-name">{key.toUpperCase()}</span>
             <span className="num muted">{entry?.stats[key] ?? "—"}</span>
-            <input type="number" min={0} max={32} step={1} className="num"
-              value={mon.sps[key] ?? 0} aria-label={`${key} SP`}
-              onChange={(e) => {
-                const value = clampNum(e.target.value, 0, 32);
+            <SpControl stat={key} value={mon.sps[key] ?? 0}
+              onChange={(value) => {
                 setMon((s) => (s.sps[key] ?? 0) === value ? s
                   : { ...s, sps: { ...s.sps, [key]: value } });
               }} />
             {key === "hp"
-              ? (() => {
-                  // HP's "boost" cell holds the damage taken so far instead: current HP is a
-                  // quantity of exactly this stat, so it belongs on this row rather than in a
-                  // separate block that repeats the same maximum underneath.
-                  const pct = maxHP > 0 ? Math.round((curHP / maxHP) * 100) : 0;
-                  const tone = pct > 50 ? "ok" : pct > 20 ? "warn" : "low";
-                  return (
-                    <span className={`boost-slider hp ${tone}`}>
-                      <span className="boost-lane">
-                        <span className="boost-track" aria-hidden
-                          style={{ ["--fill-left" as string]: "0%",
-                                   ["--fill-width" as string]: `${pct}%` }} />
-                        <input type="range" min={1} max={Math.max(1, maxHP)} step={1}
-                          value={curHP} disabled={!maxHP} aria-label={t("calc.curHP")}
-                          onChange={(e) => setMon((s) => ({ ...s, curHP: Number(e.target.value) }))} />
-                      </span>
-                      <span className="boost-read num">{pct}%</span>
-                    </span>
-                  );
-                })()
-              : (() => {
-                  const stage = mon.boosts[key as "atk"] ?? 0;
-                  const half = (Math.abs(stage) / 6) * 50;
-                  return (
-                    <span className={`boost-slider ${stage > 0 ? "up" : stage < 0 ? "down" : "flat"}`}>
-                      <span className="boost-lane">
-                        {/* Own track, filled from the CENTRE: the native one fills from the left,
-                            so a neutral 0 looked like a drop. */}
-                        <span className="boost-track" aria-hidden
-                          style={{ ["--fill-left" as string]: stage < 0 ? `${50 - half}%` : "50%",
-                                   ["--fill-width" as string]: `${half}%` }} />
-                        <input type="range" min={-6} max={6} step={1} value={stage}
-                          aria-label={`${key} boost`}
-                          onChange={(e) => setMon((s) => ({
-                            ...s, boosts: { ...s.boosts, [key]: Number(e.target.value) },
-                          }))} />
-                      </span>
-                      <span className="boost-read num">{boostLabel(stage)}</span>
-                    </span>
-                  );
-                })()}
+              ? <span className="stat-hp-percent">
+                  <input type="number" min={1} max={100} step={1} inputMode="numeric" className="num"
+                    value={maxHP > 0 ? Math.round(curHP / maxHP * 100) : 0} disabled={!maxHP}
+                    aria-label={`${t("calc.curHP")} %`} onFocus={(event) => event.currentTarget.select()}
+                    onChange={(event) => {
+                      const pct = clampNum(event.target.value, 1, 100);
+                      setMon((s) => ({ ...s, curHP: pct === 100 ? null : Math.max(1, Math.round(maxHP * pct / 100)) }));
+                    }} />
+                  <span aria-hidden>%</span>
+                </span>
+              : <StageSelect value={mon.boosts[key] ?? 0} label={`${key.toUpperCase()} ${t("calc.boosts")}`}
+                  onChange={(stage) => setMon((s) => (s.boosts[key] ?? 0) === stage ? s
+                    : { ...s, boosts: { ...s.boosts, [key]: stage } })} />}
             {/* The stat value is what the BUILD computes to, and it says why it is that number:
                 which way the nature bent it, and whether the investment is already at the 32-point
                 ceiling. HP's is the maximum — a plain fact about the build, like every other row. */}
@@ -303,7 +275,7 @@ export function buildCardOptionForMon(
 }
 
 /** Small read-only echo of a mon, used by the team strips. */
-export function MonAvatar({ mon, dex, items, active, onClick, onRemove, title }: {
+export function MonAvatar({ mon, dex, items, active, onClick, onRemove, title, slot }: {
   mon: MonState;
   dex: DexIndexEntry[];
   items: ItemRef[];
@@ -311,6 +283,8 @@ export function MonAvatar({ mon, dex, items, active, onClick, onRemove, title }:
   onClick: () => void;
   onRemove?: () => void;
   title?: string;
+  /** Roster position for a library drop, independent of which member is currently selected. */
+  slot?: number;
 }) {
   const { lang } = useLang();
   const t = useCalcT();
@@ -323,7 +297,7 @@ export function MonAvatar({ mon, dex, items, active, onClick, onRemove, title }:
     ? <GameImage assetKey={entry.key} role="dense" alt={name} className="mini" />
     : <img className="mini team-chip-empty" src={PLACEHOLDERS.pokemon} alt="" aria-hidden />;
   return (
-    <span className={`team-chip${active ? " on" : ""}`}>
+    <span className={`team-chip${active ? " on" : ""}`} data-team-slot={slot}>
       <button type="button" className="team-chip-btn" onClick={onClick}
         aria-pressed={active} title={title ?? name}>
         {preview

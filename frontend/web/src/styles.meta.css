@@ -21,6 +21,24 @@
 .mc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .mc-strip { height: 4px; background: linear-gradient(90deg, var(--acc) 0 50%, var(--acc2) 50% 100%); }
 
+/* Page-only controls share the card's frame and top stripe. The Pokemon remains the page heading. */
+.mc-viewbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 10px 20px;
+  border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--panel-2) 26%, var(--panel)); }
+.mc-view-switches { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.mc-viewbar .seg { padding: 2px; border-radius: 10px; }
+.mc-viewbar .seg button { min-height: 28px; padding: 4px 11px; border-radius: 7px; font-size: 12px; }
+/* As tall as the segmented control beside it: its button plus 2px padding and 1px border each side. */
+.mc-viewbar .meta-chip { min-height: 34px; border-radius: 10px; }
+.mc-view-notes { flex: 1; margin-left: auto; text-align: right; }
+@media (max-width: 760px) {
+  .mc-viewbar { padding: 8px 12px; gap: 8px; }
+  .mc-view-switches { flex-basis: 100%; }
+}
+@media (pointer: coarse) {
+  .mc-viewbar .seg button { min-height: 44px; }
+  .mc-viewbar .meta-chip { min-height: 50px; }
+}
+
 /* ── hero ─────────────────────────────────────────────────────────────── */
 /* The identity column is exactly half the card, so its edge continues the split of the SP / teammate
    row and of the KO card below (1.77 = 0.95 + 0.82). */
@@ -166,9 +184,44 @@
 .mc-dl.up { color: var(--ink); }
 .mc-dl.minor { color: var(--sub); opacity: 0.6; }
 .mc-dl.new { color: var(--acc-ink); font: 700 10.5px var(--font-ui); }
+/* Percentage-point comparisons have their own scale; rank changes live in styles.metarank.css.
+   Counts below five samples stay neutral. The column widens a little while it compares. */
+.mc-dl.cmp {
+  justify-self: end; display: inline-flex; align-items: center; gap: 2px; height: 20px; padding: 0 7px 0 6px;
+  border-radius: 6px; font: 600 11.5px/1 var(--font-num); font-variant-numeric: tabular-nums;
+}
+.mc-dl.cmp .ar { font-size: 8px; }
+.mc-dl.cmp.up { --cmp-direction: var(--success); }
+.mc-dl.cmp.down { --cmp-direction: var(--danger); }
+.mc-dl.cmp[data-degree="small"] {
+  --cmp-tone: var(--warning); --cmp-ink: #281b03; --cmp-muted-wash: 20%;
+}
+.mc-dl.cmp[data-degree="medium"] {
+  --cmp-tone: color-mix(in srgb, var(--cmp-direction) 80%, var(--warning));
+  --cmp-ink: var(--panel); --cmp-muted-wash: 28%;
+}
+.mc-dl.cmp[data-degree="large"] {
+  --cmp-tone: var(--cmp-direction); --cmp-ink: var(--panel); --cmp-muted-wash: 40%;
+}
+.mc-dl.cmp[data-degree] { color: var(--cmp-ink); font-weight: 700; background: var(--cmp-tone); }
+.mc-dl.cmp[data-degree].minor {
+  color: color-mix(in srgb, var(--cmp-tone) 72%, var(--ink));
+  background: color-mix(in srgb, var(--cmp-tone) var(--cmp-muted-wash), var(--panel)); opacity: 1;
+}
+.mc-dl.cmp small { font-size: 10px; font-weight: 700; opacity: 0.85; }
+.mc-dl.cmp.count { color: var(--ink); background: var(--panel-2); font-size: 11px; }
+.mc-dl.cmp.mark { color: var(--ink); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-strong);
+  font: 700 11px/1 var(--font-ui); }
+.mc-compare .mc-row:not(.no-delta) { grid-template-columns: 18px minmax(0, 1fr) 54px 56px; column-gap: 8px; }
+.mc-compare .mc-sp-row { grid-template-columns: 18px repeat(6, minmax(0, 1fr)) 54px 56px; }
+.mc-cmp-pop { display: grid; gap: 2px; font-size: 12px; }
+.mc-cmp-pop .muted { color: var(--sub); }
+.mc-tile-mark { position: absolute; top: 5px; right: 7px; }
+.mc-tile-mark .rank-dl { font-size: 10.5px; }
 
 .mc-sp-row { display: grid; grid-template-columns: 18px repeat(6, minmax(0, 1fr)) 54px 44px; column-gap: 8px; align-items: center;
   height: var(--mc-row); padding-right: 4px; border-radius: 6px; }
+.mc-sp-row.no-delta { grid-template-columns: 18px repeat(6, minmax(0, 1fr)) 54px; }
 .mc-sp-cols { height: 22px; color: var(--sub); font-size: 11.5px; text-align: center; white-space: nowrap; }
 .mc-sp-cols .end { text-align: right; }
 .mc-sp-slot { display: block; min-width: 0; }
@@ -190,9 +243,14 @@
 
 .mc-body-state { padding: 28px 24px; color: var(--sub); text-align: center; }
 
-.mc-brand { display: flex; align-items: center; gap: 8px; color: var(--sub); font-size: 12.5px; }
+.mc-brand { display: flex; align-items: center; gap: 8px; color: var(--sub); font-size: 12.5px; white-space: nowrap; }
 .mc-brand img { width: 18px; height: 18px; }
+.mc-brand > img, .mc-brand > span { flex-shrink: 0; }
+.mc-brand-source { margin-left: auto; text-align: right; font-size: 12px; }
 .mc-brand .mc-share-btn { margin-left: auto; }
+.mc-share-partners { display: flex; flex-direction: column; }
+.mc-share-host { align-self: flex-end; margin-top: auto; padding-top: 10px;
+  color: var(--sub); font: 500 12px/1.5 var(--font-ui); letter-spacing: 0.02em; }
 .mc-share-btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px;
   border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--ink); font-size: 12px; cursor: pointer; }
 .mc-share-btn:hover { border-color: var(--line-strong); }
@@ -257,9 +315,6 @@
 /* ── share dialog ─────────────────────────────────────────────────────── */
 .mc-share-options { display: flex; flex-wrap: wrap; gap: 10px 22px; }
 .mc-share-opt { display: inline-flex; align-items: center; gap: 8px; color: var(--sub); font-size: 13px; }
-.mc-share-seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); }
-.mc-share-seg button { padding: 3px 11px; border: 0; border-radius: 6px; background: transparent; color: var(--sub); font-size: 13px; cursor: pointer; }
-.mc-share-seg button.on { background: var(--panel); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgb(16 26 47 / 0.12); }
 .mc-share-stage { min-width: 0; }
 .mc-share-preview { position: relative; margin: 0 auto; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; }
 .mc-share-scale { transform-origin: 0 0; }

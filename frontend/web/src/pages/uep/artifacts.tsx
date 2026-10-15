@@ -12,7 +12,8 @@ import { useLang } from "../../i18n.ts";
 import { useUepT, optionalUepKey } from "./messages.ts";
 import { TuneCard } from "../calc/TuneCard.tsx";
 import { MonRow } from "../../components/team/MonChip.tsx";
-import { readTeamMembers, useDexByName, type TeamMemberish } from "../../components/team/TeamCard.tsx";
+import { readTeamMembers, type TeamMemberish } from "../../lib/team.ts";
+import { useDexByName } from "../../hooks.ts";
 
 const obj = (v: unknown): Record<string, unknown> | null =>
   v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;

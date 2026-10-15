@@ -1,21 +1,19 @@
-/** The inspector every matchup cell opens into — the KO grid, the check grid, and the actual-sets
- * workspace all render THIS, so a cell reads the same wherever you clicked it.
- *
- * Each grid used to hand-roll its own panel: different container classes (`notice`/`rolls` here,
- * `md-line` there), different heads, and different amounts of information — the KO grid showed the
- * engine's caveats and both sides' sets, the actual-sets grid showed neither. Callers now normalise
- * their facts into the shapes below and this component owns the layout. */
-import { useCallback, useRef, type ReactNode } from "react";
+/** Shared compact result card for every matchup table. Complete builds live in the name previews
+ * and optional image export; callers supply immutable calculation coordinates and facts. */
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { useMatchupT } from "../pages/matchup/messages.ts";
 import { useDamageText } from "../lib/damageText.tsx";
 import { BuildSetSummary, type BuildCardOption } from "./BuildPicker.tsx";
 import { ExportMenu } from "./ExportMenu.tsx";
+import { EntityHover } from "./EntityHover.tsx";
+import { IconX } from "@tabler/icons-react";
+import "../styles.matchup.css";
 
 
 /** A KO verdict in the shape `damageText.ko` renders. Callers MUST prefer the engine's
  * recovery-aware verdict over static rolls: Leftovers can turn a static 2HKO into an 87.5% chance,
  * and labelling that "guaranteed" contradicts the grade, which is computed from the real number. */
-export interface KoVerdict {
+interface KoVerdict {
   text?: string | null;
   n?: number | null;
   guaranteed?: boolean | null;
@@ -28,32 +26,61 @@ export interface InspectorDamage {
   maxPercent: number;
   ko: KoVerdict;
   /** Engine caveats (multi-hit approximation, ability shifts…). */
-  caveats?: ReactNode[];
+  caveats?: string[];
 }
 
-export interface InspectorSpeed {
+interface InspectorSpeed {
   mine: number | null;
   theirs: number | null;
   fasterName?: string | null;
 }
 
 export interface InspectorBuild {
-  /** Used only by the plain-text copy; the visible title already establishes both names. */
+  /** Names the configuration in the plain-text copy and complete image export. */
   label: string;
   option: BuildCardOption | null;
   index?: number;
 }
 
+/** The name previews exactly the configuration used for this result, without the dex facts. */
+export function InspectorMon({ build, children }: { build?: InspectorBuild; children: ReactNode }) {
+  if (!build?.option) return <>{children}</>;
+  return <EntityHover kind="spread" name="" link={false}
+    previewAddon={<BuildSetSummary option={build.option} index={build.index ?? 0} />}>
+    {children}
+  </EntityHover>;
+}
+
+export function InspectorToolbar({ children, onClear, empty }: {
+  children: ReactNode; onClear: () => void; empty: boolean;
+}) {
+  const t = useMatchupT();
+  return <div className="matchup-result-toolbar">
+    {children}
+    <span className="matchup-clear-group">
+      <small className="muted">{t("matchup.resultLimit")}</small>
+      <button type="button" className="second-btn matchup-clear" onClick={onClear} disabled={empty}
+        aria-label={t("matchup.clearDetails")} title={t("matchup.clearDetails")}>{t("matchup.clear")}</button>
+    </span>
+  </div>;
+}
+
 export function CellInspector({
-  panelRef, head, grade, gradeFacts, directions, speed, builds, calculate, extra,
+  head, headNotes = [], grade, gradeFacts, directions = [], speed, builds, calculate, extra, onRemove, panelRef,
+  className = "", loading = false,
 }: {
-  panelRef?: React.Ref<HTMLDivElement>;
+  className?: string;
+  loading?: boolean;
+  onRemove: () => void;
+  panelRef?: (node: HTMLDivElement | null) => void;
   head: ReactNode;
+  /** Caveats for a single attack described by the heading. */
+  headNotes?: string[];
   grade?: string | null;
   /** Short qualifiers shown next to the atomic grade (C0 kind, contested…). */
   gradeFacts?: ReactNode[];
   /** Both directions, in the order the caller wants them read. */
-  directions: Array<{ label: ReactNode; damage: InspectorDamage | null }>;
+  directions?: Array<{ label: ReactNode; damage: InspectorDamage | null }>;
   speed?: InspectorSpeed | null;
   /** Same complete configuration cards used by the table-head popover. */
   builds?: InspectorBuild[];
@@ -66,9 +93,21 @@ export function CellInspector({
   const rootRef = useRef<HTMLDivElement>(null);
   const attachRef = useCallback((node: HTMLDivElement | null) => {
     rootRef.current = node;
-    if (typeof panelRef === "function") panelRef(node);
-    else if (panelRef) (panelRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    panelRef?.(node);
   }, [panelRef]);
+  const [includeBuilds, setIncludeBuilds] = useState(true);
+  const [exportActive, setExportActive] = useState(false);
+  const exportWidth = (width: number) => includeBuilds ? Math.max(760, width) : width;
+  const prepareShot = (node: HTMLElement) => {
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.classList.add("md-export");
+    if (includeBuilds) clone.classList.add("md-export-with-builds");
+    clone.style.cssText = `position:fixed;left:-10000px;top:0;width:${exportWidth(node.getBoundingClientRect().width)}px;max-width:none;margin:0;`;
+    clone.setAttribute("aria-hidden", "true");
+    clone.querySelectorAll<HTMLElement>(".md-build-cards").forEach((el) => { el.hidden = !includeBuilds; });
+    document.body.append(clone);
+    return { node: clone, dispose: () => clone.remove() };
+  };
 
   const speedResult = speed?.mine != null && speed.theirs != null && speed.mine === speed.theirs
     ? t("matchup.faster.tie")
@@ -80,9 +119,12 @@ export function CellInspector({
   const plainText = (): string => {
     const root = rootRef.current;
     if (!root) return "";
-    const clean = (node: Element | null) => (node as HTMLElement | null)?.innerText
+    const clean = (node: Element | null) => ((node as HTMLElement | null)?.innerText || node?.textContent || "")
       .split("\n").map((line) => line.trim()).filter(Boolean).join("\n") ?? "";
-    const sections = [clean(root.querySelector(".md-head-summary"))];
+    const heading = root.querySelector(".md-head-summary")?.cloneNode(true) as HTMLElement | undefined;
+    heading?.querySelectorAll(".hp-warning").forEach((note) => note.remove());
+    const sections = [heading?.textContent?.replace(/\s+/g, " ").trim() ?? "", ...headNotes,
+      clean(root.querySelector(".md-grade-facts"))];
     root.querySelectorAll<HTMLElement>(".md-build-slot").forEach((slot) => {
       const readAll = (selector: string) => Array.from(slot.querySelectorAll(selector))
         .map((node) => clean(node)).filter(Boolean);
@@ -101,8 +143,12 @@ export function CellInspector({
       ];
       sections.push(lines.join("\n"));
     });
-    root.querySelectorAll<HTMLElement>(".md-directions .md-dir").forEach((dir) => {
-      const body = clean(dir);
+    root.querySelectorAll<HTMLElement>(".md-directions .md-dir").forEach((dir, index) => {
+      const verdict = dir.querySelector(".md-dir-result > span[title]");
+      const result = clean(dir.querySelector(".md-dir-result"));
+      const fullResult = verdict ? result.replace(clean(verdict), verdict.getAttribute("title") || clean(verdict)) : result;
+      const body = [clean(dir.querySelector(".md-dir-label-text")), fullResult,
+        ...(directions[index]?.damage?.caveats ?? [])].filter(Boolean).join("\n");
       if (body) sections.push(body);
     });
     const extraText = clean(root.querySelector(".md-extra"));
@@ -111,99 +157,85 @@ export function CellInspector({
   };
 
   return (
-    <div ref={attachRef} className="panel matchup-detail result-inspector" tabIndex={-1}>
+    <div ref={attachRef} className={`panel matchup-detail result-inspector${className ? ` ${className}` : ""}`}
+         aria-busy={loading || undefined} tabIndex={-1}>
       <div className="md-head">
         <div className="md-head-summary">
-          <span className="md-head-pair">{head}</span>
+          <span className="md-head-pair">{head}{headNotes.length > 0 && (
+            <span className="hp-warning" tabIndex={0} role="img"
+              aria-label={headNotes.join("；")} data-tooltip={headNotes.join("\n")}>
+              <span aria-hidden>!</span>
+            </span>
+          )}</span>
           {speed && (
-            <span className="md-head-speed num">
-              {t("matchup.speed")}: {speed.mine ?? "—"} {t("matchup.vs")} {speed.theirs ?? "—"}
-              {speedResult ? ` · ${speedResult}` : ""}
+            <span className="md-head-speed num" title={speedResult ?? undefined}>
+              {t("matchup.speed")} {speed.mine ?? "—"}{" "}
+              {speed.mine != null && speed.theirs != null
+                ? speed.mine === speed.theirs ? "=" : speed.mine > speed.theirs ? ">" : "<"
+                : t("matchup.vs")}{" "}{speed.theirs ?? "—"}
             </span>
           )}
           {grade && <span className={`grade-pill grade-${grade}`}>{grade}</span>}
-          {gradeFacts?.map((fact, index) => <span className="md-head-fact" key={index}>{fact}</span>)}
         </div>
         <div className="md-head-actions">
           {calculate}
-          <ExportMenu className="md-copy" text={plainText} shot={rootRef} exclude=".md-head-actions, .keep-mon"
+          <ExportMenu className="md-copy" text={plainText} shot={rootRef} exclude=".md-head-actions, .md-remove, .keep-mon"
+            prepareShot={prepareShot} imageWidth={exportWidth} onExportActiveChange={setExportActive}
+            imageOptions={<span className="md-export-mode" role="group" aria-label={t("matchup.exportBuilds")}>
+              <button type="button" role="menuitemradio" aria-checked={!includeBuilds}
+                onClick={() => setIncludeBuilds(false)}>{t("matchup.exportBrief")}</button>
+              <button type="button" role="menuitemradio" aria-checked={includeBuilds}
+                onClick={() => setIncludeBuilds(true)}>{t("matchup.exportFull")}</button>
+            </span>}
             fileName={(scale) => `matchup_${new Date().toISOString().slice(0, 10)}_${scale}x.png`} />
+          <button type="button" className="mini-x md-remove" onClick={onRemove}
+            aria-label={t("matchup.removeDetail")} title={t("matchup.removeDetail")}>
+            <IconX size={15} stroke={1.8} aria-hidden />
+          </button>
         </div>
       </div>
-      {!!builds?.length && (
-        <div className="md-build-cards">
+      {!!gradeFacts?.length && <div className="md-grade-facts">
+        {gradeFacts.map((fact, index) => <span className="md-head-fact" key={index}>{fact}</span>)}
+      </div>}
+      {exportActive && !!builds?.length && (
+        <div className="md-build-cards" hidden>
           {builds.map((build, index) => (
             <div className="build-card md-build-slot" data-copy-label={build.label}
-                 key={build.option?.key ?? build.label + "-" + index}>
+                 key={`${index}:${build.option?.key ?? build.label}`}>
               {build.option
-                ? <BuildSetSummary option={build.option} index={build.index ?? index} keep="meta" />
+                ? <BuildSetSummary option={build.option} index={build.index ?? index} title={build.label} />
                 : <span className="md-build-missing">—</span>}
             </div>
           ))}
         </div>
       )}
-      <div className="md-directions">
+      {directions.length > 0 && <div className="md-directions">
         {directions.map(({ label, damage }, di) => (
           <div key={di} className="md-dir">
-            <div className="md-line md-dir-label">{label}</div>
+            <div className="md-line md-dir-label">
+              <span className="md-dir-label-text">{label}</span>
+            </div>
             {damage ? (
-              <>
-                <div className="md-line num">
-                  {damageText.name(damage.move)} · {damage.minPercent}–{damage.maxPercent}%
-                </div>
-                <div className="md-line">{damageText.ko(damage.ko as never)}</div>
-                {damage.caveats?.map((c, i) => (
-                  <div key={i} className="md-line md-caveat">{c}</div>
-                ))}
-              </>
-            ) : <div className="md-line md-caveat">—</div>}
+              <div className="md-line md-dir-result">
+                <span>{damageText.name(damage.move)}</span>{" "}
+                <span className="num">{damage.minPercent}–{damage.maxPercent}%</span>{" "}
+                <span title={damageText.ko(damage.ko as never)}>
+                  {damageText.ko((damage.ko.n != null ? { ...damage.ko, text: null } : damage.ko) as never)}
+                </span>
+              </div>
+            ) : <div className="md-line md-dir-result md-caveat">{loading ? t("state.loading") : "—"}</div>}
+            {!!damage?.caveats?.length && <span className="hp-warning" tabIndex={0} role="img"
+              aria-label={damage.caveats.join("；")} data-tooltip={damage.caveats.join("\n")}>
+              <span aria-hidden>!</span>
+            </span>}
           </div>
         ))}
-      </div>
+      </div>}
       {extra && (
         <div className="md-extra">
           {extra}
         </div>
       )}
-    </div>
-  );
-}
-
-
-/** The processed set one side was computed with. Lives here rather than in a page so all three
- * grids show it identically (the actual-sets grid previously showed no sets at all). */
-export interface InspectorSet {
-  species: string;
-  runForm?: string | null;
-  item?: string | null;
-  ability?: string | null;
-  nature?: string | null;
-  moves?: string[] | null;
-  sps?: Record<string, number> | null;
-}
-
-export function SetBlock({ title, set, prose }: {
-  title: ReactNode;
-  set: InspectorSet | undefined;
-  /** Defaults to the entity-aware renderer, so callers that just want the block need not wire it. */
-  prose?: (text: string) => ReactNode;
-}) {
-  const damageText = useDamageText();
-  prose = prose ?? damageText.name;
-  if (!set) return null;
-  const line1 = [set.item, set.ability, set.nature].filter(Boolean).join(" · ");
-  const sps = set.sps
-    ? Object.entries(set.sps).filter(([, v]) => (v ?? 0) > 0)
-        .map(([k, v]) => `${k.toUpperCase()} ${v}`).join(" / ")
-    : "";
-  return (
-    <div className="md-set">
-      <div className="ms-head">{title}{set.runForm && set.runForm !== set.species && (
-        <span className="muted">({prose(set.runForm)})</span>
-      )}</div>
-      {line1 && <div className="ms-line">{prose(line1)}</div>}
-      {set.moves && set.moves.length > 0 && <div className="ms-line">{prose(set.moves.join(" / "))}</div>}
-      {sps && <div className="ms-line num">{sps}</div>}
     </div>
   );
 }

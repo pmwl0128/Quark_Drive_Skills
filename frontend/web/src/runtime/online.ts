@@ -8,20 +8,22 @@
 import {
   ActualMatchupResponseDtoSchema, BuilderJobDtoSchema, BuilderStartDtoSchema,
   CapabilitiesSchema, DamageBatchResultDtoSchema,
-  DamageResultDtoSchema, DiagnoseReportDtoSchema, MetaDetailDtoSchema, OppCacheDtoSchema,
-  OnlineQuotaDtoSchema, OppCheckGridDtoSchema, OppKoGridDtoSchema, OppSetCatalogDtoSchema,
+  DamageResultDtoSchema, DiagnoseReportDtoSchema, MetaDetailDtoSchema,
+  OnlineQuotaDtoSchema, OppCheckGridDtoSchema, OppDetailsDtoSchema, OppKoGridDtoSchema, OppSetCatalogDtoSchema,
   QaAnswerDtoSchema, QaProgressDtoSchema, RankingDtoSchema,
   LearnersDtoSchema, MetaFacetsDtoSchema, MetaKoDtoSchema,
-  MetaKoTrendDtoSchema, SpeedBatchResultDtoSchema, TrendDtoSchema, UsageTrendDtoSchema,
+  MetaKoTrendDtoSchema, SpeedBatchResultDtoSchema, TopMetaDetailDtoSchema, TopMetaRankingDtoSchema,
+  TrendDtoSchema, UsageTrendDtoSchema,
   TuneResultDtoSchema,
   type ActualMatchupRequestDto, type BuilderJobDto, type BuilderRequestDto,
   type BuilderStartDto, type Capabilities,
   type DamageBatchResultDto, type DamageRequestDto, type DamageResultDto,
   type DiagnoseReportDto, type DiagnoseRequestDto, type FormatId,
-  type OnlineQuotaDto, type OppCacheDto, type OppCheckGridDto, type OppKoGridDto,
+  type OnlineQuotaDto, type OppCheckGridDto, type OppKoGridDto,
   type OppSetCatalogDto,
   type PokemonCardDto, type QaAnswerDto, type QaProgressDto,
   type QaRequestDto, type ResolveEntryDto, type SpeedBatchResultDto, type SpeedInputDto,
+  type TopMetaScopeId,
 } from "@pokemon-champions/protocol";
 import { engineDamage, engineDamageBatch, engineSpeedBatch } from "../lib/calc-engine/index.ts";
 import { loadTeamEvidence } from "./teamEvidence.ts";
@@ -126,6 +128,16 @@ export class OnlineAdapter implements RuntimeAdapter {
     return MetaFacetsDtoSchema.parse(await fetchJson(this.url(`/meta/facets_${format}.json`)));
   }
 
+  async topRanking(format: FormatId, scope: TopMetaScopeId) {
+    return TopMetaRankingDtoSchema.parse(
+      await fetchJson(this.url(`/meta/top_ranking_${format}_${scope}.json`)));
+  }
+
+  async topDetail(format: FormatId, slug: string) {
+    return TopMetaDetailDtoSchema.parse(
+      await fetchJson(this.url(`/meta/top_detail_${format}/${slug}.json`)));
+  }
+
   dexIndex(): Promise<DexIndexEntry[]> {
     return loadProjectionDexIndex(this.cfg.projectionBase);
   }
@@ -196,8 +208,12 @@ export class OnlineAdapter implements RuntimeAdapter {
   /** Opponent matchup cache: the M5 KO grid is shipped static data (retained observed builds, no team,
    * no compute), exported to the projection like ranking/detail — a format with no built cache 404s to
    * the UI's "not built" notice, matching the bridge. */
-  async oppCache(format: FormatId): Promise<OppCacheDto> {
-    return OppCacheDtoSchema.parse(await this.teamSnapshot("oppcache", format));
+  async oppDetails(format: FormatId, slug: string) {
+    const value = await loadTeamEvidence(native => fetchJson(this.url(
+      `/matchup/details_${format}/${encodeURIComponent(slug)}${native ? ".native" : ""}.json`)));
+    if ((value as { available?: boolean }).available === false)
+      throw new HttpError(404, "Native team evidence is not yet sufficient");
+    return OppDetailsDtoSchema.parse(value);
   }
 
   async oppSets(format: FormatId): Promise<OppSetCatalogDto> {

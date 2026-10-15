@@ -10,8 +10,6 @@ import { useAssistT } from "./messages.ts";
 import {
   clearRecords, deleteRecord, freshness, isCutOff, relativeTime, type AssistKind, type AssistRecord,
 } from "../../lib/runRecords.ts";
-export { relativeTime } from "../../lib/runRecords.ts";
-export { TeamDots } from "../../components/TeamDots.tsx";
 import type { FormatId } from "@pokemon-champions/protocol";
 
 /** Large read-only views load when a result is opened, without suspending its input or progress. */
@@ -32,10 +30,10 @@ export function Elapsed({ startedAt }: { startedAt: number }) {
   return <span className="aw-elapsed num">{t("diag.progress.elapsed").replace("{seconds}", String(seconds))}</span>;
 }
 
-export type RecordState = "running" | "interrupted" | "failed" | "stale" | "done";
+type RecordState = "running" | "interrupted" | "failed" | "stale" | "done";
 
 /** How a record reads now: still running, cut off, failed, done on data since replaced, or done. */
-export function useRecordState(record: AssistRecord, formats: FormatId[]): RecordState {
+function useRecordState(record: AssistRecord, formats: FormatId[]): RecordState {
   const { capabilities } = useRuntime();
   if (record.status === "running") return isCutOff(record) ? "interrupted" : "running";
   if (record.status === "failed") return "failed";
@@ -91,7 +89,7 @@ function ClearRecords({ kind }: { kind: AssistKind }) {
   );
 }
 
-export interface StripCard {
+interface StripCard {
   /** The card's picture: a team's members, a brief. */
   body: ReactNode;
   formats: FormatId[];

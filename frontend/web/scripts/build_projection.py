@@ -18,7 +18,10 @@ Output (default frontend/web/public/projection/, gitignored):
     meta/ko_{single,double}/<slug>.json       MetaKoDto (lazy per-pokemon; own snapshot clock)
     meta/ko_trend_{single,double}/<slug>.json MetaKoTrendDto (lazy; the KO axis's own history)
     meta/facets_{single,double}.json          MetaFacetsDto (filter-rail inverted index)
+    meta/top_ranking_{single,double}_{season,rule}.json  TopMetaRankingDto (Top Meta, per scope)
+    meta/top_detail_{single,double}/<slug>.json          TopMetaDetailDto (lazy; both scopes)
     assets/                           image pack (full audit manifest + compact runtime index + files)
+    matchup/details_{single,double}/<slug>.json   species builds + reverse damage cells (lazy)
 
     python frontend/web/scripts/build_projection.py [--out DIR] [--ui-build-id ID]
 """
@@ -95,6 +98,17 @@ def runtime_asset_index(manifest: dict) -> dict:
             "files": {role: file["path"] for role, file in asset["files"].items()},
         } for asset in manifest["assets"]],
     }
+
+
+def write_matchup_details(out: Path, fmt: str, dto: dict, *, native: bool = False,
+                          slugs: set[str] | None = None) -> None:
+    """Emit bounded detail reads; native misses explicitly refuse expired handover evidence."""
+    species_slugs = {row["slug"] for row in dto.get("species", [])} | (slugs or set())
+    for slug in sorted(species_slugs):
+        detail = mappers.map_oppdetails(dto, slug) if dto.get("species") else None
+        suffix = ".native" if native else ""
+        write(out / "matchup" / f"details_{fmt}" / f"{slug}{suffix}.json",
+              detail if detail is not None else {"available": False})
 
 
 def load_usage_trend_store(path: Path, detail_slugs: set[str], fmt: str) -> dict:
@@ -351,9 +365,22 @@ def main() -> int:
             write(out / "meta" / f"facets_{fmt}.json",
                   {"season": season, "rule": rule, "format": fmt,
                    "facets": mappers.build_facets(details["rows"], ko_rows)})
+            # Top Meta (竞技环境 / 上位環境): the team skill's comparison, cropped and named by the
+            # same mappers the bridge serves live. One detail file per Pokemon carries BOTH scopes,
+            # so switching scope on the page costs no request; the in-game page reads the same file
+            # for its comparison column.
+            top = mappers.top_meta_docs(fmt, META_DATA, season, rule)
+            if top is None:
+                raise RuntimeError(f"required Top Meta table is missing: {rule}/{fmt}")
+            for scope in ("season", "rule"):
+                write(out / "meta" / f"top_ranking_{fmt}_{scope}.json",
+                      mappers.map_top_ranking(top[scope], top["slug_of"]))
+            for top_slug, top_name in top["by_slug"].items():
+                write(out / "meta" / f"top_detail_{fmt}" / f"{top_slug}.json",
+                      mappers.map_top_detail(top["season"], top["rule"], top_name, top["slug_of"]))
             print(f"  meta[{fmt}]: ranking + {len(details['rows'])} details + trend"
                   f" + {usage_count} usage trends + {ko_count} ko"
-                  f" + {ko_trend_count} ko trends + facets")
+                  f" + {ko_trend_count} ko trends + facets + top meta ({len(top['by_slug'])})")
 
             # opponent matchup cache (M5): the SAME shipped static cache the bridge maps live — a
             # standard-vs-standard KO grid + derived C2/C1/C0 checks, keyed only by (rule, format).
@@ -377,7 +404,7 @@ def main() -> int:
                 # for facts the client already holds).
                 oppchecks = mappers.map_oppcheck_grid(cache, mappers.derive_oppcheck_grid(cache))
                 # KO is the default view, but its cells need only a small verdict summary. Keep the
-                # full matrix for the detail panel and load it after a cell is opened.
+                # full matrix for legacy consumers; result cards read bounded species shards.
                 oppko = mappers.map_oppko_grid(cache)
                 # Calculator defaults and matchup build previews need only the processed real-build
                 # catalog. Shipping that slice separately avoids parsing the 15–17 MB matrix just
@@ -391,6 +418,7 @@ def main() -> int:
                 write(out / "matchup" / f"oppko_{fmt}.json", oppko)
                 write(out / "matchup" / f"oppchecks_{fmt}.json", oppchecks)
                 write(out / "matchup" / f"oppsets_{fmt}.json", oppsets)
+                write_matchup_details(out, fmt, oppcache)
                 if cache.get("built_for", {}).get("handover_receipt"):
                     native = mappers._oppcache_mod().load_cache(fmt, rule, native=True)
                     native_views = ({"oppcache": mappers.map_oppcache(native),
@@ -403,7 +431,9 @@ def main() -> int:
                     for name, doc in native_views.items():
                         strip_matchup_provenance(doc)
                         write(out / "matchup" / f"{name}_{fmt}.native.json", doc)
-                print(f"  matchup[{fmt}]: lean KO + check grids + set catalog; full detail cache "
+                    write_matchup_details(out, fmt, native_views["oppcache"], native=True,
+                                          slugs={row["slug"] for row in oppcache["species"]})
+                print(f"  matchup[{fmt}]: lean KO + check grids + set catalog + detail shards; full cache "
                       "(provenance stripped — public)")
     finally:
         pool.shutdown()

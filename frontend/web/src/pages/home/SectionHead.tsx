@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 import { typeColor } from "../../assets/icons.ts";
 import { Phrases } from "./Phrases.tsx";
 
-export type SectionMarkKind = "lab" | "glance" | "core";
+type SectionMarkKind = "lab" | "glance" | "core";
 
 const LAB = ["ko-ohko", "ko-2hko", "ko-3hko", "ko-slow"];
 const GLANCE = ["Dragon", "Water", "Steel"];

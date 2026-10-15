@@ -51,7 +51,7 @@ export function formatTeamPlainText(team: unknown): string {
   }).join("\n\n");
 }
 
-export interface TuneFill {
+interface TuneFill {
   team: unknown;          // the full team-json (format rides inside it)
   label?: string;         // where it came from, for the tab header (e.g. the session intent)
   sessionId?: string;     // UEP session of origin — enables writing the tune request back
@@ -74,12 +74,6 @@ export function markTuneFillApplied(): void {
   if (fill) stashTuneFill({ ...fill, applied: true });
 }
 
-export function clearTuneFill(): void {
-  try {
-    sessionStorage.removeItem(FILL_KEY);
-  } catch { /* nothing to clear */ }
-}
-
 /** Read (and keep) the stashed team, so a reload of the calc page retains it; the next
  * stash overwrites. */
 export function takeTuneFill(): TuneFill | null {
@@ -96,7 +90,7 @@ export function takeTuneFill(): TuneFill | null {
 /** Damage-calc hand-off (design §13): a battery/diagnose fact carries calculator-ready
  * coordinates — opponent as the attacker (its set auto-fills from usage), one of MY members
  * as the defender (real build), and the threatening move pre-selected. */
-export interface DamageFill {
+interface DamageFill {
   format: "single" | "double";
   attackerSlug: string;
   /** Full attacker build (a team member handed to the calculator as the ATTACKER):
@@ -145,7 +139,7 @@ export function teamToCalcMembers(team: unknown): CalcMember[] {
 }
 
 /** A team handed to the matchup page (a teams page or result card's "配置模拟"): read once, there. */
-export interface MatchupTeamSource {
+interface MatchupTeamSource {
   id: string;
   source: "builder" | "diagnose" | "session" | "other";
   label: string;
@@ -193,7 +187,7 @@ export interface CalcMember {
 
 /** Both calculator rosters in one hand-off: the page's own Pokemon (plus the partners picked
  * alongside it) attack, and the KO picks defend. */
-export interface CalcTeamsFill {
+interface CalcTeamsFill {
   format: "single" | "double";
   attackers: CalcMember[];
   defenders: CalcMember[];
@@ -232,5 +226,3 @@ export function takeCalcTeams(): CalcTeamsFill | null {
     return null;
   }
 }
-
-export { stashDiagnoseFill, takeDiagnoseFill } from "./diagnoseHandoff.ts";

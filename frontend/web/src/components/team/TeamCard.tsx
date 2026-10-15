@@ -9,7 +9,7 @@ import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { EntityHover } from "../EntityHover.tsx";
 import { GameImage } from "../GameImage.tsx";
 import { TypeBadge } from "../TypeBadge.tsx";
-import { useAsync, useDexByName } from "../../hooks.ts";
+import { useLearnset, useDexByName } from "../../hooks.ts";
 import { displayName, useLang } from "../../i18n.ts";
 import { useSharedT, optionalSharedKey } from "../messages.ts";
 import { localName, useNameMaps, type NameMaps } from "../../lib/names.ts";
@@ -17,16 +17,11 @@ import { formatTeamPlainText, readTeamMembers, type TeamMemberish } from "../../
 import { KeepMonButton } from "../KeepMonButton.tsx";
 import type { LibraryOrigin } from "../../lib/library/records.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
-import { loadLearnset } from "../../runtime/projection.ts";
 import { ExportMenu, type ExtraExport } from "../ExportMenu.tsx";
 import { useLibraryDragSource, useLibraryWorkspace } from "../../lib/library/workspace.tsx";
 import { toTeamMember } from "../../lib/teamDoc.ts";
 import { slugify } from "./MonChip.tsx";
 
-// Re-exported for the panel's other cards (artifacts.tsx) that read team shapes.
-export { readTeamMembers, type TeamMemberish };
-
-export { useDexByName };
 
 const REORDER_TYPE = "application/x-pc-party-index";
 
@@ -75,9 +70,7 @@ function MemberCard({ mon, index, dex, names, format, corner, keepOrigin, onReor
   };
   const sp = Object.entries(mon.spread ?? {}).filter(([, v]) => v > 0);
   // The member's learnset localizes its move names and brings each move's type icon.
-  const learnset = useAsync(
-    () => (mon.moves?.length ? loadLearnset(slug).catch(() => null) : Promise.resolve(null)),
-    [slug]);
+  const learnset = useLearnset(slug, !!mon.moves?.length);
   const moveMap = new Map(
     learnset.status === "ready" && learnset.data
       ? learnset.data.moves.map((m) => [m.name, m]) : []);

@@ -81,12 +81,16 @@ export function DeltaCell({ delta, baseline }: { delta: UsageDelta; baseline?: s
   );
 }
 
-export function UsageRow({ rank, lead, pct, delta, baseline, hover, sub, children, style }: {
+export function UsageRow({ rank, lead, pct, pctLabel, delta, cell, baseline, hover, sub, children, style }: {
   rank: number;
   lead: boolean;
   pct: number | null;
+  /** Replaces the share text (a Top Meta panel below five samples prints its count). */
+  pctLabel?: ReactNode;
   /** Absent in panels that carry no change column (the KO move lists). */
   delta?: UsageDelta;
+  /** A ready-made right-hand cell (the comparison column) used instead of `delta`. */
+  cell?: ReactNode;
   baseline?: string;
   hover: { kind: EntityKind; name: string; addon: ReactNode; onOpen?: () => void };
   sub?: ReactNode;
@@ -97,14 +101,14 @@ export function UsageRow({ rank, lead, pct, delta, baseline, hover, sub, childre
   return (
     <EntityHover kind={hover.kind} name={hover.name} link={false} previewAddon={hover.addon}
                  onPreviewOpen={hover.onOpen}>
-      <span className={`mc-row${lead ? " lead" : ""}${delta ? "" : " no-delta"}`} style={style}>
+      <span className={`mc-row${lead ? " lead" : ""}${delta || cell ? "" : " no-delta"}`} style={style}>
         <span className="mc-rk">{rank}</span>
         <span className="mc-main" style={{ "--w": `${width}%` } as CSSProperties}>
           <span className="mc-label">{children}</span>
           {sub}
         </span>
-        <span className="mc-pct">{pctText(pct)}</span>
-        {delta && <DeltaCell delta={delta} baseline={baseline} />}
+        <span className="mc-pct">{pctLabel ?? pctText(pct)}</span>
+        {cell ?? (delta && <DeltaCell delta={delta} baseline={baseline} />)}
       </span>
     </EntityHover>
   );

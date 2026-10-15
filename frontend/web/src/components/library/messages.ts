@@ -342,12 +342,13 @@ const LIBRARY_MESSAGES = {
     ja: "ボックスがすべて満杯です。整理するか新しいボックスを開いてください。" },
   "lib.import.none": {
     zh: "还没有保存{format}队伍。", en: "No {format} teams kept yet.", ja: "{format}のチームはまだ保存されていません。" },
+  "lib.import.more": { zh: "展开更多 · 还有 {n} 支", en: "Show {n} more", ja: "残り {n} チームを表示" },
+  "lib.import.less": { zh: "收起队伍", en: "Show fewer", ja: "折りたたむ" },
 };
 
 export type LibraryMsgKey = keyof typeof LIBRARY_MESSAGES;
 
 export const useLibraryT = defineMessages(LIBRARY_MESSAGES);
-export const optionalLibraryKey = useLibraryT.optionalKey;
 
 /** `{name}`-style placeholders; a missing value leaves its placeholder visible rather than blank. */
 export function fill(template: string, values: Record<string, string | number>): string {

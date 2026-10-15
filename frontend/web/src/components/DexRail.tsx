@@ -27,6 +27,7 @@ import { useAbilities, useMoves } from "../hooks.ts";
 import { displayName, useLang } from "../i18n.ts";
 import { useDexT, type DexMsgKey } from "../pages/dex/messages.ts";
 import type { ItemRef, MoveRef } from "../runtime/projection.ts";
+import "./styles.dexrail.css";
 
 export const TYPE_NAMES = [
   "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting", "Poison", "Ground",
@@ -35,25 +36,25 @@ export const TYPE_NAMES = [
 
 export const MOVE_CATEGORIES = ["Physical", "Special", "Status"] as const;
 /** The item vocabulary's own categories, in the order the calc page already orders them by. */
-export const ITEM_CATEGORIES = ["battle", "type_boost", "berry", "mega_stone"] as const;
+const ITEM_CATEGORIES = ["battle", "type_boost", "berry", "mega_stone"] as const;
 export const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 type StatKey = (typeof STAT_KEYS)[number];
 
-export interface Range { min?: number; max?: number }
+interface Range { min?: number; max?: number }
 const inRange = (v: number | null | undefined, r: Range): boolean => {
   if (r.min == null && r.max == null) return true;
   if (v == null) return false;                 // a filtered field cannot match a move that has none
   return (r.min == null || v >= r.min) && (r.max == null || v <= r.max);
 };
-export const rangeActive = (r: Range) => r.min != null || r.max != null;
+const rangeActive = (r: Range) => r.min != null || r.max != null;
 
-export interface PokemonFilter {
+interface PokemonFilter {
   types: Set<string>;
   ability: string | null;
   moves: string[];
   stats: Partial<Record<StatKey | "bst", Range>>;
 }
-export interface MoveFilter {
+interface MoveFilter {
   types: Set<string>;
   categories: Set<string>;
   power: Range;
@@ -61,7 +62,7 @@ export interface MoveFilter {
   pp: Range;
   priorities: Set<number>;
 }
-export interface ItemFilter { categories: Set<string> }
+interface ItemFilter { categories: Set<string> }
 
 export interface DexFilters {
   pokemon: PokemonFilter;

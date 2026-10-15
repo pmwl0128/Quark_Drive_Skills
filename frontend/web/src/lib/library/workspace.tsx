@@ -30,13 +30,14 @@ type PayloadOf<K extends LibraryKind> = Extract<LibraryPayload, { kind: K }>;
 /** A refusal carries the page's own reason ("that side already holds six"); success may add one. */
 export type ReceiveResult = { ok: true; message?: string } | { ok: false; message: string };
 
-export interface LibraryReceiver<K extends LibraryKind = LibraryKind> {
+interface LibraryReceiver<K extends LibraryKind = LibraryKind> {
   /** Unique on the page, stable across renders. */
   id: string;
   kind: K;
   /** The action as the reader reads it: "Fill our team". */
   label: string;
-  receive: (payload: PayloadOf<K>) => ReceiveResult;
+  /** A drop may name a destination slot; toolbar actions leave it unspecified. */
+  receive: (payload: PayloadOf<K>, targetIndex?: number) => ReceiveResult;
 }
 export type AnyReceiver = { [K in LibraryKind]: LibraryReceiver<K> }[LibraryKind];
 
@@ -70,7 +71,7 @@ interface WorkspaceApi {
   dragging: LibraryKind | null;
   setDragging: (kind: LibraryKind | null) => void;
   /** Hand a payload to a receiver and tell the reader how it went. */
-  deliver: (receiver: AnyReceiver, payload: LibraryPayload) => ReceiveResult;
+  deliver: (receiver: AnyReceiver, payload: LibraryPayload, targetIndex?: number) => ReceiveResult;
   /** Read the current team only on request, then use the page's registered receiver. */
   fillActiveTeam: (receiverId: string) => Promise<boolean>;
   /** The box the reader has in view (the dock's, the teams page's): where "keep" puts a Pokémon. */
@@ -142,9 +143,9 @@ export function LibraryWorkspaceProvider({ children }: { children: ReactNode }) 
       else localStorage.removeItem(ACTIVE_KEY);
     } catch { /* storage blocked — the choice lasts for this page view */ }
   }, []);
-  const deliver = useCallback((receiver: AnyReceiver, payload: LibraryPayload): ReceiveResult => {
+  const deliver = useCallback((receiver: AnyReceiver, payload: LibraryPayload, targetIndex?: number): ReceiveResult => {
     const result = payload.kind === receiver.kind
-      ? (receiver.receive as (value: LibraryPayload) => ReceiveResult)(payload)
+      ? (receiver.receive as (value: LibraryPayload, index?: number) => ReceiveResult)(payload, targetIndex)
       : { ok: false as const, message: receiver.label };
     toast({ text: result.ok ? result.message ?? t("library.filled").replace("{label}", receiver.label) : result.message });
     return result;
@@ -253,8 +254,8 @@ export function useLibraryReceiver<K extends LibraryKind>(receiver: LibraryRecei
     if (!id || !kind || !label) return;
     const proxy = {
       id, kind, label,
-      receive: (payload: LibraryPayload) =>
-        (latest.current?.receive as ((value: LibraryPayload) => ReceiveResult) | undefined)?.(payload)
+      receive: (payload: LibraryPayload, targetIndex?: number) =>
+        (latest.current?.receive as ((value: LibraryPayload, index?: number) => ReceiveResult) | undefined)?.(payload, targetIndex)
           ?? { ok: false as const, message: label },
     } as AnyReceiver;
     return register(proxy);
@@ -280,7 +281,7 @@ export function useLibrarySource(source: LibrarySource | null): void {
 /** Drop-zone props for a part of the page: a library payload dropped here goes to the first of
  * `receiverIds` that takes its kind. While something droppable is being dragged the zone carries
  * `data-library-drop="ready"` (and `"over"` under the pointer) for styling. */
-export function useLibraryDrop(receiverIds: string[]) {
+export function useLibraryDrop(receiverIds: string[], targetIndex?: (event: DragEvent) => number | undefined) {
   const store = useContext(WorkspaceContext);
   if (!store) throw new Error("useLibraryDrop outside LibraryWorkspaceProvider");
   const node = useRef<HTMLElement | null>(null);
@@ -322,7 +323,7 @@ export function useLibraryDrop(receiverIds: string[]) {
       try {
         const payload = JSON.parse(raw) as LibraryPayload;
         const target = targets().find((receiver) => receiver.kind === payload.kind);
-        if (target) store.value.deliver(target, payload);
+        if (target) store.value.deliver(target, payload, targetIndex?.(event));
       } catch { /* not ours after all */ }
     },
   };

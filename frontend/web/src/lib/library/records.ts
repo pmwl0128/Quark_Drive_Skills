@@ -15,7 +15,6 @@ export const LIBRARY_SCHEMA_VERSION = 1;
 export const BOX_SLOTS = 30;
 export const BOX_COLUMNS = 6;
 import { TEAM_SIZE } from "../battle.ts";
-export { TEAM_SIZE } from "../battle.ts";
 /** Team slots are opened five at a time: five full teams fill exactly one box. */
 export const TEAM_SLOT_STEP = 5;
 
@@ -106,8 +105,6 @@ export function defaultLayout(): LibraryLayout {
 export function preferredBox(format: FormatId): number {
   return format === "double" ? 1 : 0;
 }
-
-export type LibraryRecord = TeamRecord | BoxRecord;
 
 /** The export file. Records inside are re-read one by one on import, so a single bad entry never
  * blocks the rest of a file. A team entry carries both its box references and the assembled

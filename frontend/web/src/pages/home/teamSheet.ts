@@ -7,10 +7,10 @@
 import { TEAM_SIZE } from "../../lib/battle.ts";
 import { parseHeader } from "../../lib/pokepaste.ts";
 
-export interface SheetMon { species: string; item?: string }
+interface SheetMon { species: string; item?: string }
 
 /** `known: false` — text the sheet does not read (the diagnosis page still does). */
-export type SheetRead =
+type SheetRead =
   | { known: true; mons: SheetMon[]; extra: number }
   | { known: false };
 

@@ -16,7 +16,7 @@ const KIND_KEYS: Record<UepGateKind, UepMsgKey> = {
   "answer-audit": "kind.answer-audit",
 };
 
-export const isGateKind = (kind: string): kind is UepGateKind =>
+const isGateKind = (kind: string): kind is UepGateKind =>
   (UEP_GATE_KINDS as readonly string[]).includes(kind);
 
 export function KindBadge({ kind }: { kind: string }) {

@@ -20,7 +20,7 @@ export function dexLookup(dex: readonly DexIndexEntry[]) {
   return hit;
 }
 
-export function itemLookup(items: readonly ItemRef[]): Map<string, ItemRef> {
+function itemLookup(items: readonly ItemRef[]): Map<string, ItemRef> {
   let hit = itemLookups.get(items);
   if (!hit) {
     hit = new Map();

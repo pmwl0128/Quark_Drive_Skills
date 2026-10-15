@@ -6,13 +6,14 @@ import type { FormatId, TeamMemberDoc } from "@pokemon-champions/protocol";
 import { useMemo, useState } from "react";
 import { CalcRail, type CalcRailApi } from "../CalcRail.tsx";
 import { FormatTabs } from "../FormatTabs.tsx";
+import { AdaptiveSelect } from "../AdaptiveSelect.tsx";
 import { RailHandle, useSideRail } from "../SideRail.tsx";
 import { useDexIndex } from "../../hooks.ts";
 import { displayName, useLang } from "../../i18n.ts";
 import type { LibraryState } from "../../lib/library/repo.ts";
 import { useLibraryWorkspace } from "../../lib/library/workspace.tsx";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
-import type { BuildOption } from "../build/inputs.tsx";
+import type { BuildOption } from "../../lib/buildState.ts";
 import { fill, useLibraryT } from "./messages.ts";
 import { useBoxName } from "./shared.tsx";
 
@@ -49,11 +50,11 @@ export function TeamsRail({ state }: { state: LibraryState }) {
           <FormatTabs format={format} onChange={setFormat} className="rail-format" />
           <label>
             <span>{t("lib.rail.into")}</span>
-            <select value={into} onChange={(event) => setCurrentBox(Number(event.target.value))}>
+            <AdaptiveSelect value={into} onValueChange={(value) => setCurrentBox(Number(value))}>
               {Array.from({ length: boxes }, (_, index) => (
                 <option key={index} value={index}>{boxName(state.layout, index)}</option>
               ))}
-            </select>
+            </AdaptiveSelect>
           </label>
         </div>
         <p className="teams-rail-hint muted">{t("lib.rail.hint")}</p>

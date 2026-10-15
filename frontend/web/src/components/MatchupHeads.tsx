@@ -30,14 +30,14 @@ export function activeIndex(s: SpeciesRowDto, picks: Record<string, string>): nu
   return s.variants?.findIndex((v) => v.key === key) ?? -1;
 }
 
-export function activeVariant(s: SpeciesRowDto, picks: Record<string, string>): OppVariantRef | undefined {
+function activeVariant(s: SpeciesRowDto, picks: Record<string, string>): OppVariantRef | undefined {
   const key = activeKey(s, picks);
   return s.variants?.find((v) => v.key === key);
 }
 
 /** A LABEL, not a control: it names the active build (or nothing when the species has only one).
  * The head itself is the click target — clicking a Pokemon opens its build list. */
-export function HeadVariantBadge({ s, picks }: { s: SpeciesRowDto; picks: Record<string, string> }) {
+function HeadVariantBadge({ s, picks }: { s: SpeciesRowDto; picks: Record<string, string> }) {
   if ((s.variants?.length ?? 0) < 2) return null;
   const i = activeIndex(s, picks);
   return (
@@ -113,11 +113,12 @@ function CurrentBuildIcon({ s, picks, sets, showSetHover, children }: {
  * observed-build axes, so interactive callers can switch either side without recalculation. */
 export function ColHead({
   s, lang, picks = {}, open = false, onToggle, onPick, onClose,
-  sets, setsBusy = false, showSetHover = false,
+  sets, setsBusy = false, showSetHover = false, selected = false,
 }: {
   s: SpeciesRowDto | undefined; lang: Lang; picks?: Record<string, string>;
   open?: boolean; onToggle?: () => void; onPick?: (k: string) => void; onClose?: () => void;
   sets?: Record<string, OppSetDto>; setsBusy?: boolean; showSetHover?: boolean;
+  selected?: boolean;
 }) {
   if (!s) return <th className="col-head" />;
   const v = activeVariant(s, picks);
@@ -133,7 +134,7 @@ export function ColHead({
     </span>
   );
   return (
-    <th ref={headRef} className={`col-head${v && !v.isModal ? " variant-active" : ""}${open ? " picking" : ""}`}>
+    <th ref={headRef} className={`col-head${v && !v.isModal ? " variant-active" : ""}${open ? " picking" : ""}${selected ? " axis-selected" : ""}`}>
       {multi ? (
         <button type="button" className="head-pick" aria-expanded={open} onClick={onToggle}>
           {inner}
@@ -151,12 +152,13 @@ export function ColHead({
 /** `build` labels a CHECK-grid row: those rows are per-build already and have no switcher. */
 export function RowHead({
   s, lang, picks = {}, open = false, onToggle, onPick, onClose, build, isModal,
-  sets, setsBusy = false, showSetHover = false,
+  sets, setsBusy = false, showSetHover = false, selected = false,
 }: {
   s: SpeciesRowDto; lang: Lang; picks?: Record<string, string>;
   open?: boolean; onToggle?: () => void; onPick?: (k: string) => void; onClose?: () => void;
   build?: string; isModal?: boolean;
   sets?: Record<string, OppSetDto>; setsBusy?: boolean; showSetHover?: boolean;
+  selected?: boolean;
 }) {
   const v = activeVariant(s, picks);
   const multi = (s.variants?.length ?? 0) > 1 && !!onToggle;
@@ -176,7 +178,7 @@ export function RowHead({
     </CurrentBuildIcon>
   );
   return (
-    <th ref={headRef} className={`row-head${v && !v.isModal ? " variant-active" : ""}${open ? " picking" : ""}`}>
+    <th ref={headRef} className={`row-head${v && !v.isModal ? " variant-active" : ""}${open ? " picking" : ""}${selected ? " axis-selected" : ""}`}>
       {multi ? (
         <button type="button" className="head-pick" aria-expanded={open} onClick={onToggle}>
           {inner}

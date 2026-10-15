@@ -59,7 +59,7 @@ const INFER_MESSAGES = {
   "infer.analysis": { zh: "耐久、速度与火力详情", en: "Bulk, speed and firepower details", ja: "耐久・素早さ・火力の詳細" },
   "infer.reference.title": { zh: "环境参考与计算器配置", en: "Environment references and calculator build", ja: "環境の参考型と計算機の設定" },
   "infer.reference.current": { zh: "计算器实际配置", en: "Current calculator build", ja: "計算機の現在の型" },
-  "infer.reference.pick": { zh: "更换配置", en: "Change build", ja: "型を変更" },
+  "infer.reference.pick": { zh: "更换配置", en: "Env", ja: "型を変更" },
   "infer.reference.hint": {
     zh: "此配置是当前计算器页填入的实际配置，由四个工具共享。此处配置不用于配置反推，只审查是否仍满足用户填入的有效观测。",
     en: "This is the build currently entered in the calculator, shared by all four tools. It does not constrain inference; it is only checked against your usable observations.",

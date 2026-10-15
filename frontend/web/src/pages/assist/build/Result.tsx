@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { FormatId } from "@pokemon-champions/protocol";
 import { EntityHover } from "../../../components/EntityHover.tsx";
-import { useDexByName, useOppCache } from "../../../hooks.ts";
+import { useDexByName, useOppSets } from "../../../hooks.ts";
 import { displayName, useLang } from "../../../i18n.ts";
 import { optionalAssistKey, useAssistT } from "../messages.ts";
 import { useProseRenderer } from "../../../lib/prose.tsx";
-import { readTeamMembers, stashCalcTeams, stashDamageFill, stashDiagnoseFill, stashMatchupFill, teamToCalcMembers } from "../../../lib/team.ts";
+import { readTeamMembers, stashCalcTeams, stashDamageFill, stashMatchupFill, teamToCalcMembers } from "../../../lib/team.ts";
+import { stashDiagnoseFill } from "../../../lib/diagnoseHandoff.ts";
 import { type DexIndexEntry } from "../../../runtime/adapter.ts";
 import { useRuntime } from "../../../runtime/context.tsx";
 import { MemberHover, slugify, useMemberProse, useMemberSets } from "../../../components/team/MonChip.tsx";
@@ -46,8 +47,8 @@ function ThreatAssessmentPanel({ assessment, team, format, dexByName }: {
   const members = readTeamMembers(team);
   const [setsRequested, setSetsRequested] = useState(false);
   const [pendingCalc, setPendingCalc] = useState<{ opponent: string; route: ThreatRoute } | null>(null);
-  const oppCacheState = useOppCache(format, setsRequested);
-  const oppSets = oppCacheState.status === "ready" ? oppCacheState.data?.sets : undefined;
+  const oppSetsState = useOppSets(format, setsRequested);
+  const oppSets = oppSetsState.status === "ready" ? oppSetsState.data?.sets : undefined;
 
   const openCalc = (opponent: string, route: ThreatRoute,
                     sets?: Record<string, OppSetDto>) => {
@@ -78,7 +79,7 @@ function ThreatAssessmentPanel({ assessment, team, format, dexByName }: {
   };
 
   const requestCalc = (opponent: string, route: ThreatRoute) => {
-    if (setsRequested && oppCacheState.status === "ready") {
+    if (setsRequested && oppSetsState.status === "ready") {
       openCalc(opponent, route, oppSets);
       return;
     }
@@ -87,11 +88,11 @@ function ThreatAssessmentPanel({ assessment, team, format, dexByName }: {
   };
 
   useEffect(() => {
-    if (!pendingCalc || (oppCacheState.status !== "ready" && oppCacheState.status !== "error")) return;
+    if (!pendingCalc || (oppSetsState.status !== "ready" && oppSetsState.status !== "error")) return;
     openCalc(pendingCalc.opponent, pendingCalc.route,
-      oppCacheState.status === "ready" ? oppCacheState.data?.sets : undefined);
+      oppSetsState.status === "ready" ? oppSetsState.data?.sets : undefined);
     setPendingCalc(null);
-  }, [oppCacheState.status, pendingCalc]);
+  }, [oppSetsState.status, pendingCalc]);
 
   const worst = assessment.worst;
   // Routes land on OUR members, whose generated builds are known; opponents keep the dex hover.
@@ -229,12 +230,12 @@ export function BuildResult({ record, job, onRerun }: {
   // Diagnose is its own entry on the assist page (roadmap §1.2: a deterministic report must not
   // sit behind an "AI" label); the result hands its team over through a navigation.
   const canDiagnose = can("team.validate") && !!adapter.diagnose;
-  // Current results load the large Top-60 cache only when a visitor asks for calculator hand-off.
+  // Current results load the build catalog only when a visitor asks for calculator hand-off.
   // Legacy results still need it here because their old threat DTO has no self-describing variant id.
   const needsLegacyOppSets = !result.matchupThreats
     && (!!result.worstMatchup || (result.threats?.length ?? 0) > 1);
-  const oppCacheState = useOppCache(resultFormat, needsLegacyOppSets);
-  const oppSets = oppCacheState.status === "ready" ? oppCacheState.data?.sets : undefined;
+  const oppSetsState = useOppSets(resultFormat, needsLegacyOppSets);
+  const oppSets = oppSetsState.status === "ready" ? oppSetsState.data?.sets : undefined;
   const team = result.team;
   const toCalc = (opponent: string, member?: string | null, move?: string | null) => {
     const found = member ? readTeamMembers(team).find((m) => m.species === member) : undefined;

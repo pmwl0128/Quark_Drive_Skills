@@ -2,11 +2,11 @@
  * to page code (design §2 layering). */
 import { useEffect, useMemo, useState } from "react";
 import type {
-  FormatId, LearnersDto, MetaDetailDto, MetaFacetsDto, MetaKoDto, NatureDto, OppCacheDto,
-  OppCheckGridDto,
+  FormatId, LearnersDto, LearnsetDto, MetaDetailDto, MetaFacetsDto, MetaKoDto, NatureDto,
+  OppCheckGridDto, OppDetailsDto,
   OppKoGridDto, OppSetCatalogDto,
   PokemonCardDto, RankingDto,
-  MetaKoTrendDto, TrendDto, UsageTrendDto,
+  MetaKoTrendDto, TopMetaDetailDto, TopMetaRankingDto, TopMetaScopeId, TrendDto, UsageTrendDto,
 } from "@pokemon-champions/protocol";
 import { HttpError, type DexIndexEntry, type RuntimeAdapter } from "./runtime/adapter.ts";
 import { useRuntime } from "./runtime/context.tsx";
@@ -63,7 +63,7 @@ interface QueryEntry<T> {
  * for long arrays and wide objects. Projection rows are homogeneous, so evenly spread samples
  * scaled by the count are close enough for the cache's coarse memory budget — while a full
  * `JSON.stringify` of a multi-MiB matchup grid was a long main-thread task on every page open. */
-export function approxJsonChars(value: unknown, depth = 0): number {
+function approxJsonChars(value: unknown, depth = 0): number {
   if (value === null || value === undefined) return 4;
   if (typeof value === "string") return value.length + 2;
   if (typeof value === "number") return 6;
@@ -233,6 +233,27 @@ export function useKo(format: FormatId, slug: string): Async<MetaKoDto> {
   return slug ? result : LOADING;
 }
 
+/** One Top Meta ranking scope, fetched only while a view actually needs it (the Top Meta source, or
+ * the in-game ranking with its comparison switched on). */
+export function useTopRanking(format: FormatId, scope: TopMetaScopeId,
+                              enabled: boolean): Async<TopMetaRankingDto | null> {
+  const { adapter } = useRuntime();
+  const key = enabled ? `top-ranking:${format}:${scope}` : `top-ranking:disabled:${format}:${scope}`;
+  return useQuery(key, () => enabled ? adapter.topRanking(format, scope) : Promise.resolve(null),
+    [enabled, format, scope, adapter]);
+}
+
+/** One Pokemon's Top Meta panels (both scopes). Same lazy rule as `useTopRanking`; a 404 is the
+ * factual "no Top Meta sample for this Pokemon". */
+export function useTopDetail(format: FormatId, slug: string,
+                             enabled: boolean): Async<TopMetaDetailDto | null> {
+  const { adapter } = useRuntime();
+  const on = enabled && Boolean(slug);
+  const key = on ? `top-detail:${format}:${slug}` : `top-detail:disabled:${format}:${slug}`;
+  return useQuery(key, () => on ? adapter.topDetail(format, slug) : Promise.resolve(null),
+    [on, format, slug, adapter]);
+}
+
 /** Facet index for the filter rail — fetched only once the rail is actually opened. */
 export function useMetaFacets(format: FormatId, enabled: boolean): Async<MetaFacetsDto | null> {
   const { adapter } = useRuntime();
@@ -291,17 +312,21 @@ export function usePokemonCard(slug: string): Async<PokemonCardDto> {
   return slug ? result : LOADING;
 }
 
-export function useOppCache(format: FormatId): Async<OppCacheDto>;
-export function useOppCache(format: FormatId, enabled: boolean): Async<OppCacheDto | null>;
-export function useOppCache(format: FormatId, enabled = true): Async<OppCacheDto | null> {
+/** The processed real-build catalog, keyed like the matrix's variants. `enabled: false` defers it
+ * until a caller actually needs a set (a calculator hand-off). */
+export function useOppSets(format: FormatId): Async<OppSetCatalogDto>;
+export function useOppSets(format: FormatId, enabled: boolean): Async<OppSetCatalogDto | null>;
+export function useOppSets(format: FormatId, enabled = true): Async<OppSetCatalogDto | null> {
   const { adapter } = useRuntime();
-  return useQuery(enabled ? `matchup:ko:${format}` : `matchup:ko:${format}:disabled`,
-    () => enabled ? adapter.oppCache(format) : Promise.resolve(null), [format, enabled, adapter]);
+  return useQuery(enabled ? `matchup:sets:${format}` : `matchup:sets:${format}:disabled`,
+    () => enabled ? adapter.oppSets(format) : Promise.resolve(null), [format, enabled, adapter]);
 }
 
-export function useOppSets(format: FormatId): Async<OppSetCatalogDto> {
+/** Result cards share a per-species shard across builds and selected opponents. */
+export function useOppDetails(format: FormatId, slug: string): Async<OppDetailsDto> {
   const { adapter } = useRuntime();
-  return useQuery(`matchup:sets:${format}`, () => adapter.oppSets(format), [format, adapter]);
+  return useQuery(`matchup:details:${format}:${slug}`,
+    () => adapter.oppDetails(format, slug), [format, slug, adapter]);
 }
 
 /** Imperative consumers (the calculator's async auto-fill callbacks) share the exact same cache
@@ -326,10 +351,19 @@ export function useOppChecks(format: FormatId): Async<OppCheckGridDto> {
 // -- global vocab lookup maps (entity hover cards, dex browse) ------------------------------
 
 import {
-  loadAbilities, loadItems, loadMoves, loadNatures,
+  loadAbilities, loadItems, loadLearnset, loadMoves, loadNatures,
   type AbilityRef, type ItemRef, type MoveRef,
 }
   from "./runtime/projection.ts";
+
+/** A previously visited species is ready during render, including when another tool loaded it.
+ * Never carry the previous species' legal moves through a pending request. */
+export function useLearnset(slug: string, enabled = true): Async<LearnsetDto> {
+  const active = enabled && !!slug;
+  const result = useQuery(active ? `dex:learnset:${slug}` : "dex:learnset:disabled",
+    () => active ? loadLearnset(slug) : Promise.resolve(null as unknown as LearnsetDto), [slug, active]);
+  return active ? result : LOADING;
+}
 
 export function useMoves(enabled = true): Async<MoveRef[]> {
   return useQuery(enabled ? "vocab:moves" : "vocab:moves:disabled",

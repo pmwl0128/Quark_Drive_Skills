@@ -1,0 +1,65 @@
+.adaptive-select { position: relative; display: inline-flex; align-items: center; min-width: 0; max-width: 100%;
+  gap: 6px; padding: 0 28px 0 10px; min-height: 38px; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--panel); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.adaptive-select-value { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adaptive-select-leading { display: inline-flex; align-items: center; flex: none; }
+.adaptive-select-chevron { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; pointer-events: none; }
+.adaptive-select[aria-expanded="true"] { border-color: var(--brand); }
+.adaptive-select:disabled { opacity: .55; cursor: default; }
+.adaptive-select-list button { font: inherit; font-size: 13px; gap: 8px; }
+.adaptive-select-list button:disabled { opacity: .45; cursor: default; }
+.adaptive-listbox.adaptive-select-list.compact > button {
+  display: grid; grid-template-columns: minmax(24px, 1fr) 14px; column-gap: 6px;
+  padding-inline: 6px; text-align: center; white-space: nowrap;
+}
+.adaptive-listbox.adaptive-select-list.compact > button > span {
+  text-align: center; white-space: nowrap; overflow-wrap: normal; word-break: normal;
+}
+.adaptive-select-check { flex: none; width: 14px; height: 14px; color: var(--brand-strong); visibility: hidden; }
+.adaptive-select-check.selected { visibility: visible; }
+.adaptive-select-option-icon { flex: 0 0 18px !important; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; }
+.adaptive-select-option-icon img { display: block; width: 18px; height: 18px; object-fit: contain; }
+
+.adaptive-listbox {
+  position: fixed; z-index: 2050; overflow-y: auto; overscroll-behavior: contain;
+  contain: layout style;
+  padding: 4px; border: 1px solid var(--line-strong); border-radius: 10px;
+  background: var(--panel); color: var(--ink); box-shadow: var(--shadow-raised);
+}
+.adaptive-listbox [data-option-key] { display: flow-root; }
+.adaptive-listbox button {
+  width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 8px 10px; border: 0; border-radius: 7px;
+  background: transparent; color: inherit; text-align: left; cursor: pointer;
+}
+.adaptive-listbox button.active, .adaptive-listbox button:active { background: var(--brand-soft); }
+.adaptive-listbox button span { min-width: 0; overflow-wrap: anywhere; }
+.adaptive-listbox button small { flex: none; max-width: 45%; color: var(--sub); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+/* The build inputs' list: the metagame's picks first, faintly tinted, with their share; a hairline;
+   then everything else. Compact rows where a mouse is the pointer. */
+.adaptive-listbox.rich button > span { flex: 1 1 auto; }
+.adaptive-listbox.rich button.meta { background: color-mix(in srgb, var(--brand) 4%, transparent); }
+.adaptive-listbox.rich button.meta.active, .adaptive-listbox.rich button.active { background: var(--brand-soft); }
+.adaptive-share { flex: none; min-width: 36px; text-align: right; color: var(--brand-strong);
+  font: 700 11.5px var(--font-mono); }
+/* Option rows with fixed columns (OptionRow.tsx): name, usage share, then a tail that stays in place
+   from the first row to the last — the English name, a move's facts. */
+.adaptive-listbox .option-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.option-row-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.option-row-share { flex: none; width: 38px; text-align: right; color: var(--brand-strong); font: 700 11.5px var(--font-mono); }
+.adaptive-listbox .option-row-alias {
+  flex: none; width: 8.6em; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--sub);
+}
+.adaptive-sep { height: 1px; margin: 4px 8px; background: var(--line-strong); opacity: 0.7; }
+.adaptive-combobox-popup { display: flex; flex-direction: column; overflow: hidden; }
+.adaptive-combobox-options { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.adaptive-section { margin: 4px 6px 2px; padding: 6px 4px 3px; border-top: 1px solid var(--line);
+  color: var(--sub); font-size: 11px; font-weight: 600; }
+.adaptive-section:first-child { margin-top: 0; }
+.adaptive-empty { padding: 18px 10px; color: var(--sub); font-size: 12px; text-align: center; }
+@media (pointer: fine) {
+  .adaptive-listbox.rich button { min-height: 30px; padding: 4px 10px; font-size: 13px; }
+  .adaptive-listbox.rich button small { font-size: 11.5px; }
+}

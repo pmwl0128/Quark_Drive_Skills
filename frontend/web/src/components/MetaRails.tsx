@@ -183,15 +183,12 @@ function ActiveChips({ picks, label, onToggle, onClear }: {
 }
 
 /** Search + ranking list in the rail, filter in the flyout beside it. */
-export function MetaRail({ state, format, ranking, activeSlug = "", onAllowed, headActions }: {
+export function MetaRail({ state, format, ranking, activeSlug = "", headActions }: {
   state: RailState;
   format: FormatId;
   ranking: Async<RankingDto>;
   /** Highlighted row, when the page is about one Pokemon. The ranking page passes none. */
   activeSlug?: string;
-  /** The filter scopes THIS LIST only — the page behind the rail keeps showing its own rows.
-   * Pages that do not consume the result pass a no-op. */
-  onAllowed: (slugs: Set<string> | null) => void;
   /** Extra controls in the panel head (the site-wide search's format switch). */
   headActions?: ReactNode;
 }) {
@@ -234,8 +231,6 @@ export function MetaRail({ state, format, ranking, activeSlug = "", onAllowed, h
     }
     return acc;
   }, [picks, facets]);
-
-  useEffect(() => { onAllowed(allowed); }, [allowed, onAllowed]);
 
   const needle = q.trim().toLowerCase();
   const shown = useMemo(() => (ranking.status === "ready" ? ranking.data.rows : []).filter((r) => {

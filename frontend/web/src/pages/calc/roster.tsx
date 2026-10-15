@@ -22,9 +22,10 @@ import { markTuneFillApplied, readTeamMembers, takeCalcTeams, takeTuneFill,
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import type { ItemRef } from "../../runtime/projection.ts";
-import { autofillSig, buildConfigSig, sideIsBare, useBuildOptions } from "../../components/build/inputs.tsx";
+import { useBuildOptions } from "../../components/build/inputs.tsx";
+import { autofillSig, buildConfigSig, sideIsBare } from "../../lib/buildState.ts";
 import { cloneSps, type Baseline } from "./tune/model.ts";
-import { TEAM_MAX } from "./duel/TeamBar.tsx";
+import { TEAM_SIZE } from "../../lib/battle.ts";
 import { loadRoster, saveRoster, type RosterSnapshot } from "./duel/persist.ts";
 import { applyEntryFields, entryFieldPlan, resolveEntryFields, type EntryFieldPlan, type EntryFields } from "./duel/entryFields.ts";
 import {
@@ -37,7 +38,7 @@ const SIDES: SideId[] = ["a", "b"];
 /** Our side's demo Pokémon and the opponent's (dex slugs). */
 const DEMO_PAIR: PerSide<string> = { a: "garchomp", b: "mimikyu" };
 
-export interface RosterApi {
+interface RosterApi {
   teams: PerSide<MonState[]>;
   active: PerSide<number>;
   /** Each side's selected move slot (the move that side's result reads). */
@@ -94,7 +95,7 @@ function initialRoster(dex: DexIndexEntry[]): RosterSnapshot & { demo?: boolean 
   const calcFill = takeCalcTeams();
   if (calcFill) {
     const side = (list: CalcMember[]): MonState[] =>
-      list.length ? list.slice(0, TEAM_MAX).map((member) => fromCalcMember(member, dex)) : [makeMon()];
+      list.length ? list.slice(0, TEAM_SIZE).map((member) => fromCalcMember(member, dex)) : [makeMon()];
     return {
       teams: { a: side(calcFill.attackers), b: side(calcFill.defenders) },
       active: { a: 0, b: 0 }, slot: { a: 0, b: 0 },
@@ -110,7 +111,7 @@ function initialRoster(dex: DexIndexEntry[]): RosterSnapshot & { demo?: boolean 
         ability: member.ability ?? undefined, item: member.item ?? undefined,
         nature: member.nature ?? undefined, sps: member.spread ?? undefined, moves: member.moves,
       }, dex)];
-    }).slice(0, TEAM_MAX);
+    }).slice(0, TEAM_SIZE);
     markTuneFillApplied();
     if (ours.length) {
       const format = (tuneFill.team as { format?: unknown } | null)?.format === "double" ? "double" : "single";

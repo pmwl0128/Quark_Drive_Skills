@@ -142,8 +142,8 @@ function editable(target: EventTarget | null): boolean {
 
 /** The top bar's search entry: a search icon at the bar's left end, on every page in the same place.
  * It opens the page's search (or the environment search). `/` opens it from anywhere outside a text
- * field. */
-export function SearchEntry() {
+ * field. A hover or focus on a page without its own search announces the environment search. */
+export function SearchEntry({ onFallbackIntent }: { onFallbackIntent?: () => void }) {
   const t = useT();
   const { slot, fallbackOpen, setFallbackOpen } = useContext(SearchContextValue);
   const open = slot ? slot.open : fallbackOpen;
@@ -168,7 +168,8 @@ export function SearchEntry() {
   const label = `${slot?.label ?? t("rail.search")} (/)`;
   return (
     <button type="button" className={`topbar-tool search-entry${open ? " on" : ""}`} aria-expanded={open}
-            aria-keyshortcuts="/" title={label} aria-label={label} onClick={() => setOpen(!open)}>
+            aria-keyshortcuts="/" title={label} aria-label={label} onClick={() => setOpen(!open)}
+            onPointerEnter={slot ? undefined : onFallbackIntent} onFocus={slot ? undefined : onFallbackIntent}>
       <IconSearch aria-hidden />
     </button>
   );

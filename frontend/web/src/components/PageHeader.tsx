@@ -2,12 +2,15 @@ import type { ReactNode } from "react";
 
 export function PageHeader({
   title,
+  titleAside,
   description,
   children,
   className,
   sticky = false,
 }: {
   title: ReactNode;
+  /** Controls that belong to the title itself (kept outside the heading element, right after it). */
+  titleAside?: ReactNode;
   description?: ReactNode;
   children?: ReactNode;
   className?: string;
@@ -18,7 +21,12 @@ export function PageHeader({
   const header = (
     <header className={`page-header${sticky ? " page-header-sticky" : ""}${className ? ` ${className}` : ""}`}>
       <div className="page-heading-row">
-        <h1 className="page-title">{title}</h1>
+        {titleAside ? (
+          <div className="page-title-group">
+            <h1 className="page-title">{title}</h1>
+            {titleAside}
+          </div>
+        ) : <h1 className="page-title">{title}</h1>}
         {children && <div className="page-heading-actions">{children}</div>}
       </div>
       {!sticky && description && <p className="page-lead">{description}</p>}

@@ -1,4 +1,5 @@
 import { EscapeLayers } from "./components/EscapeLayers.tsx";
+import "./components/build/styles.fields.css";
 import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { BRAND_LOGO } from "./assets/icons.ts";
@@ -6,12 +7,14 @@ import { PageRailProvider, SearchEntry, useSiteSearch } from "./components/SideR
 import { LibraryDockButton } from "./components/LibraryDockButton.tsx";
 import { SiteFooter } from "./components/SiteFooter.tsx";
 import { ThemeToggle } from "./components/ThemeToggle.tsx";
+import { AdaptiveSelect } from "./components/AdaptiveSelect.tsx";
 import { useThemePreference, type ThemePreference } from "./lib/theme.ts";
 import { LibraryWorkspaceProvider, useLibraryWorkspace } from "./lib/library/workspace.tsx";
 import { LangContext, detectLang, saveLang, useLang, useT, type Lang } from "./i18n.ts";
 import { HomePage } from "./pages/HomePage.tsx";
 import { RuntimeProvider, useRuntime } from "./runtime/context.tsx";
 import { ToastProvider } from "./components/Toast.tsx";
+import { preloadable } from "./lib/preloadable.ts";
 
 // Keep the home launchpad in the entry chunk and split every other surface. Navigation intent
 // preloads the relevant module, so desktop hover/keyboard focus hides the network boundary while a
@@ -25,7 +28,6 @@ const loadCalcPage = () => import("./pages/CalcPage.tsx");
 const loadAssistantPage = () => import("./pages/AssistantPage.tsx");
 const loadTeamsPage = () => import("./pages/TeamsPage.tsx");
 const loadUepPages = () => import("./pages/uep/index.ts");
-const loadLibraryDock = () => import("./components/library/LibraryDock.tsx");
 
 const RankingPage = lazy(() => loadRankingPage().then((m) => ({ default: m.RankingPage })));
 const DexPage = lazy(() => loadDexPage().then((m) => ({ default: m.DexPage })));
@@ -35,10 +37,11 @@ const MatchupPage = lazy(() => loadMatchupPage().then((m) => ({ default: m.Match
 const CalcPage = lazy(() => loadCalcPage().then((m) => ({ default: m.CalcPage })));
 const AssistantPage = lazy(() => loadAssistantPage().then((m) => ({ default: m.AssistantPage })));
 const TeamsPage = lazy(() => loadTeamsPage().then((m) => ({ default: m.TeamsPage })));
-// The environment search pages without their own fall back to, loaded the first time it is opened.
-const MetaSearch = lazy(() => import("./components/MetaSearch.tsx").then((m) => ({ default: m.MetaSearch })));
-// The library dock (and the storage code under it) loads the first time it is opened.
-const LibraryDock = lazy(() => loadLibraryDock().then((m) => ({ default: m.LibraryDock })));
+// The environment search pages without their own fall back to, and the library dock (with the storage
+// code under it), are fetched on intent — a hover or focus of their entry — and open without a wait.
+const MetaSearch = preloadable(() => import("./components/MetaSearch.tsx").then((m) => ({ default: m.MetaSearch })));
+const LibraryDock = preloadable(() => import("./components/library/LibraryDock.tsx")
+  .then((m) => ({ default: m.LibraryDock })));
 // Both local UEP pages intentionally share one chunk; online runtimes never request it.
 const SessionsPage = lazy(() => loadUepPages().then((m) => ({ default: m.SessionsPage })));
 const SessionPage = lazy(() => loadUepPages().then((m) => ({ default: m.SessionPage })));
@@ -150,14 +153,14 @@ function MissingRoute() {
 function FallbackSearch() {
   const { slot, fallbackOpen } = useSiteSearch();
   if (slot || !fallbackOpen) return null;
-  return <Suspense fallback={null}><MetaSearch /></Suspense>;
+  return <MetaSearch />;
 }
 
 /** The dock, once opened: the shell owns it, so it stays open across pages. */
 function LibraryDockLayer() {
   const { open } = useLibraryWorkspace("open");
   if (!open) return null;
-  return <Suspense fallback={null}><LibraryDock /></Suspense>;
+  return <LibraryDock />;
 }
 
 function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: ThemePreference) => void }) {
@@ -190,7 +193,7 @@ function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: 
       <a className="skip-link" href="#main-content">{t("a11y.skipContent")}</a>
       <header ref={topbar} className="topbar">
         {/* First in the bar, on every page: the site search (components/SideRail.tsx). */}
-        <SearchEntry />
+        <SearchEntry onFallbackIntent={() => void MetaSearch.preload().catch(() => {})} />
         <Link className="logo" to="/" aria-label={t("nav.home")}>
           <img src={BRAND_LOGO} alt="" aria-hidden />
           <span className="logo-text">Quark Drive<span className="logo-sub">Web</span></span>
@@ -219,13 +222,13 @@ function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: 
             <span className="env-date"> · {capabilities.environment.asOf}</span>
           )}
         </span>
-        <select value={lang} onChange={(e) => setLang(e.target.value as Lang)} aria-label={t("a11y.language")}>
+        <AdaptiveSelect value={lang} onValueChange={(value) => setLang(value as Lang)} aria-label={t("a11y.language")}>
           <option value="zh">中文</option>
           <option value="en">English</option>
           <option value="ja">日本語</option>
-        </select>
+        </AdaptiveSelect>
         <ThemeToggle theme={theme} onChange={setTheme} />
-        <LibraryDockButton preload={() => void loadLibraryDock()} />
+        <LibraryDockButton preload={() => void LibraryDock.preload().catch(() => {})} />
       </header>
       <LibraryDockLayer />
       <FallbackSearch />

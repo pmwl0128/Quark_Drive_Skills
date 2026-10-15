@@ -5,7 +5,8 @@ import type { NatureDto } from "@pokemon-champions/protocol";
 import { membersFromPaste } from "../../../lib/pasteMembers.ts";
 import type { DexIndexEntry, RuntimeAdapter } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import { TEAM_MAX, type ImportOutcome } from "./TeamBar.tsx";
+import { type ImportOutcome } from "./TeamBar.tsx";
+import { TEAM_SIZE } from "../../../lib/battle.ts";
 import { makeMon, withMoves, type MonState } from "./state.ts";
 
 export async function monsFromPaste(text: string, context: {
@@ -17,7 +18,7 @@ export async function monsFromPaste(text: string, context: {
   pin?: boolean;
 }): Promise<{ mons: MonState[]; outcome: ImportOutcome }> {
   const { pin = false } = context;
-  const { members, unresolved, rescaledEvs } = await membersFromPaste(text, context, TEAM_MAX);
+  const { members, unresolved, rescaledEvs } = await membersFromPaste(text, context, TEAM_SIZE);
   const mons = members.map(({ entry, member }) => {
     const next = makeMon(entry.slug);
     next.sps = { ...(member.spread ?? {}) };

@@ -4,7 +4,7 @@
  * usage panels live. */
 import "../styles.meta.css";
 import "../styles.dex.css";
-import type { FormatId, LearnsetDto, MoveCategory, PokemonCardDto, StatKey, TypeName } from "@pokemon-champions/protocol";
+import type { FormatId, MoveCategory, PokemonCardDto, StatKey, TypeName } from "@pokemon-champions/protocol";
 import { MOVE_CATEGORIES, STAT_KEYS } from "@pokemon-champions/protocol";
 import { useMemo, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -16,13 +16,12 @@ import { RailHandle, useSideRail } from "../components/SideRail.tsx";
 import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import { CategoryBadge, TypeBadge } from "../components/TypeBadge.tsx";
 import {
-  useAbilitiesByName, useAsync, useDexIndex, useLearners, usePokemonCard, useRanking,
+  useAbilitiesByName, useLearnset, useDexIndex, useLearners, usePokemonCard, useRanking,
 } from "../hooks.ts";
 import { displayName, effectText, useLang } from "../i18n.ts";
 import { useDexT, type DexMsgKey } from "./dex/messages.ts";
 import { actualStat } from "../lib/stats.ts";
 import { defensiveProfile, offensiveProfile } from "../lib/typechart.ts";
-import { loadLearnset } from "../runtime/projection.ts";
 import { MetaHero, type MetaForm } from "./meta/MetaHero.tsx";
 import { accentStyle } from "./meta/UsageCard.tsx";
 
@@ -147,7 +146,7 @@ function Learnset({ slug }: { slug: string }) {
   const { lang } = useLang();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
-  const learnset = useAsync<LearnsetDto>(() => loadLearnset(slug), [slug]);
+  const learnset = useLearnset(slug);
 
   const moves = useMemo(() => {
     if (learnset.status !== "ready") return [];

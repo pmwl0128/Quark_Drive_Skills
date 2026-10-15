@@ -28,7 +28,7 @@ export interface RosterSnapshot {
   field: FieldState;
 }
 
-export interface DuelViewSnapshot {
+interface DuelViewSnapshot {
   /** Index into the engine's sorted 16 rolls. */
   roll: Record<SideId, number>;
   crit: Record<SideId, boolean>;

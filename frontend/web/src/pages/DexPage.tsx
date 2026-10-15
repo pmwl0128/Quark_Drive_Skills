@@ -24,7 +24,7 @@ import { useAbilities, useDexIndex, useItems, useLearners, useMoves } from "../h
 import { displayName, effectText, useLang } from "../i18n.ts";
 import { useDexT, optionalDexKey } from "./dex/messages.ts";
 import type { ItemRef, MoveRef } from "../runtime/projection.ts";
-import { ITEM_CATEGORY_ORDER, itemOrder } from "../components/build/inputs.tsx";
+import { ITEM_CATEGORY_ORDER, itemOrder } from "../lib/buildLabels.ts";
 
 type DexTab = "pokemon" | "moves" | "items" | "abilities";
 const EMPTY_DEX: never[] = [];

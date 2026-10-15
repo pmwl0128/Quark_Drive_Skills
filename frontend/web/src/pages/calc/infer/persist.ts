@@ -7,7 +7,7 @@ import type { KnownFacts, Observation } from "./context.ts";
 
 const KEY = "pc-calc-infer-v1";
 
-export interface FoeRecord {
+interface FoeRecord {
   observations: Observation[];
   known: KnownFacts;
 }

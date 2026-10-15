@@ -1,6 +1,6 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
-export type SegmentedItem<T extends string> = {
+type SegmentedItem<T extends string> = {
   id: T;
   label: ReactNode;
 };
@@ -58,7 +58,7 @@ export function SegmentedControl<T extends string>(props: TabProps<T> | RadioPro
   };
 
   return (
-    <div className={props.className} role={props.kind === "tabs" ? "tablist" : "radiogroup"}
+    <div className={`segmented-control ${props.className ?? ""}`.trim()} role={props.kind === "tabs" ? "tablist" : "radiogroup"}
       aria-label={props.ariaLabel} aria-orientation={props.orientation ?? "horizontal"}>
       {props.items.map((item, index) => {
         const selected = index === current;

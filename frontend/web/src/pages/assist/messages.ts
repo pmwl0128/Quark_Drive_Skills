@@ -1,5 +1,5 @@
 /** Copy shared by the assistance tabs (Q&A, wizard, diagnosis), in their lazy chunk. */
-import { defineMessages, type ScopedKey } from "../../i18n.ts";
+import { defineMessages } from "../../i18n.ts";
 import { SHARED_MESSAGES } from "../../components/messages.ts";
 
 const ASSIST_MESSAGES = {
@@ -665,4 +665,3 @@ const ASSIST_MESSAGES = {
 
 export const useAssistT = defineMessages(ASSIST_MESSAGES);
 export const optionalAssistKey = useAssistT.optionalKey;
-export type AssistMsgKey = ScopedKey<typeof ASSIST_MESSAGES>;

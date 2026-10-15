@@ -22,14 +22,6 @@ export function actualStat(base: number, key: StatKey, sp: number, natureMult: 0
   return key === "hp" ? hpAt(base, sp) : statAt(base, sp, natureMult);
 }
 
-/** Standard in-battle boost-stage multiplier for an offensive/defensive stat (atk/def/spa/spd):
- * +n → (2+n)/2, −n → 2/(2−n), clamped to ±6. Speed uses the same curve but is handled by the
- * speed engine; here it feeds the tune page's live attack/bulk indices. */
-export function boostMult(stage: number): number {
-  const s = Math.max(-6, Math.min(6, Math.trunc(stage)));
-  return s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
-}
-
 export function natureMultiplier(nature: Pick<NatureDto, "upStat" | "downStat"> | undefined, key: StatKey): 0.9 | 1 | 1.1 {
   if (key === "hp" || !nature || nature.upStat === nature.downStat) return 1;
   return nature.upStat === key ? 1.1 : nature.downStat === key ? 0.9 : 1;

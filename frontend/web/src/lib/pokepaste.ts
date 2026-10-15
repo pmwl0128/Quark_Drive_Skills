@@ -9,7 +9,7 @@
  * naming authority (design §2.1), so guessing here would put a second resolver in the app. */
 import type { StatKey } from "@pokemon-champions/protocol";
 
-export interface PastedMon {
+interface PastedMon {
   /** Species exactly as written — the caller resolves it through the dex. */
   species: string;
   nickname?: string;
@@ -21,7 +21,7 @@ export interface PastedMon {
   moves: string[];
 }
 
-export interface PasteResult {
+interface PasteResult {
   mons: PastedMon[];
   /** A mainline EV line (a value above the 32 SP cap) was rescaled onto the Champions budget.
    * Surfaced so the import can say so — a silently rewritten spread is a wrong answer that looks

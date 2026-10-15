@@ -22,7 +22,7 @@
 .home {
   --font-num: "PC Numerals", var(--font-ui);
   --font-display: "QD Display", var(--font-ui);
-  display: grid; gap: 34px;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 34px;
 }
 /* Headings here name a cell or a section; the generic panel header strip (`.panel h2`) is not theirs. */
 .home :is(h1, h2, h3), .home .panel :is(h2, h3) {
@@ -214,8 +214,9 @@
   transform: translateX(calc(var(--tab-x, 0px) + var(--tab-inset)));
   transition: transform 380ms var(--ease-out), width 380ms var(--ease-out);
 }
-.home-task-tabs button:hover { color: var(--ink); }
-.home-task-tabs button.on { color: var(--ink); }
+.home-task-tabs button { border-radius: 10px 10px 0 0; }
+.home-task-tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
+.home-task-tabs button.on { color: var(--ink); background: linear-gradient(0deg, color-mix(in srgb, var(--brand) 6%, transparent), transparent); }
 .home-task-tabs button.on svg { color: var(--brand); }
 
 .home-board-panels { display: grid; }
@@ -296,8 +297,8 @@
   width: 100%; min-width: 0; height: 42px; padding: 0 14px;
   border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit;
 }
-form.home-build { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
-  grid-template-rows: auto 1fr auto; grid-template-areas: "lead lead" "fields flow" "actions flow"; column-gap: 40px; }
+form.home-build { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-rows: auto 1fr auto; grid-template-areas: "lead flow" "fields flow" "actions flow"; column-gap: 32px; }
 form.home-build .home-cell-lead { grid-area: lead; display: flex; align-items: center; min-height: 40px; margin-bottom: 16px; }
 /* The brief, top to bottom: two switches side by side, the core, the tactics, then the button. */
 form.home-build .home-fields { grid-area: fields; display: grid; grid-template-columns: auto minmax(0, 1fr); justify-content: start;
@@ -691,7 +692,8 @@ form.home-build .home-cell-actions { grid-area: actions; align-self: end; margin
 .home-install-tabs button { flex: 1; min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent;
   color: var(--stage-sub); font: inherit; font-weight: 650; cursor: pointer; }
 .home-install-tabs button:hover { color: var(--stage-ink); }
-.home-install-tabs button.on { background: var(--stage-raised); color: var(--stage-ink); box-shadow: 0 1px 3px rgb(0 0 0 / 0.14); }
+.home-install-tabs button.on { background: var(--stage-raised); color: var(--stage-ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.14), inset 0 0 0 1px var(--stage-hair); }
 .home-install-panes { display: grid; margin-top: 12px; }
 .home-install-panes > * { display: flex; flex-direction: column; grid-area: 1 / 1; min-width: 0; }
 .home-install-panes > [hidden] { visibility: hidden; }
@@ -760,6 +762,9 @@ pre[data-prompt=">"] .home-code-line::before { content: ">"; }
 
 /* ---- narrower ---------------------------------------------------------------------- */
 @media (max-width: 1080px) {
+  form.home-build { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto 1fr;
+    grid-template-areas: "lead" "fields" "flow" "actions"; }
+  form.home-build .home-flowmap { align-self: start; margin-top: 18px; }
   .home-hero { grid-template-columns: minmax(0, 1fr); padding: 44px 44px 128px; }
   .home-art { justify-self: start; }
   .home-art-card { left: auto; right: -56px; }
@@ -814,17 +819,11 @@ pre[data-prompt=">"] .home-code-line::before { content: ">"; }
   .home .home-cell h2.home-cell-lead { font-size: 13.5px; }
   /* Narrow, the leads wrap to different lengths: start them all at the same top instead. */
   .home-cell-heading, form.home-build .home-cell-lead, .home-ask-head { align-items: flex-start; min-height: 0; }
-  form.home-build { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto 1fr;
-    grid-template-areas: "lead" "fields" "flow" "actions"; }
-  /* The flow fills the slack, so the button sits at the foot as it does on diagnose. */
-  form.home-build .home-flowmap { align-self: start; }
-  form.home-build .home-cell-actions { align-self: end; }
   /* Kept short so the three tabs stay close in height: two choices share a row, the flow reads as names. */
   form.home-build .home-fields { grid-template-columns: auto minmax(0, 1fr); gap: 16px 14px; }
   form.home-build .home-field.core { grid-column: 1 / -1; order: 1; }
   .home-chips { gap: 6px; flex-wrap: nowrap; }
   .home-chip { gap: 5px; min-height: 32px; padding: 0 10px; font-size: 12.5px; }
-  .home-flowmap { margin-top: 18px; }
   .home-flowmap-canvas { width: calc(100% - 16px); margin: 8px 8px 0; }
   .home-fnode { width: 26px; height: 26px; }
   .home-fnode svg { width: 14px; height: 14px; }

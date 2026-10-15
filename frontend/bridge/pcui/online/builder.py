@@ -130,10 +130,8 @@ def make_context(form: BuilderForm) -> tuple[dict, list[str]]:
     if form.owned:
         ctx["owned"] = list(form.owned)
         ctx["owned_only"] = True
-        # The environment posture asks for the frame's usual registration count (two Megas in
-        # most frames), and a single wizard candidate outside it can never pass the gates. A
-        # pool with fewer Mega-capable species cannot reach that count, so the pool itself is
-        # the user's Mega choice: say so as an explicit posture instead of failing every build.
+        # A restricted pool's reachable Mega count is an explicit composition constraint;
+        # unrestricted builds follow each bound frame's observed distribution instead.
         reachable = _mega_bases(form)
         if reachable is not None and len(reachable) < 2:
             ctx["mega_posture"] = "single" if reachable else "none"
@@ -154,6 +152,7 @@ def make_context(form: BuilderForm) -> tuple[dict, list[str]]:
 # stripped alongside the plain source/provenance fields (audit 2026-07-16). `fallback` names
 # where a skeleton came from when no current team carries the anchor — internal too.
 _PROVENANCE_KEYS = {"source", "confidence", "note", "notes", "sample_count", "fallback",
+                    "unknown_sample_count", "total_sample_count",
                     "real_team_backed", "set_source", "set_confidence", "provenance",
                     "evidence", "fetched_at", "spread_origin", "grounding_ref",
                     "confidence_reason", "observed_facts", "observed_fillers"}
@@ -291,7 +290,7 @@ def _mega_options(pool: Any, form: BuilderForm, bases: list[str], deadline: floa
     guidance forces the model to invent stones/abilities from main-series memory (the exact
     hallucination the VPS diagnosis caught). The dex lists the forms by base species; the
     team skill's repset supplies the real-team joint set (ability/stone/moves as one unit)."""
-    # A Mega skeleton core IS its own offer (wants-driven frames lead with Megas — they must
+    # A Mega skeleton core IS its own offer (anchor frames may lead with Megas — they must
     # reach mega_options); a locked Mega anchor too.
     if form.anchor and form.anchor not in bases:
         bases = [form.anchor, *bases]
@@ -376,7 +375,7 @@ def _ground(pool: Any, form: BuilderForm, skeletons: list[dict], deadline: float
             species.append(name)
 
     add(form.anchor)
-    for sk in skeletons:                # ALL skeletons — wants-driven frames fan out wide,
+    for sk in skeletons:                # ALL skeletons — anchor frames can fan out wide,
         for cand in (sk.get("core_candidates") or []):  # and every core must be sourced
             add(cand.get("species"))
     # Mega forms have no meta entry (usage is keyed by base species) — their sourcing is
@@ -458,6 +457,32 @@ def _model_skeleton(skeleton: dict) -> dict:
     return {k: v for k, v in skeleton.items() if k not in ("fallback", "confidence_reason")}
 
 
+def _registration_guidance(ctx: dict, skeletons: list[dict]) -> dict:
+    """Expose each offered frame's own modal lanes, never a fixed season-wide count.
+
+    Frame already selects the authoritative group/pool reference and marks its confidence.
+    Keep thin samples advisory; the slate remains the authority for load-bearing checks.
+    """
+    frames = []
+    for skeleton in skeletons:
+        facts = skeleton.get("observed_facts") or {}
+        reference = facts.get("mega_registration_reference") or {}
+        distribution = reference.get("distribution") or facts.get("observed_mega_slots") or {}
+        buckets = distribution.get("buckets") or {}
+        shares = {key: float(bucket.get("share") or 0) for key, bucket in buckets.items()
+                  if isinstance(bucket, dict)}
+        peak = max(shares.values(), default=0)
+        frames.append({
+            "frame_id": skeleton.get("frame_id"),
+            "modal_buckets": [key for key, share in shares.items() if peak > 0 and share == peak],
+            "confidence": reference.get("confidence"),
+            "basis": reference.get("basis"),
+            "sample_count": distribution.get("sample_count", 0),
+            "unknown_sample_count": distribution.get("unknown_sample_count", 0),
+        })
+    return {"posture": ctx.get("mega_posture") or "environment", "frames": frames}
+
+
 SYSTEM_PROMPT = """\
 You are the team-assembly engine of a Pokemon Champions team-building site.
 
@@ -507,18 +532,25 @@ Rules:
   tactics in "exclude_tactics" MUST NOT appear; when "owned_only" is true use ONLY species
   from "owned" — owning a base species includes its Mega forms listed in mega_options.
   Follow "style_lean" for the overall posture.
-- "wants" lists the user's PREFERRED tactics: the skeletons were already selected for
-  them — build the team around those tactics (e.g. a trickroom want means a Trick Room
-  setter plus slow attackers, per the skeletons and usage details).
-- Mega registration count (answer-audit gates on the observed MODAL count): in the
-  current meta register exactly TWO different Mega-stone holders in BOTH formats (the
-  modal bucket: ~82% of real singles teams, ~56% of doubles). A locked Mega anchor counts
-  as one — always add a second from mega_options. Never give two members the same stone.
-  A "pool_rules" entry in the input overrides this count.
-- Mega registration: observed teams for a skeleton often register SEVERAL Mega-stone
-  holders. If a problems document reports "mega_registration" whose reference
-  modal_buckets favor more registered Megas than your team has, add Mega species (with
-  their stones, from the input data) until you match the modal count.
+- "wants" lists the user's PREFERRED tactics. Skeletons are anchor-grounded structural
+  references, NOT pre-filtered for these tactics. Realize the preferences in the actual
+  six sets: identify the enabler and how teammates benefit from it using the grounded
+  moves, abilities and items. A token setter alone does not establish a tactical plan.
+  Explain the concrete plan in the rationale; never assume a preference was satisfied
+  merely because a skeleton was offered.
+- Mega registration: use "mega_registration.posture". For "none" register zero Mega-stone
+  holders; for "single" exactly one; for "multi" at least two. For "environment", use the
+  modal_buckets for YOUR selected frame_id in mega_registration.frames: "0" means zero,
+  "1" one, "2" two, "3_plus" at least three; any tied modal bucket is acceptable. A thin
+  (low-confidence) reference is advisory. Never assume one fixed count for all anchors,
+  frames or formats. A locked Mega anchor counts toward the total; never duplicate a stone.
+  Unpublished or inferred sets are UNKNOWN, never evidence of zero registrations. An empty
+  modal_buckets list means no observed count, not a recommendation to register zero Megas.
+- For a repair, "mega_registration.reference.modal_buckets" in the problems document is
+  the bound frame's exact requirement. Increase OR decrease registrations to match it,
+  including removing all Mega holders when its modal bucket is "0". Preserve locked
+  species and use only grounded sets. Explicit posture / pool_rules override environment
+  guidance; never change the user's constraints merely to bypass a failed audit.
 - If a repair request lists problems with your previous team, fix EVERY listed problem and
   return the full corrected team in the same strict JSON shape.
 """
@@ -958,7 +990,9 @@ def _slate_problems(slate_out: dict) -> dict | None:
     cand = cands[0] if cands and isinstance(cands[0], dict) else {}
     legality = cand.get("legality") or {}
     survived = 0 in (slate_out.get("survivors") or [])
-    if survived and legality.get("status") == "valid":
+    mega_slate = slate_out.get("mega_registration_slate") or {}
+    if survived and legality.get("status") == "valid" \
+            and mega_slate.get("status") != "missing_modal_lane":
         return None
     eliminated = cand.get("eliminated") if isinstance(cand.get("eliminated"), dict) else {}
     funnel_reasons = [str(reason) for reason in (eliminated.get("reasons") or []) if reason]
@@ -972,13 +1006,18 @@ def _slate_problems(slate_out: dict) -> dict | None:
         # they name the member and the grounded item/ability pair the repair must restore.
         "funnel_reasons": funnel_reasons,
         "mega_registration": cand.get("mega_registration_assessment"),
+        "mega_registration_slate": mega_slate,
     }
 
 
-def _audit_problems(audit_out: dict) -> dict | None:
+def _audit_problems(audit_out: dict, slate_out: dict) -> dict | None:
     if audit_out.get("pass") is True:
         return None
-    return {"audit_violations": audit_out.get("violations") or []}
+    candidates = slate_out.get("candidates") or []
+    candidate = candidates[0] if candidates and isinstance(candidates[0], dict) else {}
+    return {"audit_violations": audit_out.get("violations") or [],
+            "mega_registration": candidate.get("mega_registration_assessment"),
+            "mega_registration_slate": slate_out.get("mega_registration_slate")}
 
 
 # -- draft ---------------------------------------------------------------------------------
@@ -1333,6 +1372,7 @@ def build(pool: Any, provider: LlmProvider, form: BuilderForm,
         "skeletons": [prune(_model_skeleton(s), **PRUNE_SKELETON) for s in skeletons[:3]],
         "usage_details": grounding["usage_details"],
         "mega_options": grounding["mega_options"],
+        "mega_registration": _registration_guidance(ctx, skeletons[:3]),
         "instruction": "Assemble ONE team for these constraints.",
     }
     if grounding.get("anchor_dex_facts"):
@@ -1414,7 +1454,7 @@ def build(pool: Any, provider: LlmProvider, form: BuilderForm,
                 {"op": "answer-audit", "file": draft, "slate": slate_doc,
                  "slate_output": slate_out},
             ], deadline)[0])
-            problems = _audit_problems(audit_out)
+            problems = _audit_problems(audit_out, slate_out)
             fail_code = "audit_failed"
             if problems is None:
                 progress("audit", "done", None,

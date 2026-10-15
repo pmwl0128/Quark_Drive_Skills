@@ -1,0 +1,7 @@
+.pokemon-combo { display: block; flex: 1; min-width: 0; width: 100%; }
+
+.adaptive-listbox .pokemon-option { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.pokemon-option-title { display: flex; align-items: baseline; gap: 6px; flex: 1; min-width: 0; }
+.adaptive-listbox .pokemon-option-title small { flex: 0 1 auto; max-width: none; font-size: 10px; }
+.pokemon-option-types { display: flex; flex: none; gap: 2px; margin-left: auto; }
+.pokemon-option-types .type-badge img { width: 13px; height: 13px; }

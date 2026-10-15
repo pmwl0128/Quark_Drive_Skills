@@ -14,7 +14,7 @@ import {
 } from "../components/SegmentedControl.tsx";
 import { useAssistT } from "./assist/messages.ts";
 import { OnlineNote } from "./assist/OnlineNote.tsx";
-import { takeDiagnoseFill } from "../lib/team.ts";
+import { takeDiagnoseFill } from "../lib/diagnoseHandoff.ts";
 import { takeBuilderFill, type BuilderFill } from "../lib/builderHandoff.ts";
 import { useRuntime } from "../runtime/context.tsx";
 

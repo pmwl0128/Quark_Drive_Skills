@@ -3,8 +3,8 @@
   "$id": "urn:pokemon-champions:protocol:0.1.0",
   "title": "Quark Drive Web Protocol",
   "description": "Generated from @pokemon-champions/protocol Zod schemas; do not edit by hand.",
-  "x-schema-count": 106,
-  "x-export-fingerprint": "c7361549da0d44ce95758ebdd24537fbbdbb4f515179dc594ce19c1bd7bf02a9",
+  "x-schema-count": 120,
+  "x-export-fingerprint": "e83fe045719a73659f87bb02dc39666ccc2121f16f92bc1a7f4a107e16155303",
   "$defs": {
     "AbilityDtoSchema": {
       "type": "object",
@@ -10149,6 +10149,275 @@
       ],
       "additionalProperties": false
     },
+    "OppDetailsDtoSchema": {
+      "type": "object",
+      "properties": {
+        "teamEvidenceExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "single",
+            "double"
+          ]
+        },
+        "matrix": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "offense": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "move": {
+                          "type": "string"
+                        },
+                        "minPercent": {
+                          "type": "number"
+                        },
+                        "maxPercent": {
+                          "type": "number"
+                        },
+                        "koPossible": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "koGuaranteed": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "ko": {
+                          "type": "string"
+                        },
+                        "koExact": {
+                          "type": "boolean"
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "Physical",
+                            "Special",
+                            "Status"
+                          ]
+                        },
+                        "koChance": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string"
+                                },
+                                "n": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "guaranteed": {
+                                  "type": "boolean"
+                                },
+                                "chancePct": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "text"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "koCaveats": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "direction": {
+                                    "type": "string"
+                                  },
+                                  "cause": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "direction"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "disguiseAdjusted": {
+                          "type": "object",
+                          "properties": {
+                            "effectiveKoPossible": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "effectiveKoGuaranteed": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "note": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "effectiveKoPossible",
+                            "effectiveKoGuaranteed",
+                            "note"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "move",
+                        "minPercent",
+                        "maxPercent",
+                        "koPossible",
+                        "koGuaranteed",
+                        "ko",
+                        "koExact",
+                        "category",
+                        "koChance"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "speed": {
+                  "type": "object",
+                  "properties": {
+                    "attacker": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "defender": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "faster": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "attacker",
+                            "defender",
+                            "tie"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "attacker",
+                    "defender",
+                    "faster"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "offense",
+                "speed"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "required": [
+        "format",
+        "matrix"
+      ],
+      "additionalProperties": false
+    },
     "OppKoGridDtoSchema": {
       "type": "object",
       "properties": {
@@ -13571,6 +13840,3092 @@
         "Misty",
         ""
       ]
+    },
+    "TopIngameRankSchema": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "rank"
+            },
+            "value": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "unlisted"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TopIngameValueSchema": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "pct"
+            },
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "bound"
+            },
+            "below": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "kind",
+            "below"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "absent"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TopItemEntryDtoSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nameZh": {
+          "type": "string"
+        },
+        "nameJa": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ingame": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pct"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "bound"
+                    },
+                    "below": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "below"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "absent"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deltaIsFloor": {
+          "type": "boolean",
+          "const": true
+        },
+        "withinNoise": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "marker": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "outside_ingame_top",
+                "unseen_in_top"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^item:[a-z0-9-]+$"
+        }
+      },
+      "required": [
+        "name",
+        "count",
+        "share",
+        "ingame",
+        "delta",
+        "withinNoise",
+        "marker",
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "TopMetaDetailDtoSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^pokemon:[a-z0-9-]+$"
+        },
+        "name": {
+          "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema0"
+        },
+        "nameZh": {
+          "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema1"
+        },
+        "nameJa": {
+          "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema2"
+        },
+        "format": {
+          "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema3"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "season": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scopes": {
+          "type": "object",
+          "properties": {
+            "season": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema4"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "rule": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema4"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "season",
+            "rule"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "slug",
+        "key",
+        "name",
+        "format",
+        "rule",
+        "season",
+        "scopes"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "__schema0": {
+          "type": "string",
+          "minLength": 1
+        },
+        "__schema1": {
+          "type": "string"
+        },
+        "__schema2": {
+          "type": "string"
+        },
+        "__schema3": {
+          "type": "string",
+          "enum": [
+            "single",
+            "double"
+          ]
+        },
+        "__schema4": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema3"
+            },
+            "rule": {
+              "type": "string",
+              "minLength": 1
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "season",
+                "rule"
+              ]
+            },
+            "season": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "partitions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "sample": {
+              "type": "object",
+              "properties": {
+                "teams": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "sets": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "teams",
+                "sets"
+              ],
+              "additionalProperties": false
+            },
+            "comparedWith": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "season": {
+                      "type": "string"
+                    },
+                    "window": {
+                      "type": "string",
+                      "enum": [
+                        "same_season",
+                        "current_snapshot"
+                      ]
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "season",
+                    "window"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "builtAt": {
+              "type": "string"
+            },
+            "rank": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "tier": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema5"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "share": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "rankDelta": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "withinNoise": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ingameRank": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "teams": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "sets": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "lanes": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "panels": {
+              "type": "object",
+              "properties": {
+                "moves": {
+                  "type": "object",
+                  "properties": {
+                    "n": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "tier": {
+                      "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema5"
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema0"
+                          },
+                          "nameZh": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema1"
+                          },
+                          "nameJa": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema2"
+                          },
+                          "count": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema6"
+                          },
+                          "share": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema7"
+                          },
+                          "ingame": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema8"
+                          },
+                          "delta": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema9"
+                          },
+                          "deltaIsFloor": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema10"
+                          },
+                          "withinNoise": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema11"
+                          },
+                          "marker": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema12"
+                          },
+                          "type": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "Normal",
+                                  "Fire",
+                                  "Water",
+                                  "Electric",
+                                  "Grass",
+                                  "Ice",
+                                  "Fighting",
+                                  "Poison",
+                                  "Ground",
+                                  "Flying",
+                                  "Psychic",
+                                  "Bug",
+                                  "Rock",
+                                  "Ghost",
+                                  "Dragon",
+                                  "Dark",
+                                  "Steel",
+                                  "Fairy",
+                                  "Typeless"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "category": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "Physical",
+                                  "Special",
+                                  "Status"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "power": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "count",
+                          "share",
+                          "ingame",
+                          "delta",
+                          "withinNoise",
+                          "marker",
+                          "type",
+                          "category",
+                          "power"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "n",
+                    "tier",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                },
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "n": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "tier": {
+                      "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema5"
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema0"
+                          },
+                          "nameZh": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema1"
+                          },
+                          "nameJa": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema2"
+                          },
+                          "count": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema6"
+                          },
+                          "share": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema7"
+                          },
+                          "ingame": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema8"
+                          },
+                          "delta": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema9"
+                          },
+                          "deltaIsFloor": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema10"
+                          },
+                          "withinNoise": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema11"
+                          },
+                          "marker": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema12"
+                          },
+                          "key": {
+                            "type": "string",
+                            "pattern": "^item:[a-z0-9-]+$"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "count",
+                          "share",
+                          "ingame",
+                          "delta",
+                          "withinNoise",
+                          "marker",
+                          "key"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "n",
+                    "tier",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                },
+                "abilities": {
+                  "type": "object",
+                  "properties": {
+                    "n": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "tier": {
+                      "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema5"
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema13"
+                      }
+                    }
+                  },
+                  "required": [
+                    "n",
+                    "tier",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                },
+                "natures": {
+                  "type": "object",
+                  "properties": {
+                    "n": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "tier": {
+                      "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema5"
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema13"
+                      }
+                    }
+                  },
+                  "required": [
+                    "n",
+                    "tier",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                },
+                "spreads": {
+                  "type": "object",
+                  "properties": {
+                    "n": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "tier": {
+                      "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema5"
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "spread": {
+                            "type": "object",
+                            "properties": {
+                              "hp": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "atk": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "def": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "spa": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "spd": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "spe": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "count": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema6"
+                          },
+                          "share": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema7"
+                          },
+                          "ingame": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema8"
+                          },
+                          "delta": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema9"
+                          },
+                          "deltaIsFloor": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema10"
+                          },
+                          "withinNoise": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema11"
+                          },
+                          "marker": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema12"
+                          }
+                        },
+                        "required": [
+                          "spread",
+                          "count",
+                          "share",
+                          "ingame",
+                          "delta",
+                          "withinNoise",
+                          "marker"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "n",
+                    "tier",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                },
+                "partners": {
+                  "type": "object",
+                  "properties": {
+                    "n": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "tier": {
+                      "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema5"
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema0"
+                          },
+                          "nameZh": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema1"
+                          },
+                          "nameJa": {
+                            "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema2"
+                          },
+                          "slug": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "key": {
+                            "type": "string",
+                            "pattern": "^pokemon:[a-z0-9-]+$"
+                          },
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "share": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "rank": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "ingame": {
+                            "anyOf": [
+                              {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "rank"
+                                      },
+                                      "value": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "unlisted"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "rankDelta": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "slug",
+                          "key",
+                          "count",
+                          "share",
+                          "rank",
+                          "ingame",
+                          "rankDelta"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "n",
+                    "tier",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "moves",
+                "items",
+                "abilities",
+                "natures",
+                "spreads",
+                "partners"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "format",
+            "rule",
+            "scope",
+            "season",
+            "partitions",
+            "sample",
+            "comparedWith",
+            "rank",
+            "tier",
+            "share",
+            "rankDelta",
+            "withinNoise",
+            "ingameRank",
+            "teams",
+            "sets",
+            "lanes",
+            "panels"
+          ],
+          "additionalProperties": false
+        },
+        "__schema5": {
+          "type": "string",
+          "enum": [
+            "count",
+            "low",
+            "reliable"
+          ]
+        },
+        "__schema6": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "__schema7": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema8": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pct"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "bound"
+                    },
+                    "below": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "below"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "absent"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema9": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema10": {
+          "type": "boolean",
+          "const": true
+        },
+        "__schema11": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema12": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "outside_ingame_top",
+                "unseen_in_top"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema13": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema0"
+            },
+            "nameZh": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema1"
+            },
+            "nameJa": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema2"
+            },
+            "count": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema6"
+            },
+            "share": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema7"
+            },
+            "ingame": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema8"
+            },
+            "delta": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema9"
+            },
+            "deltaIsFloor": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema10"
+            },
+            "withinNoise": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema11"
+            },
+            "marker": {
+              "$ref": "#/$defs/TopMetaDetailDtoSchema/$defs/__schema12"
+            }
+          },
+          "required": [
+            "name",
+            "count",
+            "share",
+            "ingame",
+            "delta",
+            "withinNoise",
+            "marker"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "TopMetaRankingDtoSchema": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "single",
+            "double"
+          ]
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "season",
+            "rule"
+          ]
+        },
+        "season": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "partitions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sample": {
+          "type": "object",
+          "properties": {
+            "teams": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "sets": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "teams",
+            "sets"
+          ],
+          "additionalProperties": false
+        },
+        "comparedWith": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "season": {
+                  "type": "string"
+                },
+                "window": {
+                  "type": "string",
+                  "enum": [
+                    "same_season",
+                    "current_snapshot"
+                  ]
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "season",
+                "window"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "builtAt": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rank": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "slug": {
+                "type": "string",
+                "minLength": 1
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^pokemon:[a-z0-9-]+$"
+              },
+              "types": {
+                "maxItems": 2,
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/TopMetaRankingDtoSchema/$defs/__schema0"
+                }
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "nameZh": {
+                "type": "string"
+              },
+              "nameJa": {
+                "type": "string"
+              },
+              "teams": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "share": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "tier": {
+                "type": "string",
+                "enum": [
+                  "count",
+                  "low",
+                  "reliable"
+                ]
+              },
+              "ingameRank": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rankDelta": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "withinNoise": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "rank",
+              "slug",
+              "key",
+              "types",
+              "name",
+              "teams",
+              "share",
+              "tier",
+              "ingameRank",
+              "rankDelta",
+              "withinNoise"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "format",
+        "rule",
+        "scope",
+        "season",
+        "partitions",
+        "sample",
+        "comparedWith",
+        "rows"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "__schema0": {
+          "type": "string",
+          "enum": [
+            "Normal",
+            "Fire",
+            "Water",
+            "Electric",
+            "Grass",
+            "Ice",
+            "Fighting",
+            "Poison",
+            "Ground",
+            "Flying",
+            "Psychic",
+            "Bug",
+            "Rock",
+            "Ghost",
+            "Dragon",
+            "Dark",
+            "Steel",
+            "Fairy",
+            "Typeless"
+          ]
+        }
+      }
+    },
+    "TopMetaScopeDtoSchema": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "single",
+            "double"
+          ]
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "season",
+            "rule"
+          ]
+        },
+        "season": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "partitions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sample": {
+          "type": "object",
+          "properties": {
+            "teams": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "sets": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "teams",
+            "sets"
+          ],
+          "additionalProperties": false
+        },
+        "comparedWith": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "season": {
+                  "type": "string"
+                },
+                "window": {
+                  "type": "string",
+                  "enum": [
+                    "same_season",
+                    "current_snapshot"
+                  ]
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "season",
+                "window"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "builtAt": {
+          "type": "string"
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema0"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rankDelta": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "withinNoise": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ingameRank": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "teams": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sets": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "lanes": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "panels": {
+          "type": "object",
+          "properties": {
+            "moves": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tier": {
+                  "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema0"
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema1"
+                      },
+                      "nameZh": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema2"
+                      },
+                      "nameJa": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema3"
+                      },
+                      "count": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema4"
+                      },
+                      "share": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema5"
+                      },
+                      "ingame": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema6"
+                      },
+                      "delta": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema7"
+                      },
+                      "deltaIsFloor": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema8"
+                      },
+                      "withinNoise": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema9"
+                      },
+                      "marker": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema10"
+                      },
+                      "type": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "Normal",
+                              "Fire",
+                              "Water",
+                              "Electric",
+                              "Grass",
+                              "Ice",
+                              "Fighting",
+                              "Poison",
+                              "Ground",
+                              "Flying",
+                              "Psychic",
+                              "Bug",
+                              "Rock",
+                              "Ghost",
+                              "Dragon",
+                              "Dark",
+                              "Steel",
+                              "Fairy",
+                              "Typeless"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "category": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "Physical",
+                              "Special",
+                              "Status"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "power": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "count",
+                      "share",
+                      "ingame",
+                      "delta",
+                      "withinNoise",
+                      "marker",
+                      "type",
+                      "category",
+                      "power"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "n",
+                "tier",
+                "entries"
+              ],
+              "additionalProperties": false
+            },
+            "items": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tier": {
+                  "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema0"
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema1"
+                      },
+                      "nameZh": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema2"
+                      },
+                      "nameJa": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema3"
+                      },
+                      "count": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema4"
+                      },
+                      "share": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema5"
+                      },
+                      "ingame": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema6"
+                      },
+                      "delta": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema7"
+                      },
+                      "deltaIsFloor": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema8"
+                      },
+                      "withinNoise": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema9"
+                      },
+                      "marker": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema10"
+                      },
+                      "key": {
+                        "type": "string",
+                        "pattern": "^item:[a-z0-9-]+$"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "count",
+                      "share",
+                      "ingame",
+                      "delta",
+                      "withinNoise",
+                      "marker",
+                      "key"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "n",
+                "tier",
+                "entries"
+              ],
+              "additionalProperties": false
+            },
+            "abilities": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tier": {
+                  "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema0"
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema11"
+                  }
+                }
+              },
+              "required": [
+                "n",
+                "tier",
+                "entries"
+              ],
+              "additionalProperties": false
+            },
+            "natures": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tier": {
+                  "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema0"
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema11"
+                  }
+                }
+              },
+              "required": [
+                "n",
+                "tier",
+                "entries"
+              ],
+              "additionalProperties": false
+            },
+            "spreads": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tier": {
+                  "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema0"
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "spread": {
+                        "type": "object",
+                        "properties": {
+                          "hp": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "atk": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "def": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "spa": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "spd": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "spe": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "count": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema4"
+                      },
+                      "share": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema5"
+                      },
+                      "ingame": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema6"
+                      },
+                      "delta": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema7"
+                      },
+                      "deltaIsFloor": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema8"
+                      },
+                      "withinNoise": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema9"
+                      },
+                      "marker": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema10"
+                      }
+                    },
+                    "required": [
+                      "spread",
+                      "count",
+                      "share",
+                      "ingame",
+                      "delta",
+                      "withinNoise",
+                      "marker"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "n",
+                "tier",
+                "entries"
+              ],
+              "additionalProperties": false
+            },
+            "partners": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tier": {
+                  "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema0"
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema1"
+                      },
+                      "nameZh": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema2"
+                      },
+                      "nameJa": {
+                        "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema3"
+                      },
+                      "slug": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "key": {
+                        "type": "string",
+                        "pattern": "^pokemon:[a-z0-9-]+$"
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "share": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "rank": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "ingame": {
+                        "anyOf": [
+                          {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "rank"
+                                  },
+                                  "value": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "unlisted"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "rankDelta": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "slug",
+                      "key",
+                      "count",
+                      "share",
+                      "rank",
+                      "ingame",
+                      "rankDelta"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "n",
+                "tier",
+                "entries"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "moves",
+            "items",
+            "abilities",
+            "natures",
+            "spreads",
+            "partners"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "format",
+        "rule",
+        "scope",
+        "season",
+        "partitions",
+        "sample",
+        "comparedWith",
+        "rank",
+        "tier",
+        "share",
+        "rankDelta",
+        "withinNoise",
+        "ingameRank",
+        "teams",
+        "sets",
+        "lanes",
+        "panels"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "__schema0": {
+          "type": "string",
+          "enum": [
+            "count",
+            "low",
+            "reliable"
+          ]
+        },
+        "__schema1": {
+          "type": "string",
+          "minLength": 1
+        },
+        "__schema2": {
+          "type": "string"
+        },
+        "__schema3": {
+          "type": "string"
+        },
+        "__schema4": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "__schema5": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema6": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pct"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "bound"
+                    },
+                    "below": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "below"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "absent"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema7": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema8": {
+          "type": "boolean",
+          "const": true
+        },
+        "__schema9": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema10": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "outside_ingame_top",
+                "unseen_in_top"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema11": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema1"
+            },
+            "nameZh": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema2"
+            },
+            "nameJa": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema3"
+            },
+            "count": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema4"
+            },
+            "share": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema5"
+            },
+            "ingame": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema6"
+            },
+            "delta": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema7"
+            },
+            "deltaIsFloor": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema8"
+            },
+            "withinNoise": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema9"
+            },
+            "marker": {
+              "$ref": "#/$defs/TopMetaScopeDtoSchema/$defs/__schema10"
+            }
+          },
+          "required": [
+            "name",
+            "count",
+            "share",
+            "ingame",
+            "delta",
+            "withinNoise",
+            "marker"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "TopMetaScopeIdSchema": {
+      "type": "string",
+      "enum": [
+        "season",
+        "rule"
+      ]
+    },
+    "TopMetaTierSchema": {
+      "type": "string",
+      "enum": [
+        "count",
+        "low",
+        "reliable"
+      ]
+    },
+    "TopMoveEntryDtoSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nameZh": {
+          "type": "string"
+        },
+        "nameJa": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ingame": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pct"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "bound"
+                    },
+                    "below": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "below"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "absent"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deltaIsFloor": {
+          "type": "boolean",
+          "const": true
+        },
+        "withinNoise": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "marker": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "outside_ingame_top",
+                "unseen_in_top"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Normal",
+                "Fire",
+                "Water",
+                "Electric",
+                "Grass",
+                "Ice",
+                "Fighting",
+                "Poison",
+                "Ground",
+                "Flying",
+                "Psychic",
+                "Bug",
+                "Rock",
+                "Ghost",
+                "Dragon",
+                "Dark",
+                "Steel",
+                "Fairy",
+                "Typeless"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Physical",
+                "Special",
+                "Status"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "power": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "count",
+        "share",
+        "ingame",
+        "delta",
+        "withinNoise",
+        "marker",
+        "type",
+        "category",
+        "power"
+      ],
+      "additionalProperties": false
+    },
+    "TopNamedEntryDtoSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nameZh": {
+          "type": "string"
+        },
+        "nameJa": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ingame": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pct"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "bound"
+                    },
+                    "below": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "below"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "absent"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deltaIsFloor": {
+          "type": "boolean",
+          "const": true
+        },
+        "withinNoise": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "marker": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "outside_ingame_top",
+                "unseen_in_top"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "count",
+        "share",
+        "ingame",
+        "delta",
+        "withinNoise",
+        "marker"
+      ],
+      "additionalProperties": false
+    },
+    "TopPartnerEntryDtoSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nameZh": {
+          "type": "string"
+        },
+        "nameJa": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^pokemon:[a-z0-9-]+$"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ingame": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "rank"
+                    },
+                    "value": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "unlisted"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rankDelta": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "slug",
+        "key",
+        "count",
+        "share",
+        "rank",
+        "ingame",
+        "rankDelta"
+      ],
+      "additionalProperties": false
+    },
+    "TopRankRowDtoSchema": {
+      "type": "object",
+      "properties": {
+        "rank": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^pokemon:[a-z0-9-]+$"
+        },
+        "types": {
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TopRankRowDtoSchema/$defs/__schema0"
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nameZh": {
+          "type": "string"
+        },
+        "nameJa": {
+          "type": "string"
+        },
+        "teams": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "tier": {
+          "type": "string",
+          "enum": [
+            "count",
+            "low",
+            "reliable"
+          ]
+        },
+        "ingameRank": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rankDelta": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "withinNoise": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "rank",
+        "slug",
+        "key",
+        "types",
+        "name",
+        "teams",
+        "share",
+        "tier",
+        "ingameRank",
+        "rankDelta",
+        "withinNoise"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "__schema0": {
+          "type": "string",
+          "enum": [
+            "Normal",
+            "Fire",
+            "Water",
+            "Electric",
+            "Grass",
+            "Ice",
+            "Fighting",
+            "Poison",
+            "Ground",
+            "Flying",
+            "Psychic",
+            "Bug",
+            "Rock",
+            "Ghost",
+            "Dragon",
+            "Dark",
+            "Steel",
+            "Fairy",
+            "Typeless"
+          ]
+        }
+      }
+    },
+    "TopSpreadEntryDtoSchema": {
+      "type": "object",
+      "properties": {
+        "spread": {
+          "type": "object",
+          "properties": {
+            "hp": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "atk": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "def": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "spa": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "spd": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "spe": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ingame": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pct"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "bound"
+                    },
+                    "below": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "below"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "absent"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deltaIsFloor": {
+          "type": "boolean",
+          "const": true
+        },
+        "withinNoise": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "marker": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "outside_ingame_top",
+                "unseen_in_top"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "spread",
+        "count",
+        "share",
+        "ingame",
+        "delta",
+        "withinNoise",
+        "marker"
+      ],
+      "additionalProperties": false
     },
     "TrendDtoSchema": {
       "type": "object",

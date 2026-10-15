@@ -6,7 +6,7 @@
 import type { NatureDto, SpeedInputDto, Status } from "@pokemon-champions/protocol";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import { withMega } from "../../../components/build/inputs.tsx";
+import { withMega } from "../../../lib/buildState.ts";
 import type { FieldState, MonState, SideId } from "../duel/state.ts";
 
 export const SCARF = "Choice Scarf";
@@ -22,7 +22,7 @@ export type Tier = "max" | "fast" | "none" | "min";
 export const TIER_KEYS: Tier[] = ["max", "fast", "none", "min"];
 /** Every Champions individual value is fixed at 31, so the four investment tiers differ only by
  * nature direction and SP: 最速 (+spe, 32), 準速 (neutral, 32), 無振 (neutral, 0), 最慢 (−spe, 0). */
-export type Dir = "+" | "0" | "-";
+type Dir = "+" | "0" | "-";
 export const TIER_SPEC: Record<Tier, { dir: Dir; sp: number }> = {
   max: { dir: "+", sp: SP_MAX },
   fast: { dir: "0", sp: SP_MAX },

@@ -1,0 +1,51 @@
+.stat-sp-control { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.stat-sp-capsule {
+  display: grid; grid-template-columns: 27px 34px 27px; align-items: center; flex: none;
+  height: 28px; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2);
+}
+.stat-sp-capsule button {
+  align-self: stretch; padding: 0; border: 0; background: transparent; color: var(--sub);
+  font: 600 9px/1 var(--font-ui); cursor: pointer;
+}
+.stat-sp-capsule button:hover { background: var(--brand-soft); color: var(--brand-strong); }
+.stat-sp-capsule button:focus-visible { outline: 2px solid var(--brand); outline-offset: -3px; border-radius: 999px; }
+.stat-sp-control .stat-sp-capsule input[type="number"] {
+  width: 100%; height: 24px; padding: 0; border: 0; border-radius: 999px; background: var(--panel);
+  text-align: center; font-size: 12px; font-weight: 700; appearance: textfield; -moz-appearance: textfield;
+}
+.stat-sp-capsule input::-webkit-inner-spin-button,
+.stat-sp-capsule input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.stat-sp-capsule:focus-within { border-color: var(--brand); }
+.stat-sp-control.plain { gap: 6px; }
+.stat-sp-control.plain .stat-sp-capsule { display: block; width: 38px; border-radius: 7px; background: var(--panel); }
+.stat-sp-control.plain .stat-sp-capsule input { height: 26px; border-radius: inherit; }
+.stat-sp-meter { position: relative; display: flex; align-items: center; flex: 1; min-width: 16px; height: 28px; }
+.stat-sp-meter.low { --sp-color: var(--danger); }
+.stat-sp-meter.mid { --sp-color: var(--warning); }
+.stat-sp-meter.high { --sp-color: var(--success); }
+.stat-sp-track { position: relative; width: 100%; height: 12px; overflow: hidden; border-radius: 4px; background: var(--panel-3); }
+.stat-sp-fill { display: block; width: var(--sp-fill); height: 100%; border-radius: inherit; background: var(--sp-color); }
+.stat-sp-track::after { content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(var(--sp-segment-width, 12.5%) - 1px),
+    var(--panel) calc(var(--sp-segment-width, 12.5%) - 1px) var(--sp-segment-width, 12.5%)); }
+.stat-sp-meter input[type="range"] {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
+  appearance: none; background: transparent; cursor: ew-resize; touch-action: pan-y;
+}
+.stat-sp-meter input[type="range"]::-webkit-slider-runnable-track { height: 28px; background: transparent; }
+.stat-sp-meter input[type="range"]::-moz-range-track { height: 28px; background: transparent; }
+.stat-sp-meter input[type="range"]::-moz-range-progress { background: transparent; }
+.stat-sp-meter input[type="range"]::-webkit-slider-thumb { appearance: none; width: 1px; height: 28px; border: 0; background: transparent; }
+.stat-sp-meter input[type="range"]::-moz-range-thumb { width: 1px; height: 28px; border: 0; background: transparent; }
+.stat-sp-meter input[type="range"]:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; border-radius: 5px; }
+.stat-sp-meter:hover .stat-sp-track { box-shadow: 0 0 0 1px color-mix(in srgb, var(--sp-color) 55%, var(--line)); }
+.stat-sp-baseline {
+  position: absolute; top: 5px; bottom: 5px; width: 2px; border-radius: 1px; pointer-events: none;
+  left: clamp(0px, calc(var(--sp-baseline) - 1px), calc(100% - 2px));
+  background: var(--sub); box-shadow: 0 0 0 1px var(--panel);
+}
+@container mon-stats (max-width: 480px) {
+  .stat-sp-control { gap: 5px; }
+  .stat-sp-capsule { grid-template-columns: 22px 28px 22px; }
+  .stat-sp-capsule button { font-size: 8.5px; }
+}

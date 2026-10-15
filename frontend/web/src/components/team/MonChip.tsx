@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { typeColor } from "../../assets/icons.ts";
 import { GameImage } from "../GameImage.tsx";
 import { TypeBadge } from "../TypeBadge.tsx";
-import { useAsync, useDexByName, useDexIndex, useItems, useNatures } from "../../hooks.ts";
+import { useLearnset, useDexByName, useDexIndex, useItems, useNatures } from "../../hooks.ts";
 import { displayName, useLang, type Lang } from "../../i18n.ts";
 import { useSharedT, optionalSharedKey } from "../messages.ts";
 import { dexLookup, megaFor } from "../../lib/lookup.ts";
@@ -21,7 +21,7 @@ import { actualStat, natureMultiplier } from "../../lib/stats.ts";
 import { useProseRenderer, type ProseMonRenderer } from "../../lib/prose.tsx";
 import { readTeamMembers, type TeamMemberish } from "../../lib/team.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
-import { loadLearnset, type ItemRef } from "../../runtime/projection.ts";
+import { type ItemRef } from "../../runtime/projection.ts";
 
 const NO_DEX: DexIndexEntry[] = [];
 const NO_ITEMS: ItemRef[] = [];
@@ -49,9 +49,7 @@ export function HoverSet({ anchorRef, slug, label, mon, lang, side = "below" }: 
   const natures = useNatures();
   const popRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<CSSProperties>({ visibility: "hidden" });
-  const moves = useAsync(
-    () => (mon.moves?.length ? loadLearnset(slug).catch(() => null) : Promise.resolve(null)),
-    [slug]);
+  const moves = useLearnset(slug, !!mon.moves?.length);
   const moveMap = new Map(
     moves.status === "ready" && moves.data ? moves.data.moves.map((m) => [m.name, m]) : []);
   const dexList = dex.status === "ready" ? dex.data : NO_DEX;

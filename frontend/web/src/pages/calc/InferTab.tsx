@@ -6,22 +6,23 @@
  * Their builds are the unknown, ours are known: every recorded hit belongs to the opponent it was
  * dealt to or by, keyed on its uid, so switching our Pokémon keeps everything learned about theirs.
  * The rosters and the frame are the calc page's shared roster; the records are this tool's own. */
-import type { LearnsetDto, NatureDto } from "@pokemon-champions/protocol";
+import type { NatureDto } from "@pokemon-champions/protocol";
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type { CalcRailApi, CalcRailTarget } from "../../components/CalcRail.tsx";
-import { useAbilitiesByName, useAsync, useMovesByName } from "../../hooks.ts";
+import { useAbilitiesByName, useAsync, useLearnset, useMovesByName } from "../../hooks.ts";
 import { displayName, useLang } from "../../i18n.ts";
 import { useCalcT, type CalcMsgKey } from "./messages.ts";
 import type { DexIndexEntry } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
-import { loadLearnset, type ItemRef } from "../../runtime/projection.ts";
-import { buildConfigSig, type BuildOption } from "../../components/build/inputs.tsx";
+import { type ItemRef } from "../../runtime/projection.ts";
+import { buildConfigSig, type BuildOption } from "../../lib/buildState.ts";
 import { FieldPanel, useFieldOffers } from "./duel/FieldPanel.tsx";
 import { monsFromPaste } from "./duel/paste.ts";
 import { MonEditor } from "./duel/MonEditor.tsx";
-import { DuelBar, TeamBar, TEAM_MAX, type ImportOutcome } from "./duel/TeamBar.tsx";
+import { DuelBar, TeamBar, type ImportOutcome } from "./duel/TeamBar.tsx";
+import { MOVE_SLOTS, TEAM_SIZE } from "../../lib/battle.ts";
 import {
-  MOVE_SLOTS, applyBuildOption, effectiveEntry, makeMon, maxHPOf, natureMult, updateRosterMon, withoutMember, type MonState,
+  applyBuildOption, effectiveEntry, makeMon, maxHPOf, natureMult, updateRosterMon, withoutMember, type MonState,
   type SideId,
   type SharedFlagKey,
 } from "./duel/state.ts";
@@ -161,8 +162,8 @@ export function InferTab({ dex, natures, items, onRailApi, visible }: {
     return outcome;
   };
   const addMember = (side: SideId) => {
-    if (teams[side].length >= TEAM_MAX) return;
-    setTeams((previous) => previous[side].length >= TEAM_MAX ? previous
+    if (teams[side].length >= TEAM_SIZE) return;
+    setTeams((previous) => previous[side].length >= TEAM_SIZE ? previous
       : { ...previous, [side]: [...previous[side], makeMon()] });
     setActive((previous) => ({ ...previous, [side]: teams[side].length }));
   };
@@ -180,7 +181,7 @@ export function InferTab({ dex, natures, items, onRailApi, visible }: {
     const side: SideId = target === "primary" ? "a" : "b";
     const team = teams[side];
     const empty = team.findIndex((candidate) => !candidate.slug);
-    if (empty < 0 && team.length >= TEAM_MAX) return { ok: false as const, reason: "full" as const };
+    if (empty < 0 && team.length >= TEAM_SIZE) return { ok: false as const, reason: "full" as const };
     const base = { ...makeMon(entry.slug), pinned: true };
     const mon = option ? applyBuildOption(base, option) : base;
     const index = empty >= 0 ? empty : team.length;
@@ -213,10 +214,8 @@ export function InferTab({ dex, natures, items, onRailApi, visible }: {
   const speedView = useAsync(() => speedRequests ? readSpeedProjection(adapter, speedRequests) : Promise.resolve(null),
     [adapter, speedSignature]);
 
-  const learnsetMine = useAsync<LearnsetDto | null>(
-    () => (mine.slug ? loadLearnset(mine.slug) : Promise.resolve(null)), [mine.slug]);
-  const learnsetFoe = useAsync<LearnsetDto | null>(
-    () => (foe.slug ? loadLearnset(foe.slug) : Promise.resolve(null)), [foe.slug]);
+  const learnsetMine = useLearnset(mine.slug);
+  const learnsetFoe = useLearnset(foe.slug);
 
   // The selected move on each card: tool-local, falling back to the first readable one.
   const [pick, setPick] = useState<{ into: number; from: number }>({ into: 0, from: 0 });
@@ -287,7 +286,7 @@ export function InferTab({ dex, natures, items, onRailApi, visible }: {
                 {mine.nature ? ` · ${labels.nature(mine.nature)}` : ""}
                 {mine.item ? ` · ${labels.item(mine.item)}` : ""}</span>
             </summary>
-            <MonEditor label="infer-mine" mon={mine} setMon={setMonOf(mine.uid)} dex={dex} natures={natures}
+            <MonEditor mon={mine} setMon={setMonOf(mine.uid)} dex={dex} natures={natures}
               items={items} format={field.format} keep={false}
               onSetPick={(option, index) => setMonOf(mine.uid)((current) => applyBuildOption(current, option, index))} />
           </details>

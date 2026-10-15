@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "note": "Original SVG icon set for types and move categories. Keys are lowercase canonical English (meta data is lowercase; dex is Title-case — resolvers must lowercase). Artwork carries no text; localized names come from the dex.",
+  "note": "Original SVG icon set for types, move categories and filter markers. Keys are lowercase canonical English (meta data is lowercase; dex is Title-case — resolvers must lowercase). Artwork carries no text; localized names come from the dex.",
   "types": {
     "normal": {
       "file": "types/normal.svg",
@@ -113,6 +113,16 @@
       "file": "categories/status.svg",
       "color": "#8A8A8A",
       "dex_canonical": "Status"
+    }
+  },
+  "markers": {
+    "mega": {
+      "file": "markers/mega.svg",
+      "gradient": [
+        "#7A5CF0",
+        "#D1569E"
+      ],
+      "meaning": "Mega Evolution forms (an abstract Mega Stone)"
     }
   }
 }

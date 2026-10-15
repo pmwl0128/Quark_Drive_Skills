@@ -38,6 +38,23 @@ export function usePopover<T extends HTMLElement = HTMLDivElement>(
   return { open, setOpen, toggle, wrap, trigger, onBlur };
 }
 
+/** The dismissal rule of a portalled popup, whose trigger and panel live in different subtrees:
+ * while `active`, a press outside every one of `refs` calls `onOutside`. */
+export function useOutsidePress(active: boolean, refs: ReadonlyArray<RefObject<Element | null>>,
+  onOutside: () => void) {
+  const latest = useRef({ refs, onOutside });
+  latest.current = { refs, onOutside };
+  useEffect(() => {
+    if (!active) return;
+    const onDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!latest.current.refs.some((ref) => ref.current?.contains(target))) latest.current.onOutside();
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [active]);
+}
+
 /** Moves focus to the first match inside `root` once it has rendered — the selected option of a
  * listbox, the first item of a menu — so arrow keys work the moment it opens. Programmatic focus
  * after a mouse click draws no focus ring, so pointer users see nothing change. */

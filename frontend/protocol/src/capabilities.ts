@@ -23,7 +23,8 @@ import { FormatIdSchema } from "./common.ts";
 // `oppsets_<format>.json` / `view=sets` resource instead of loading the full matchup matrix.
 // Bumped 7 → 8: environment.sourceFingerprints is REQUIRED — the per-format data identity (meta
 // panels + real-team library) that derived views were built from, independent of code changes.
-export const WEB_PROTOCOL_VERSION = "8";
+// Bumped 8 → 9: reference-grid result cards require per-species detail shards / view=details.
+export const WEB_PROTOCOL_VERSION = "9";
 
 export const SKILL_IDS = ["dex", "meta", "calc", "team"] as const;
 export type SkillId = (typeof SKILL_IDS)[number];

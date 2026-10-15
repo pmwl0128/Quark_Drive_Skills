@@ -19,7 +19,7 @@ export function useLibrary(): LiveRead<LibraryState> {
  * limits (an owner or tester key, a local rehearsal); a local runtime has no visitors. Until the
  * answer arrives, and whenever it can't be had, the browser is a visitor — that only hides the
  * "open more" controls, never anything already open. */
-export function useLibraryAccess(): LibraryAccess {
+function useLibraryAccess(): LibraryAccess {
   const { adapter } = useRuntime();
   const [access, setAccess] = useState<LibraryAccess>(adapter.quota ? "visitor" : "authorized");
   useEffect(() => {

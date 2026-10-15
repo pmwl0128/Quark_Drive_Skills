@@ -13,14 +13,19 @@ import { useCalcT } from "../messages.ts";
 import { localName, useNameMaps } from "../../../lib/names.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import {
-  BuildPickerButton, ItemCombo, NatureOptions, STATUSES, boostLabel, buildConfigSig, clampNum, megaFor,
-  spSumClass,
-} from "../../../components/build/inputs.tsx";
+import { BuildPickerButton, ItemCombo } from "../../../components/build/inputs.tsx";
+import { megaFor } from "../../../lib/lookup.ts";
+import { boostLabel, buildConfigSig, clampNum, spSumClass } from "../../../lib/buildState.ts";
 import { useMetaUsage } from "../../../lib/metaUsage.ts";
-import { MonNameRow, MonPortrait } from "../duel/MonEditor.tsx";
+import { MonNameRow, MonPortrait } from "../../../components/build/MonIdentity.tsx";
 import { applyBuildOption, effectiveEntry, makeMon, monToMember, type MonState } from "../duel/state.ts";
-import { SpSlider, StageSelect, spreadChanged } from "../tune/MonCards.tsx";
+import { spreadChanged } from "../tune/MonCards.tsx";
+import { StageSelect } from "../../../components/build/StageSelect.tsx";
+import { SpControl } from "../../../components/build/SpControl.tsx";
+import { NatureCombo } from "../../../components/build/NatureCombo.tsx";
+import { ItemFieldLabel, StatusFieldLabel } from "../../../components/build/FieldLabels.tsx";
+import { AdaptiveSelect } from "../../../components/AdaptiveSelect.tsx";
+import { StatusSelect } from "../../../components/build/StatusSelect.tsx";
 import { cloneSps, type Baseline } from "../tune/model.ts";
 import {
   SCARF, SP_BUDGET, SP_MAX, TIER_KEYS, applyTier, natureDir, spTotal, tierOf, type Offense, type Tier,
@@ -72,13 +77,12 @@ function useSpeedChain(input: SpeedInputDto | null, result: SpeedlineDto | null,
 }
 
 export function SpeedCard({
-  label, mon, setMon, pickerKey, dex, natures, items, format, offense, input, result, scarf, baseline,
+  label, mon, setMon, dex, natures, items, format, offense, input, result, scarf, baseline,
 }: {
   /** The side's name, for screen readers: the strip above already shows which card is whose. */
   label: string;
   mon: MonState;
   setMon: (update: (mon: MonState) => MonState) => void;
-  pickerKey: string;
   dex: DexIndexEntry[];
   natures: NatureDto[];
   items: ItemRef[];
@@ -142,7 +146,7 @@ export function SpeedCard({
       <div className="mon-id">
         <MonPortrait entry={entry} name={entry ? displayName(entry, lang) : ""}
           member={() => monToMember(mon, dex)} />
-        <MonNameRow slug={mon.slug} item={mon.item} dex={dex} items={items} pickerKey={pickerKey}
+        <MonNameRow slug={mon.slug} item={mon.item} dex={dex} items={items}
           actions={(
             <>
               <BuildPickerButton slug={mon.slug} format={format}
@@ -161,29 +165,24 @@ export function SpeedCard({
 
       <div className="mon-build-row">
         <label>{t("calc.ability")}
-          <select value={mon.ability}
-            onChange={(e) => setMon((s) => ({ ...s, ability: e.target.value, abilityOn: null }))}>
+          <AdaptiveSelect value={mon.ability}
+            onValueChange={(value) => setMon((s) => ({ ...s, ability: value, abilityOn: null }))}>
             <option value="">—</option>
             {(mega ?? literal)?.abilities.map((a) => (
               <option key={a.name} value={a.name}>{displayName(a, lang)}</option>
             ))}
-          </select>
+          </AdaptiveSelect>
         </label>
         <label>{t("calc.nature")}
-          <select value={mon.nature} onChange={(e) => setMon((s) => ({ ...s, nature: e.target.value }))}>
-            <NatureOptions natures={natures} usage={usage} />
-          </select>
+          <NatureCombo value={mon.nature} natures={natures} usage={usage}
+            onChange={(nature) => setMon((s) => ({ ...s, nature }))} />
         </label>
-        <label>{t("calc.item")}
-          <ItemCombo idKey={pickerKey} value={mon.item} items={items} disabled={!!requiredStone} usage={usage}
+        <label><ItemFieldLabel value={mon.item} items={items} />
+          <ItemCombo value={mon.item} items={items} disabled={!!requiredStone} usage={usage}
             onChange={(item) => setMon((s) => ({ ...s, item }))} />
         </label>
-        <label>{t("calc.status")}
-          <select value={mon.status} onChange={(e) => setMon((s) => ({ ...s, status: e.target.value }))}>
-            {STATUSES.map((st) => (
-              <option key={st} value={st === "Healthy" ? "" : st}>{t(`status.${st}`)}</option>
-            ))}
-          </select>
+        <label><StatusFieldLabel value={mon.status} />
+          <StatusSelect value={mon.status} onChange={(status) => setMon((s) => ({ ...s, status }))} />
         </label>
       </div>
       {mon.ability === "Unburden" && (
@@ -222,9 +221,7 @@ export function SpeedCard({
         </div>
         <div className="tw-sp-row spd-sp-row">
           <span className="tw-sp-name">{statLabel}</span>
-          <input type="number" min={0} max={SP_MAX} className="num tw-sp-input" value={sp}
-            aria-label={`${statLabel} SP`} onChange={(e) => setSp(e.target.value)} />
-          <SpSlider label={statLabel} value={sp} onChange={setSp} />
+          <SpControl stat={statLabel} value={sp} onChange={setSp} />
           <StageSelect value={stage} label={`${statLabel} ${t("calc.boosts")}`}
             onChange={(next) => setMon((s) => ({ ...s, boosts: { ...s.boosts, spe: next } }))} />
           <span className="num tw-sp-final" title={chain.parts.length ? chain.parts.join(" · ") : undefined}

@@ -25,7 +25,8 @@ from .worker import WorkerPool
 # Version 6 requires clients to stop consuming transitional team evidence at expiry.
 # Version 7 adds the lightweight opponent-set catalog used by calculator defaults and build previews.
 # Version 8 requires environment.sourceFingerprints, the data identity that derived views were built from.
-WEB_PROTOCOL_VERSION = "8"
+# Version 9 adds per-species matchup detail shards and the local details view.
+WEB_PROTOCOL_VERSION = "9"
 
 # Ids derived from the installed skill snapshot. A deployed release carries a `release-<hash>`
 # id instead, bound to the whole payload rather than to the skill data alone.

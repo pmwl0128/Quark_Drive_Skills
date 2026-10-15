@@ -31,7 +31,7 @@ import { TrendAddon, UsageRow } from "./rows.tsx";
 type Side = "koTargets" | "koedBy";
 
 /** Local wall-clock "YYYY-MM-DD HH:mm" — the reader's own time zone, same form in every language. */
-export function stampTime(iso: string): string {
+function stampTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   const pad = (n: number) => String(n).padStart(2, "0");

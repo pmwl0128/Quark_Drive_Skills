@@ -7,7 +7,7 @@ import type { FormatId } from "@pokemon-champions/protocol";
 const DIAGNOSE_FILL_KEY = "pc-diagnose-fill-v1";
 
 /** Raw pasted text; the diagnose form parses it like anything typed there. */
-export interface DiagnoseTextFill { handoff: "text"; text: string; format?: FormatId }
+interface DiagnoseTextFill { handoff: "text"; text: string; format?: FormatId }
 
 export const isDiagnoseTextFill = (fill: unknown): fill is DiagnoseTextFill =>
   typeof fill === "object" && fill !== null && (fill as { handoff?: unknown }).handoff === "text"

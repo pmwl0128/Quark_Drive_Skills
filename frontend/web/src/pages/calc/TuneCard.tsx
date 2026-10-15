@@ -1,15 +1,14 @@
 /** Benchmark-ordered cliff card for the authoritative `tune` operator. The session page renders the
  * same card for AGENT-authored tune results, so the reader stays lenient: anything that fails the
  * schema falls back to raw JSON instead of white-screening. */
-import type { LearnsetDto, TuneCardDto } from "@pokemon-champions/protocol";
+import type { TuneCardDto } from "@pokemon-champions/protocol";
 import { TuneCardDtoSchema } from "@pokemon-champions/protocol";
 import { useState } from "react";
-import { useAsync, useDexByName } from "../../hooks.ts";
+import { useLearnset, useDexByName } from "../../hooks.ts";
 import { displayName, useLang } from "../../i18n.ts";
 import { useCalcT, optionalCalcKey, type CalcMsgKey } from "./messages.ts";
 import { useProseRenderer } from "../../lib/prose.tsx";
 import { localName, useNameMaps } from "../../lib/names.ts";
-import { loadLearnset } from "../../runtime/projection.ts";
 import { SetOriginBadge, tuneSourceOrigin } from "../../components/SetOrigin.tsx";
 
 const RESULT_LABEL: Record<string, CalcMsgKey> = {
@@ -67,9 +66,7 @@ function TuneCardBody({ card }: { card: TuneCardDto }) {
   };
   const moveOwner = typeof card.vs === "string" && card.kind === "survive" ? card.vs : card.member;
   const ownerSlug = dexByName.get(moveOwner)?.slug ?? null;
-  const ownerMoves = useAsync<LearnsetDto | null>(
-    () => (card.move && ownerSlug ? loadLearnset(ownerSlug).catch(() => null) : Promise.resolve(null)),
-    [ownerSlug, card.move]);
+  const ownerMoves = useLearnset(ownerSlug ?? "", !!card.move);
   const moveInfo = ownerMoves.status === "ready" && ownerMoves.data
     ? ownerMoves.data.moves.find((m) => m.name === card.move) : undefined;
   const kindKey = optionalCalcKey(`tune.kind.${card.kind}`);

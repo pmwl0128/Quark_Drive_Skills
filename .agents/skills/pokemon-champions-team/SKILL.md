@@ -131,7 +131,13 @@ python scripts/team.py repset Garchomp --game-format double --format json
 python scripts/team.py search --game-format double --species Gengar Froslass --format json
 python scripts/team.py show <team-id> --game-format double --format json
 python scripts/team.py oppmatrix --game-format double --species Garchomp --vs Charizard --format json
+python scripts/team.py topmeta --game-format double --scope season --species Garchomp
 ```
+
+`topmeta` (Top Meta / 竞技环境 / 上位環境) counts the library on the metagame's own fields and returns
+each entry with both its count and the in-game value. Use it for "what do top-level teams run" and
+"how does that differ from the in-game data"; name the population and the sample size in the answer,
+and never treat agreement with `repset`/`frame` as corroboration — it is the same library.
 
 Use `observed` for constraint-shaped retrieval and `search`/`show` for exact library inspection.
 Adopting an observed team is allowed only with the provenance and adoption-review disclosures required
@@ -152,4 +158,4 @@ by `answer-audit`. Never silently reproduce a stored team.
 
 - `references/assisted_workflow.md`: mandatory routing, guided intake, grounding, gates, and final audit.
 - `references/schema.md`: `team-json`, provenance, representative-set/cache, build-context, evidence,
-  and frame contracts.
+  frame and Top Meta contracts.

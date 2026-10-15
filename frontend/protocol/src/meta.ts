@@ -295,3 +295,155 @@ export const MetaKoTrendDtoSchema = z.object({
       .every((series) => series.values.length === expected);
 }, { message: "every KO trend series must align 1:1 with periods" });
 export type MetaKoTrendDto = z.infer<typeof MetaKoTrendDtoSchema>;
+
+/* ── Top Meta (竞技环境 / 上位環境) ───────────────────────────────────────────────────────────
+ * The real-team library counted on the in-game metagame's own fields (team skill `topmeta`).
+ * Every entry is ONE record carrying both sides — the Top Meta count/share and the in-game value —
+ * so the in-game page and the Top Meta page read the same deviation from opposite perspectives:
+ * `delta` is Top Meta minus in-game, and the in-game page shows its negation.
+ *   - `tier` decides presentation, never existence: `count` (under 5 units) shows k/n and carries
+ *     no numeric delta, only the two markers; `low` is a share with a low-sample flag.
+ *   - in-game `bound` means "below the last listed share" — never a measured zero; a delta derived
+ *     from it is a lower bound (`deltaIsFloor`).
+ *   - the rule scope spans seasons; it compares with the current official snapshot (`comparedWith.window`).
+ */
+export const TopMetaScopeIdSchema = z.enum(["season", "rule"]);
+export type TopMetaScopeId = z.infer<typeof TopMetaScopeIdSchema>;
+export const TopMetaTierSchema = z.enum(["count", "low", "reliable"]);
+export type TopMetaTier = z.infer<typeof TopMetaTierSchema>;
+
+export const TopIngameValueSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("pct"), value: z.number().min(0).max(100) }),
+  z.object({ kind: z.literal("bound"), below: z.number().min(0).max(100) }),
+  z.object({ kind: z.literal("absent") }),
+]);
+export type TopIngameValue = z.infer<typeof TopIngameValueSchema>;
+
+export const TopIngameRankSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("rank"), value: z.number().int().positive() }),
+  z.object({ kind: z.literal("unlisted") }),
+]);
+export type TopIngameRank = z.infer<typeof TopIngameRankSchema>;
+
+const topHeaderFields = {
+  format: FormatIdSchema,
+  rule: z.string().min(1),
+  scope: TopMetaScopeIdSchema,
+  season: z.string().nullable(),
+  partitions: z.array(z.string()),
+  /** Deduplicated units: one player's distinct composition / distinct build. */
+  sample: z.object({ teams: z.number().int().nonnegative(), sets: z.number().int().nonnegative() }),
+  /** `current_snapshot`: the rule scope compared with the current official snapshot — the two sides
+   * cover different time ranges, which every view must say. */
+  comparedWith: z.object({
+    season: z.string(),
+    window: z.enum(["same_season", "current_snapshot"]),
+    updatedAt: z.string().optional(),
+  }).nullable(),
+  builtAt: z.string().optional(),
+} as const;
+
+export const TopRankRowDtoSchema = z.object({
+  rank: z.number().int().positive(),
+  slug: z.string().min(1),
+  key: z.string().regex(/^pokemon:[a-z0-9-]+$/),
+  types: z.array(TypeNameSchema).max(2),
+  ...namedFields,
+  teams: z.number().int().positive(),
+  share: z.number().min(0).max(100),
+  tier: TopMetaTierSchema,
+  /** null = not in the in-game ranking, or the scope carries no comparison. */
+  ingameRank: z.number().int().positive().nullable(),
+  /** In-game rank minus Top Meta rank (positive = ranks higher in Top Meta). Null in the count tier. */
+  rankDelta: z.number().int().nullable(),
+  withinNoise: z.boolean().nullable(),
+});
+export type TopRankRowDto = z.infer<typeof TopRankRowDtoSchema>;
+
+export const TopMetaRankingDtoSchema = z.object({
+  ...topHeaderFields,
+  rows: z.array(TopRankRowDtoSchema),
+});
+export type TopMetaRankingDto = z.infer<typeof TopMetaRankingDtoSchema>;
+
+const topValueFields = {
+  count: z.number().int().nonnegative(),
+  share: z.number().min(0).max(100).nullable(),
+  ingame: TopIngameValueSchema.nullable(),
+  delta: z.number().nullable(),
+  deltaIsFloor: z.literal(true).optional(),
+  withinNoise: z.boolean().nullable(),
+  marker: z.enum(["outside_ingame_top", "unseen_in_top"]).nullable(),
+} as const;
+
+export const TopNamedEntryDtoSchema = z.object({ ...namedFields, ...topValueFields });
+export type TopNamedEntryDto = z.infer<typeof TopNamedEntryDtoSchema>;
+export const TopItemEntryDtoSchema = z.object({
+  ...namedFields, ...topValueFields, key: z.string().regex(/^item:[a-z0-9-]+$/),
+});
+export type TopItemEntryDto = z.infer<typeof TopItemEntryDtoSchema>;
+export const TopMoveEntryDtoSchema = z.object({
+  ...namedFields, ...topValueFields,
+  type: TypeNameSchema.nullable(), category: MoveCategorySchema.nullable(),
+  power: z.number().int().nullable(),
+});
+export type TopMoveEntryDto = z.infer<typeof TopMoveEntryDtoSchema>;
+export const TopSpreadEntryDtoSchema = z.object({ spread: SpSpreadSchema, ...topValueFields });
+export type TopSpreadEntryDto = z.infer<typeof TopSpreadEntryDtoSchema>;
+/** Partners publish only an order in-game, so their comparison is rank against rank. A row counted in
+ * fewer than three distinct teams is cropped at the web boundary (it would name one team's line-up). */
+export const TopPartnerEntryDtoSchema = z.object({
+  ...namedFields,
+  slug: z.string().min(1),
+  key: z.string().regex(/^pokemon:[a-z0-9-]+$/),
+  count: z.number().int().nonnegative(),
+  share: z.number().min(0).max(100).nullable(),
+  rank: z.number().int().positive().nullable(),
+  ingame: TopIngameRankSchema.nullable(),
+  rankDelta: z.number().int().nullable(),
+});
+export type TopPartnerEntryDto = z.infer<typeof TopPartnerEntryDtoSchema>;
+
+function topPanel<T extends z.ZodTypeAny>(entry: T) {
+  return z.object({
+    n: z.number().int().nonnegative(),
+    tier: TopMetaTierSchema,
+    entries: z.array(entry),
+  });
+}
+
+export const TopMetaScopeDtoSchema = z.object({
+  ...topHeaderFields,
+  rank: z.number().int().positive().nullable(),
+  tier: TopMetaTierSchema.nullable(),
+  share: z.number().min(0).max(100).nullable(),
+  rankDelta: z.number().int().nullable(),
+  withinNoise: z.boolean().nullable(),
+  ingameRank: z.number().int().positive().nullable(),
+  teams: z.number().int().nonnegative(),
+  sets: z.number().int().nonnegative(),
+  lanes: z.record(z.string(), z.number().int().nonnegative()),
+  panels: z.object({
+    moves: topPanel(TopMoveEntryDtoSchema),
+    items: topPanel(TopItemEntryDtoSchema),
+    abilities: topPanel(TopNamedEntryDtoSchema),
+    natures: topPanel(TopNamedEntryDtoSchema),
+    spreads: topPanel(TopSpreadEntryDtoSchema),
+    partners: topPanel(TopPartnerEntryDtoSchema),
+  }),
+});
+export type TopMetaScopeDto = z.infer<typeof TopMetaScopeDtoSchema>;
+
+export const TopMetaDetailDtoSchema = z.object({
+  slug: z.string().min(1),
+  key: z.string().regex(/^pokemon:[a-z0-9-]+$/),
+  ...namedFields,
+  format: FormatIdSchema,
+  rule: z.string().min(1),
+  season: z.string().nullable(),
+  scopes: z.object({
+    season: TopMetaScopeDtoSchema.nullable(),
+    rule: TopMetaScopeDtoSchema.nullable(),
+  }),
+});
+export type TopMetaDetailDto = z.infer<typeof TopMetaDetailDtoSchema>;

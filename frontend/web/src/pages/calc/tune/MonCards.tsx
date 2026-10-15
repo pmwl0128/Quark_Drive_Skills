@@ -7,13 +7,18 @@ import { displayName, useLang } from "../../../i18n.ts";
 import { useCalcT, type CalcMsgKey } from "../messages.ts";
 import type { DexIndexEntry } from "../../../runtime/adapter.ts";
 import type { ItemRef } from "../../../runtime/projection.ts";
-import {
-  BOOST_STAGES, BuildPickerButton, ItemCombo, NatureOptions, STATUSES, boostLabel, clampNum, megaFor,
-  spSum, spSumClass, type BuildOption,
-} from "../../../components/build/inputs.tsx";
+import { BuildPickerButton, ItemCombo } from "../../../components/build/inputs.tsx";
+import { megaFor } from "../../../lib/lookup.ts";
+import { spSum, spSumClass, type BuildOption } from "../../../lib/buildState.ts";
 import { useMetaUsage } from "../../../lib/metaUsage.ts";
-import { MonNameRow, MonPortrait } from "../duel/MonEditor.tsx";
+import { MonNameRow, MonPortrait } from "../../../components/build/MonIdentity.tsx";
 import { MoveCell } from "../../../components/build/MoveCell.tsx";
+import { StageSelect } from "../../../components/build/StageSelect.tsx";
+import { SpControl } from "../../../components/build/SpControl.tsx";
+import { NatureCombo } from "../../../components/build/NatureCombo.tsx";
+import { ItemFieldLabel, StatusFieldLabel } from "../../../components/build/FieldLabels.tsx";
+import { AdaptiveSelect } from "../../../components/AdaptiveSelect.tsx";
+import { StatusSelect } from "../../../components/build/StatusSelect.tsx";
 import { boostedStat, effectiveEntry, finalStat, monToMember, type MonState } from "../duel/state.ts";
 import { attackIndex, pressedStat, type Baseline, type BulkStat, type Rolls } from "./model.ts";
 
@@ -57,7 +62,7 @@ function useMegaConsistency(slug: string, item: string, ability: string, dex: De
  * the member so a slider tick - which only moves SP - never re-renders the pickers, whose desktop
  * datalists carry every species and item in the game. */
 const Identity = memo(function Identity({ slug, ability, nature, item, status, dex, natures, items, format,
-  idKey, restore, member, onSpecies, onChange, onPickBuild }: {
+  restore, member, onSpecies, onChange, onPickBuild }: {
   slug: string;
   ability: string;
   nature: string;
@@ -69,7 +74,6 @@ const Identity = memo(function Identity({ slug, ability, nature, item, status, d
   natures: NatureDto[];
   items: ItemRef[];
   format: FormatId;
-  idKey: string;
   /** The card's revert control; `enabled` is false while the spread still equals its baseline. */
   restore?: { enabled: boolean; onRestore: () => void };
   /** The whole build, for dragging the portrait into a box. */
@@ -98,40 +102,31 @@ const Identity = memo(function Identity({ slug, ability, nature, item, status, d
     <>
       <div className="mon-id">
         <MonPortrait entry={entry} name={entry ? displayName(entry, lang) : ""} member={member} />
-        <MonNameRow slug={slug} item={item} dex={dex} items={items} pickerKey={idKey} actions={actions}
+        <MonNameRow slug={slug} item={item} dex={dex} items={items} actions={actions}
           onSpecies={onSpecies}
           onForme={(next, dropStone) => onChange((current) => ({
             ...current, slug: next, ...(dropStone ? { item: "" } : {}) }))} />
       </div>
       <div className="mon-build-row">
         <label>{t("calc.ability")}
-          <select value={ability}
-            onChange={(event) => onChange((current) => ({ ...current, ability: event.target.value }))}>
+          <AdaptiveSelect value={ability}
+            onValueChange={(value) => onChange((current) => ({ ...current, ability: value }))}>
             <option value="">—</option>
             {entry?.abilities.map((candidate) => (
               <option key={candidate.name} value={candidate.name}>{displayName(candidate, lang)}</option>
             ))}
-          </select>
+          </AdaptiveSelect>
         </label>
         <label>{t("calc.nature")}
-          <select value={nature}
-            onChange={(event) => onChange((current) => ({ ...current, nature: event.target.value }))}>
-            <NatureOptions natures={natures} usage={usage} />
-          </select>
+          <NatureCombo value={nature} natures={natures} usage={usage}
+            onChange={(next) => onChange((current) => ({ ...current, nature: next }))} />
         </label>
-        <label>{t("calc.item")}
-          <ItemCombo idKey={idKey} value={item} items={items} disabled={!!requiredStone} usage={usage}
+        <label><ItemFieldLabel value={item} items={items} />
+          <ItemCombo value={item} items={items} disabled={!!requiredStone} usage={usage}
             onChange={(next) => onChange((current) => ({ ...current, item: next }))} />
         </label>
-        <label>{t("calc.status")}
-          <select value={status}
-            onChange={(event) => onChange((current) => ({ ...current, status: event.target.value }))}>
-            {STATUSES.map((candidate) => (
-              <option key={candidate} value={candidate === "Healthy" ? "" : candidate}>
-                {t(`status.${candidate}`)}
-              </option>
-            ))}
-          </select>
+        <label><StatusFieldLabel value={status} />
+          <StatusSelect value={status} onChange={(value) => onChange((current) => ({ ...current, status: value }))} />
         </label>
       </div>
     </>
@@ -140,57 +135,22 @@ const Identity = memo(function Identity({ slug, ability, nature, item, status, d
 
 type StageKey = "atk" | "def" | "spa" | "spd" | "spe";
 
-/** A stat stage, as narrow as -6..+6 allows. Coloured by direction so a raised or lowered stat is
- * visible without reading the number. */
-export function StageSelect({ value, label, onChange }: {
-  value: number;
-  label: string;
-  onChange: (stage: number) => void;
-}) {
-  return (
-    <select className={`tw-stage-sel num${value > 0 ? " up" : value < 0 ? " down" : ""}`} value={value}
-      aria-label={label} title={label} onChange={(event) => onChange(Number(event.target.value))}>
-      {BOOST_STAGES.map((stage) => <option key={stage} value={stage}>{boostLabel(stage)}</option>)}
-    </select>
-  );
-}
-
-export function SpSlider({ label, value, baseline, mini = false, onChange }: {
-  label: string;
-  value: number;
-  /** Where the loaded spread sat; drawn as a tick once the slider has left it. */
-  baseline?: number;
-  mini?: boolean;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <span className={`tw-sp-slider${mini ? " mini" : ""}`}
-      style={{ ["--fill" as string]: value / 32, ["--base" as string]: (baseline ?? 0) / 32 }}>
-      <span className="tw-sp-track" aria-hidden />
-      {baseline !== undefined && baseline !== value && <span className="tw-sp-base" aria-hidden />}
-      <input type="range" min={0} max={32} step={1} value={value} aria-label={`${label} SP`}
-        onChange={(event) => onChange(clampNum(event.target.value, 0, 32))} />
-    </span>
-  );
-}
-
 /** One compact stat: name, SP box, short slider and an unlabelled stage select. Used for the stats
  * that are not the bulk axis — our Atk/SpA/Spe (Foul Play reads our Attack, Gyro Ball our Speed) and
  * the attacker's Atk/SpA. */
-function StatStrip({ label, value, stage, onValue, onStage, stageLabel }: {
+function StatStrip({ label, value, stage, onValue, onStage, stageLabel, shortcuts = true }: {
   label: string;
   value: number;
   stage: number;
   onValue: (value: number) => void;
   onStage: (stage: number) => void;
   stageLabel: string;
+  shortcuts?: boolean;
 }) {
   return (
     <div className="tw-stat-strip">
       <span>{label}</span>
-      <input type="number" min={0} max={32} className="num tw-sp-input" value={value}
-        aria-label={`${label} SP`} onChange={(event) => onValue(clampNum(event.target.value, 0, 32))} />
-      <SpSlider label={label} value={value} mini onChange={onValue} />
+      <SpControl stat={label} value={value} onChange={onValue} shortcuts={shortcuts} />
       <StageSelect value={stage} label={stageLabel} onChange={onStage} />
     </div>
   );
@@ -249,7 +209,7 @@ export const DefenderCard = memo(function DefenderCard({ mon, baseline, dex, nat
     <section className="panel mon-editor tw-mon tw-mine" aria-label={t("speed.ours")}>
       <Identity slug={mon.slug} ability={mon.ability} nature={mon.nature} item={mon.item}
         status={mon.status} dex={dex} natures={natures} items={items} format={format}
-        idKey="tune-mine" onSpecies={onSpecies} onChange={onChange} onPickBuild={onPickBuild}
+        onSpecies={onSpecies} onChange={onChange} onPickBuild={onPickBuild}
         restore={changed ? restoreOn : restoreOff} member={member} />
 
       <div className="tw-sp">
@@ -283,9 +243,7 @@ export const DefenderCard = memo(function DefenderCard({ mon, baseline, dex, nat
           return (
             <div className="tw-sp-row" key={key}>
               <span className="tw-sp-name">{label}</span>
-              <input type="number" min={0} max={32} className="num tw-sp-input" value={current}
-                aria-label={`${label} SP`} onChange={(event) => setSp(key, clampNum(event.target.value, 0, 32))} />
-              <SpSlider label={label} value={current} baseline={mark} onChange={(next) => setSp(key, next)} />
+              <SpControl stat={label} value={current} baseline={mark} onChange={(next) => setSp(key, next)} />
               {key === "hp" ? <span aria-hidden /> : (
                 <StageSelect value={stage} label={`${label} ${t("calc.boosts")}`}
                   onChange={(next) => setStage(key, next)} />
@@ -306,7 +264,7 @@ export const DefenderCard = memo(function DefenderCard({ mon, baseline, dex, nat
             const label = t(STAT_LABEL[key]!);
             return (
               <StatStrip key={key} label={label} value={mon.sps[key] ?? 0} stage={mon.boosts[key] ?? 0}
-                stageLabel={`${label} ${t("calc.boosts")}`}
+                stageLabel={`${label} ${t("calc.boosts")}`} shortcuts={false}
                 onValue={(next) => setSp(key, next)} onStage={(next) => setStage(key, next)} />
             );
           })}
@@ -376,7 +334,7 @@ export const AttackerCard = memo(function AttackerCard({ mon, baseline, dex, nat
     <section className="panel mon-editor tw-mon tw-foe" aria-label={t("speed.theirs")}>
       <Identity slug={mon.slug} ability={mon.ability} nature={mon.nature} item={mon.item}
         status={mon.status} dex={dex} natures={natures} items={items} format={format}
-        idKey="tune-foe" onSpecies={onSpecies} onChange={onChange}
+        onSpecies={onSpecies} onChange={onChange}
         onPickBuild={onPickBuild} restore={changed ? restoreOn : restoreOff} member={member} />
 
       <div className="tw-offense">

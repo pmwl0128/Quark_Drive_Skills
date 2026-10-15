@@ -6,7 +6,7 @@
  * their place. */
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
-export interface ToastInput {
+interface ToastInput {
   text: string;
   action?: { label: string; run: () => void };
 }

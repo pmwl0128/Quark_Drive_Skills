@@ -1,0 +1,17 @@
+.team-import-choices { min-width: 0; }
+.team-import-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%;
+  padding: 6px 8px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.team-import-row:hover, .team-import-row:focus-visible { background: var(--brand-soft); }
+.team-import-no { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
+  background: var(--panel-2); color: var(--sub); font-size: 12px; font-weight: 700; }
+.team-import-row:hover .team-import-no { background: var(--brand-soft); color: var(--brand-strong); }
+.team-import-main { display: grid; gap: 2px; min-width: 0; }
+.team-import-name { overflow: hidden; font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.team-import-name.auto { color: var(--sub); font-weight: 500; }
+.team-import-sprites { display: flex; gap: 1px; }
+.team-import-sprites img { width: 30px; height: 30px; object-fit: contain; }
+.team-import-note { margin: 6px 8px; font-size: 12.5px; line-height: 1.55; }
+.team-import-count { font-size: 11px; color: var(--sub); }
+.team-import-more { display: block; width: 100%; margin-top: 5px; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--panel-2); color: var(--brand-strong); font: inherit; font-size: 12px; cursor: pointer; }
+.team-import-more:hover { border-color: var(--brand); background: var(--brand-soft); }

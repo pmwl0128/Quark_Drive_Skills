@@ -8,8 +8,9 @@ import { useAsync } from "../../../hooks.ts";
 import { HttpError, type RuntimeAdapter } from "../../../runtime/adapter.ts";
 import type { MoveRef } from "../../../runtime/projection.ts";
 import { natureMult, type FieldState, type MonState } from "../duel/state.ts";
-import { useBuildOptions, withMega, type BuildOption } from "../../../components/build/inputs.tsx";
-import { useDamageStore } from "../tune/model.ts";
+import { useBuildOptions } from "../../../components/build/inputs.tsx";
+import { withMega, type BuildOption } from "../../../lib/buildState.ts";
+import { useDamageStore } from "../tune/useDamageStore.ts";
 import {
   bulkUse, buildSpace, frameOf, hitRequests, liveFrame, offenseUse,
   type HitFrame, type KnownFacts, type Observation, type RequestKit, type SpaceInfo,
@@ -39,7 +40,7 @@ export interface SetReading {
   fits: boolean;
 }
 
-export interface SpreadReading {
+interface SpreadReading {
   spread: Record<string, number>;
   percentage: number | null;
   /** Per space nature: still fits. */
