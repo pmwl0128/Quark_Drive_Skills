@@ -85,18 +85,18 @@ const LIBRARY_MESSAGES = {
     en: "Imported {teams} teams and {box} Pokémon; {n} entries found no room and were left out",
     ja: "{teams} チームと {box} 匹を読み込みました。空きがなかった {n} 件は読み込んでいません" },
   "lib.toast.failed": {
-    zh: "没有保存成功，请检查配置与浏览器存储后重试", en: "Could not save. Check the build and browser storage, then retry",
-    ja: "保存できませんでした。型とブラウザのストレージを確認してください" },
+    zh: "没有保存成功，请检查配置与存储权限后重试", en: "Could not save. Check the build and storage permissions, then retry",
+    ja: "保存できませんでした。型と保存先の権限を確認してください" },
 
   "lib.broken": {
-    zh: "有 {n} 条记录无法读取（可能由更新版本的网站写入，或已损坏）。它们仍保留在浏览器里，“导出全部”会一并带走。",
-    en: "{n} stored records can't be read (written by a newer version of the site, or damaged). They stay in the browser, and “Export all” includes them.",
-    ja: "読み取れない記録が {n} 件あります（新しいバージョンのサイトで書き込まれたか、破損しています）。ブラウザには残っており、「すべて書き出す」に含まれます。" },
+    zh: "有 {n} 条记录无法读取（可能由更新版本写入，或已损坏）。原始记录仍保留，“导出全部”会一并带走。",
+    en: "{n} stored records can't be read (written by a newer version, or damaged). The originals are kept, and “Export all” includes them.",
+    ja: "読み取れない記録が {n} 件あります（新しいバージョンで書き込まれたか、破損しています）。元の記録は保持され、「すべて書き出す」に含まれます。" },
   "lib.loading": { zh: "正在读取本地资料…", en: "Reading the local library…", ja: "ローカルデータを読み込み中…" },
   "lib.unavailable": {
-    zh: "这个浏览器不允许本站使用本地存储（可能是隐私模式或禁用了站点数据），暂时无法保存队伍。",
-    en: "This browser does not let the site use local storage (private mode, or site data is blocked), so teams can't be saved here.",
-    ja: "このブラウザではローカルストレージを利用できないため（プライベートモード、またはサイトデータのブロック）、チームを保存できません。" },
+    zh: "无法读取资料库，请检查存储权限后重试。",
+    en: "The library cannot be read. Check storage permissions and retry.",
+    ja: "ライブラリを読み込めません。保存先の権限を確認して再試行してください。" },
 
   "lib.edit.team": { zh: "编辑队伍", en: "Edit team", ja: "チームを編集" },
   "lib.edit.box": { zh: "编辑宝可梦", en: "Edit Pokémon", ja: "ポケモンを編集" },
@@ -263,9 +263,9 @@ const LIBRARY_MESSAGES = {
     en: "{boxes} boxes open ({cells} cells) · {single} singles and {double} doubles team slots",
     ja: "ボックス {boxes} 個（{cells} マス）· シングル {single} 枠、ダブル {double} 枠" },
   "lib.store.origin": {
-    zh: "资料按网址分别保存：在线站点、本地版，以及换了端口的本地版，各有一份互不相通的资料。换浏览器、换网址或清除站点数据之前，请先“导出全部”，再到新地址导入。",
-    en: "Each web address keeps its own library: the online site, the local app, and the local app on another port each have a separate one. Before switching browsers or addresses, or clearing site data, use “Export all” and import the file at the new address.",
-    ja: "データはURLごとに別々に保存されます。オンライン版、ローカル版、ポート番号を変えたローカル版はそれぞれ独立しています。ブラウザやURLを変える前、サイトデータを消去する前に「すべて書き出す」で保存し、新しい場所で読み込んでください。" },
+    zh: "在线资料按浏览器和网址分别保存。更换浏览器、网址或清除站点数据前，请先“导出全部”，再到新地址导入。",
+    en: "Online libraries are separate for each browser and web address. Before switching browsers or addresses, or clearing site data, use “Export all” and import the file at the new address.",
+    ja: "オンラインのデータはブラウザとURLごとに保存されます。ブラウザやURLの変更、サイトデータの消去の前に「すべて書き出す」で保存し、新しい場所で読み込んでください。" },
 
   "lib.act.setActive": { zh: "设为当前队伍", en: "Work with this team", ja: "使用中のチームにする" },
   "lib.activeBadge": { zh: "当前", en: "Current", ja: "使用中" },

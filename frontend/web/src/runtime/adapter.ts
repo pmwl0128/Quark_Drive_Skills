@@ -11,6 +11,7 @@ import type {
   OnlineQuotaDto, QaAnswerDto, QaProgressDto, QaRequestDto, RankingDto, ResolveEntryDto, SessionDto, SessionWithLedgerDto,
   MetaKoTrendDto, SpeedBatchResultDto, SpeedInputDto, TopMetaDetailDto, TopMetaRankingDto,
   TopMetaScopeId, TrendDto, TuneResultDto, UsageTrendDto,
+  WorkspaceInfoDto, WorkspaceLibraryDto,
 } from "@pokemon-champions/protocol";
 import { OnlineErrorDetailSchema } from "@pokemon-champions/protocol";
 
@@ -34,7 +35,7 @@ export interface DexIndexEntry {
  * and never re-serializes. Only the LocalAdapter provides this — the interface member stays
  * optional so the OnlineAdapter never carries reject-stubs for a surface it cannot have. */
 export interface SessionApi {
-  list(): Promise<SessionDto[]>;
+  list(options?: { limit?: number; prioritizeDecisions?: boolean }): Promise<SessionDto[]>;
   create(meta?: Record<string, unknown>): Promise<SessionDto>;
   get(id: string): Promise<SessionWithLedgerDto>;
   /** Raw artifact payload, verbatim (kind comes from the X-Artifact-Kind header). */
@@ -59,6 +60,7 @@ export interface BuilderApi {
 
 export interface RuntimeAdapter {
   readonly runtime: "local" | "online";
+  readonly storage?: WorkspaceApi;
   capabilities(): Promise<Capabilities>;
   ranking(format: FormatId, limit?: number): Promise<RankingDto>;
   detail(format: FormatId, slug: string): Promise<MetaDetailDto>;
@@ -112,10 +114,23 @@ export interface RuntimeAdapter {
   /** Online-only builder wizard (llm.builder, design §7.3). Absent on the local runtime —
    * a local user has the full UEP session panel and a real agent instead. */
   readonly builder?: BuilderApi;
-  /** Online-only team diagnose (team.validate, §7.5 deterministic surface): free-form
+  /** Deterministic team diagnose (team.validate, §7.5): free-form
    * team text -> parse -> validate + diagnose report. Zero LLM, rate-limited. */
   diagnose?(req: DiagnoseRequestDto,
             onReport?: (report: DiagnoseReportDto) => void): Promise<DiagnoseReportDto>;
+}
+
+/** Local user files. The workspace identity also guards writes from older open windows. */
+export interface WorkspaceApi {
+  info(): Promise<WorkspaceInfoDto>;
+  pickFolder(lang: "zh" | "en" | "ja"): Promise<string | null>;
+  library(): Promise<WorkspaceLibraryDto>;
+  saveLibrary(document: WorkspaceLibraryDto): Promise<WorkspaceLibraryDto>;
+  importBrowser(document: WorkspaceLibraryDto & { records: unknown[] }): Promise<void>;
+  records(): Promise<unknown[]>;
+  putRecord(record: Record<string, unknown>): Promise<void>;
+  deleteRecords(ids: string[]): Promise<void>;
+  switch(path: string, migrate: boolean): Promise<WorkspaceInfoDto>;
 }
 
 export interface RuntimeConfig {

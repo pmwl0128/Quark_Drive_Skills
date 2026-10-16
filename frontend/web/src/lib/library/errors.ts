@@ -1,4 +1,6 @@
 import { defineMessages } from "../../i18n.ts";
+import { HttpError } from "../../runtime/adapter.ts";
+import { useWorkspaceT } from "../../components/library/workspaceMessages.ts";
 
 const useMessages = defineMessages({
   invalid: { zh: "配置格式无法读取，请检查宝可梦名称与字段后重试。", en: "The build could not be read. Check its names and fields, then retry.", ja: "型を読み取れません。名前と各項目を確認してください。" },
@@ -9,7 +11,12 @@ const useMessages = defineMessages({
 
 export function useLibraryFailure() {
   const t = useMessages();
+  const wt = useWorkspaceT();
   return (error: unknown): string => {
+    if (error instanceof HttpError) {
+      if (error.code === "workspace_changed" || error.code === "library_conflict") return wt("conflict");
+      return wt("error");
+    }
     const name = error instanceof Error ? error.name : "";
     if (/QuotaExceeded/.test(name)) return t("quota");
     if (/ZodError|TypeError|DataError|RangeError/.test(name)) return t("invalid");

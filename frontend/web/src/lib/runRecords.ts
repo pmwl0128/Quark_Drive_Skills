@@ -1,6 +1,6 @@
-/** Run records: the questions, builds, diagnoses and matchup batteries this browser has run — every
+/** Run records: questions, builds, diagnoses and matchup batteries — every
  * request that spends an allowance (frontend/design.md §2.3, §7.2–7.5). The server keeps no
- * history; the browser keeps its own, in a database of its own beside the library — these are
+ * online history; online browsers keep a separate IndexedDB and local workspaces use records.json. These are
  * derived results, not the reader's teams and boxes, so the two never mix and the library's export
  * does not carry them.
  *
@@ -19,6 +19,7 @@ import type { Table } from "dexie";
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import type { Capabilities, FormatId, SourceFingerprints } from "@pokemon-champions/protocol";
 import type { Lang } from "../i18n.ts";
+import { cancelUserWrite, persistUserWrite, rememberStorageFailure, userStorage } from "./userStorage.ts";
 
 export type AssistKind = "qa" | "build" | "diagnose" | "matchup";
 type AssistStatus = "running" | "done" | "failed";
@@ -61,9 +62,19 @@ const CUT_OFF_MS = 15000;
 
 /** The database, opened on first use. Dexie is imported then, not with the page: a page renders its
  * records list empty, and fills it once the store answers. */
-type RunTable = Table<AssistRecord, string>;
+type RunTable = Pick<Table<AssistRecord, string>, "put" | "bulkGet" | "bulkDelete" | "where">;
 let opening: Promise<RunTable | null> | null = null;
 function database(): Promise<RunTable | null> {
+  const local = userStorage();
+  if (local) {
+    // Same repository behavior; no IndexedDB is opened in the local runtime.
+    return Promise.resolve({
+      where: () => ({ equals: (kind: AssistKind) => ({ toArray: async () => (await local.records()).filter(row => readable(row) && row.kind === kind) }) }),
+      put: async (record: AssistRecord) => { await local.putRecord(record as unknown as Record<string, unknown>); return record.id; },
+      bulkGet: async (ids: string[]) => { const rows = await local.records(); return ids.map(id => rows.find(row => readable(row) && row.id === id)); },
+      bulkDelete: async (ids: string[]) => local.deleteRecords(ids),
+    } as unknown as RunTable);
+  }
   opening ??= import("dexie").then(({ default: Dexie }) => {
     const db = new Dexie("pokemon-champions-runs");
     db.version(1).stores({ records: "id, kind" });
@@ -94,16 +105,18 @@ function readable(row: unknown): row is AssistRecord {
 function ensureLoaded(kind: AssistKind): Promise<void> {
   let pending = loading.get(kind);
   if (!pending) {
-    pending = (async () => {
-      try {
+    const read = async () => {
         const table = await database();
         const rows = table ? await table.where("kind").equals(kind).toArray() : [];
         // A record written here before the store answered is newer than its stored row.
         for (const row of rows) if (readable(row) && !cache.has(row.id)) cache.set(row.id, row);
-      } catch { /* no IndexedDB here: the in-memory copy is all there is */ }
       loaded.add(kind);
       changed(kind);
-    })();
+    };
+    pending = read().catch(error => {
+      if (userStorage()) rememberStorageFailure(`read:${kind}`, read, error);
+      else { loaded.add(kind); changed(kind); }
+    });
     loading.set(kind, pending);
   }
   return pending;
@@ -153,6 +166,13 @@ const announce = (ids: string[]) => { if (ids.length) channel?.postMessage({ ids
 
 let persistenceAsked = false;
 function persist(record: AssistRecord, announceChange = true): void {
+  if (userStorage()) {
+    persistUserWrite(record.id, async () => {
+      await userStorage()!.putRecord(record as unknown as Record<string, unknown>);
+      if (announceChange) announce([record.id]);
+    });
+    return;
+  }
   void database().then((table) => table?.put(record)).then(() => {
     if (announceChange) announce([record.id]);
     if (persistenceAsked) return;
@@ -163,6 +183,11 @@ function persist(record: AssistRecord, announceChange = true): void {
 
 function forget(ids: string[]): void {
   if (!ids.length) return;
+  if (userStorage()) {
+    for (const id of ids) cancelUserWrite(id);
+    persistUserWrite(`delete:${ids.join(",")}`, async () => { await userStorage()!.deleteRecords(ids); announce(ids); });
+    return;
+  }
   void database().then((table) => table?.bulkDelete(ids)).then(() => announce(ids), () => {});
 }
 

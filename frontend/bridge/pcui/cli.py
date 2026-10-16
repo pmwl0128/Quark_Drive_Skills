@@ -83,7 +83,11 @@ def _http(info: dict, method: str, path: str, body: dict | None = None, timeout:
 
 
 def _store() -> Store:
-    return Store(data_dir() / "sessions.db")
+    from .workspace import default_workspace, workspace_path
+    config = load_runtime_config()
+    workspace = workspace_path(config.workspace_dir) if config.workspace_dir else default_workspace()
+    workspace.mkdir(parents=True, exist_ok=True)
+    return Store(workspace / "sessions.db")
 
 
 def _projection_deployment_id(value: str | None) -> str | None:
@@ -123,8 +127,19 @@ def cmd_serve(ns) -> int:
         raise SystemExit(i18n.t("daemon_running", pid=existing["pid"], port=existing["port"]))
     security = Security()
     pool = WorkerPool()
-    store = _store()
+    from .workspace import Workspace, save_workspace_default
+    workspace = Workspace(Path(ns.workspace).expanduser().resolve(), Path(ns.workspace_config))
+    legacy = data_dir() / "sessions.db"
+    first_workspace = load_runtime_config(Path(ns.workspace_config)).workspace_dir is None
+    if first_workspace and not (workspace.path / "sessions.db").exists() and legacy.is_file() and legacy.resolve() != workspace.path / "sessions.db":
+        previous = Store(legacy)
+        try:
+            previous.backup(workspace.path / "sessions.db")
+        finally:
+            previous.close()
+    store = Store(workspace.path / "sessions.db")
     app = create_app(store, pool, security,
+                     workspace=workspace,
                      deployment_id=_projection_deployment_id(ns.projection),
                      dist_dir=Path(ns.dist) if ns.dist else None,
                      projection_dir=Path(ns.projection) if ns.projection else None,
@@ -133,6 +148,7 @@ def cmd_serve(ns) -> int:
     # a concurrent `serve` that lost the race here cannot clobber the winner's marker.
     if not claim_daemon_file(ns.port, security.cli_secret):
         pool.shutdown()
+        app.state.close_workspace()
         live = read_daemon_file() or {}
         raise SystemExit(i18n.t("daemon_running", pid=live.get("pid", "?"), port=live.get("port", "?")))
     # flush: under a pipe (wrapper scripts, log capture) stdout is block-buffered and the
@@ -140,9 +156,11 @@ def cmd_serve(ns) -> int:
     print(f"pcui bridge: http://127.0.0.1:{ns.port}/#bootstrap={security.bootstrap_token}",
           flush=True)
     try:
+        save_workspace_default(Path(ns.workspace_config), workspace.path)
         uvicorn.run(app, host=ns.host, port=ns.port, log_level="warning")
     finally:
         pool.shutdown()
+        app.state.close_workspace()
         remove_daemon_file_if_owned()      # never erase a marker this process did not write
     return 0
 
@@ -280,8 +298,10 @@ def cmd_doctor(ns) -> int:
         checks.append((i18n.t("check_node"), node is not None, node or i18n.t("calc_missing")))
     current = META_DATA / "current.json"
     checks.append((i18n.t("check_meta"), current.exists(), str(current)))
-    db = data_dir() / "sessions.db"
-    checks.append((i18n.t("check_write"), data_dir().is_dir(), str(db)))
+    from .workspace import default_workspace, workspace_path
+    config = load_runtime_config()
+    folder = workspace_path(config.workspace_dir) if config.workspace_dir else default_workspace()
+    checks.append((i18n.t("check_write"), folder.is_dir() or folder.parent.is_dir(), str(folder / "sessions.db")))
     info = read_daemon_file()
     running = bool(info and pid_alive(int(info.get("pid", -1))))
     checks.append((i18n.t("check_daemon"), True,
@@ -447,6 +467,10 @@ def main(argv: list[str] | None = None) -> int:
     serve = sub.add_parser("serve", help=i18n.t("serve_help"))
     serve.add_argument("--port", type=int, default=runtime_config.local_port)
     serve.add_argument("--host", default="127.0.0.1")
+    from .workspace import default_workspace
+    serve.add_argument("--workspace", default=runtime_config.workspace_dir or str(default_workspace()),
+                       help="User workspace folder (default: ./storage; PCUI_WORKSPACE_DIR in pc.env)")
+    serve.set_defaults(workspace_config=str(config_path))
     # The dev-checkout default for --dist/--projection. It follows the repo layout, not SKILLS_ROOT,
     # which PCUI_SKILLS_ROOT may point outside the checkout entirely.
     _web = PROJECT_ROOT / "frontend" / "web"

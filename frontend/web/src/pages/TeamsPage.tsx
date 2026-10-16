@@ -18,6 +18,7 @@ import { useLibraryT } from "../components/library/messages.ts";
 import { StorageNote } from "../components/library/StorageNote.tsx";
 import { TeamShelf } from "../components/library/TeamShelf.tsx";
 import { TeamsRail } from "../components/library/TeamsRail.tsx";
+import { useWorkspaceT } from "../components/library/workspaceMessages.ts";
 
 type TeamsTab = "teams" | "box";
 const TABS: TeamsTab[] = ["teams", "box"];
@@ -26,6 +27,7 @@ const ID_BASE = "teams-mode";
 export function TeamsPage() {
   const { adapter, can } = useRuntime();
   const t = useLibraryT();
+  const wt = useWorkspaceT();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const canDiagnose = can("team.validate") && !!adapter.diagnose;
@@ -54,7 +56,7 @@ export function TeamsPage() {
     navigate("/assist?tab=diagnose");
   }, [navigate]);
 
-  if (requested === "diagnose") return <Navigate to="/assist?tab=diagnose" replace />;
+  if (requested === "diagnose") return <Navigate to={adapter.diagnose ? "/assist?tab=diagnose" : "/sessions"} replace />;
 
   const panel = (id: TeamsTab) => ({
     role: "tabpanel" as const,
@@ -66,13 +68,13 @@ export function TeamsPage() {
   return (
     <div className="lib-page">
       {state && <TeamsRail state={state} />}
-      <PageHeader title={t("lib.title")} description={t("lib.lead")}>
+      <PageHeader title={t("lib.title")} description={adapter.storage ? wt("lead") : t("lib.lead")}>
         <SegmentedControl kind="tabs" idBase={ID_BASE} value={tab} onChange={setTab}
           ariaLabel={t("lib.sections")} className="seg page-tabs"
           items={TABS.map((id) => ({ id, label: t(`lib.tab.${id}`) }))} />
       </PageHeader>
 
-      {library === "unavailable" && <p className="notice lib-warn">{t("lib.unavailable")}</p>}
+      {library === "unavailable" && <><p className="notice lib-warn">{adapter.storage ? wt("unavailable") : t("lib.unavailable")}</p>{adapter.storage && <StorageNote state={null} />}</>}
       {library === undefined && <p className="lib-loading muted">{t("lib.loading")}</p>}
       {state && visited.has("teams") && (
         <div {...panel("teams")}>

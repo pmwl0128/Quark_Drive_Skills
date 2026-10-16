@@ -119,9 +119,9 @@ const ASSIST_MESSAGES = {
   "builder.tab.qa": { zh: "问答", en: "Q&A", ja: "質問" },
   "builder.tab.diagnose": { zh: "队伍诊断", en: "Diagnose", ja: "診断" },
   "diag.disclosure": {
-    zh: "在线诊断会解析队伍，检查规则合法性，并检查属性、招式、速度、角色分工和常见对位。输入配置不完整时，按已有信息估算；结果只保存在本机浏览器。",
-    en: "The online diagnosis parses your team, checks its legality, and reviews typing, moves, speed, roles and common matchups. Incomplete sets are assessed from the details given; results are kept in this browser only.",
-    ja: "オンライン診断ではチームを読み取り、ルール適合性に加えて、タイプ・わざ・素早さ・役割分担・主な対面を確認します。型が不完全な場合は入力済みの情報から推定します。結果はこのブラウザにのみ保存されます。" },
+    zh: "诊断会解析队伍，检查规则合法性，并检查属性、招式、速度、角色分工和常见对位。输入配置不完整时，按已有信息估算；结果只保存在当前浏览器。",
+    en: "Diagnosis parses your team, checks its legality, and reviews typing, moves, speed, roles and common matchups. Incomplete sets are assessed from the details given; results are kept in this browser only.",
+    ja: "チームを読み取り、ルール適合性に加えて、タイプ・わざ・素早さ・役割分担・主な対面を確認します。型が不完全な場合は入力済みの情報から推定します。結果はこのブラウザにのみ保存されます。" },
   "diag.text": { zh: "队伍文本", en: "Team text", ja: "チームテキスト" },
   "diag.placeholder": {
     zh: "粘贴 Showdown 导出、team-json、常见社区分享格式，或直接输入 6 只宝可梦的中／日／英文名。系统会诊断成功识别的成员。",

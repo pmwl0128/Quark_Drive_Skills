@@ -15,6 +15,7 @@ import { HomePage } from "./pages/HomePage.tsx";
 import { RuntimeProvider, useRuntime } from "./runtime/context.tsx";
 import { ToastProvider } from "./components/Toast.tsx";
 import { preloadable } from "./lib/preloadable.ts";
+import { StorageFailureNotice } from "./components/StorageFailureNotice.tsx";
 
 // Keep the home launchpad in the entry chunk and split every other surface. Navigation intent
 // preloads the relevant module, so desktop hover/keyboard focus hides the network boundary while a
@@ -28,6 +29,7 @@ const loadCalcPage = () => import("./pages/CalcPage.tsx");
 const loadAssistantPage = () => import("./pages/AssistantPage.tsx");
 const loadTeamsPage = () => import("./pages/TeamsPage.tsx");
 const loadUepPages = () => import("./pages/uep/index.ts");
+const LocalHomePage = lazy(() => import("./pages/LocalHomePage.tsx").then(m => ({ default: m.LocalHomePage })));
 
 const RankingPage = lazy(() => loadRankingPage().then((m) => ({ default: m.RankingPage })));
 const DexPage = lazy(() => loadDexPage().then((m) => ({ default: m.DexPage })));
@@ -196,7 +198,7 @@ function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: 
         <SearchEntry onFallbackIntent={() => void MetaSearch.preload().catch(() => {})} />
         <Link className="logo" to="/" aria-label={t("nav.home")}>
           <img src={BRAND_LOGO} alt="" aria-hidden />
-          <span className="logo-text">Quark Drive<span className="logo-sub">Web</span></span>
+          <span className="logo-text">Quark Drive{" "}<span className="logo-sub">{adapter.runtime === "local" ? "Console" : "Web"}</span></span>
         </Link>
         <nav aria-label={t("a11y.primaryNav")}>
           <NavItem to="/ranking" label={t("nav.ranking")} preload={loadRankingPage} />
@@ -233,9 +235,10 @@ function Shell({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: 
       <LibraryDockLayer />
       <FallbackSearch />
       <main id="main-content" className="content" tabIndex={-1}>
+        <StorageFailureNotice />
         <Suspense fallback={<RouteLoading />}>
           <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={adapter.runtime === "local" ? <LocalHomePage /> : <HomePage />} />
           <Route path="/ranking" element={<RankingPage />} />
           <Route path="/dex" element={<DexPage />} />
           <Route path="/pokemon/:slug" element={<PokemonPage />} />

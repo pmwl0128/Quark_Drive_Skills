@@ -2,7 +2,7 @@
   "season": "M-7",
   "rule": "M-C",
   "format": "double",
-  "generated_at": "2026-10-14T03:31:12+00:00",
+  "generated_at": "2026-10-16T01:31:20+00:00",
   "thresholds": {
     "tiers": [
       {
@@ -50,55 +50,14 @@
   },
   "baseline": {
     "kind": "git-HEAD",
-    "ranking_updated_at": "2026-10-11T21:31:20+00:00",
-    "details_updated_at": "2026-10-11T21:31:20+00:00"
-  },
-  "current": {
     "ranking_updated_at": "2026-10-14T03:31:12+00:00",
     "details_updated_at": "2026-10-14T03:31:12+00:00"
   },
-  "rank_moves": [
-    {
-      "slug": "tyranitar",
-      "name": "班基拉斯",
-      "old": 25,
-      "new": 19,
-      "delta": 6,
-      "tier": "A"
-    },
-    {
-      "slug": "grimmsnarl",
-      "name": "长毛巨魔",
-      "old": 27,
-      "new": 22,
-      "delta": 5,
-      "tier": "A"
-    },
-    {
-      "slug": "metagross",
-      "name": "巨金怪",
-      "old": 21,
-      "new": 26,
-      "delta": -5,
-      "tier": "A"
-    },
-    {
-      "slug": "excadrill",
-      "name": "龙头地鼠",
-      "old": 35,
-      "new": 30,
-      "delta": 5,
-      "tier": "A"
-    },
-    {
-      "slug": "sceptile",
-      "name": "蜥蜴王",
-      "old": 74,
-      "new": 60,
-      "delta": 14,
-      "tier": "B"
-    }
-  ],
+  "current": {
+    "ranking_updated_at": "2026-10-16T01:31:20+00:00",
+    "details_updated_at": "2026-10-16T01:31:20+00:00"
+  },
+  "rank_moves": [],
   "new_entries": [],
   "dropped": [],
   "config_changes": []

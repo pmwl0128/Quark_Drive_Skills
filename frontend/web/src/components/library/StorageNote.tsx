@@ -10,8 +10,15 @@ import { storageStatus, type LibraryState, type StorageStatus } from "../../lib/
 import { ImportDialog } from "./ImportDialog.tsx";
 import { fill, useLibraryT } from "./messages.ts";
 import { formatBytes, useExportAll } from "./shared.tsx";
+import { useRuntime } from "../../runtime/context.tsx";
+import { WorkspaceStorage } from "./WorkspaceStorage.tsx";
 
 export function StorageNote({ state }: { state: LibraryState | null }) {
+  const { adapter } = useRuntime();
+  return <StorageDetails state={state} local={!!adapter.storage} />;
+}
+
+function StorageDetails({ state, local }: { state: LibraryState | null; local: boolean }) {
   const t = useLibraryT();
   const exportAll = useExportAll();
   const [status, setStatus] = useState<StorageStatus | null>(null);
@@ -20,22 +27,23 @@ export function StorageNote({ state }: { state: LibraryState | null }) {
   const revision = state ? state.teams.length * 1000 + state.box.length : 0;
 
   useEffect(() => {
+    if (local) return;
     let live = true;
     void storageStatus().then((next) => { if (live) setStatus(next); });
     return () => { live = false; };
-  }, [revision]);
+  }, [revision, local]);
 
   return (
     <aside className="lib-store">
       <div className="lib-store-row">
-        <span className="lib-store-status">
+        {!local && <span className="lib-store-status">
           {status?.persisted
             ? <><IconShieldCheck aria-hidden />{t("lib.store.persisted")}</>
             : <><IconDatabase aria-hidden />{t("lib.store.bestEffort")}</>}
           {status?.usage != null && (
             <span className="num muted">{fill(t("lib.store.usage"), { size: formatBytes(status.usage) })}</span>
           )}
-        </span>
+        </span>}
         <span className="lib-store-actions">
           <button type="button" className="second-btn lib-btn" onClick={() => setImporting(true)}>
             <IconFileImport aria-hidden />{t("lib.import")}
@@ -53,7 +61,7 @@ export function StorageNote({ state }: { state: LibraryState | null }) {
           })}
         </p>
       )}
-      <p>{t("lib.store.origin")}</p>
+      {local ? <WorkspaceStorage /> : <p>{t("lib.store.origin")}</p>}
       {importing && <ImportDialog onClose={() => setImporting(false)} />}
     </aside>
   );

@@ -32,6 +32,9 @@ export const SessionDtoSchema = z.object({
   revision: z.number().int().nonnegative(),
   heads: z.record(z.string(), z.string()),
   meta: z.record(z.string(), z.unknown()),
+  /** Evidence-derived summary; optional for compatibility with older local bridges. */
+  state: z.enum(["idle", "progress", "awaiting", "needs_changes", "review", "done"]).optional(),
+  updatedAt: z.string().min(1).optional(),
 });
 export type SessionDto = z.infer<typeof SessionDtoSchema>;
 

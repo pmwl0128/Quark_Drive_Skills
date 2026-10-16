@@ -3,8 +3,8 @@
   "$id": "urn:pokemon-champions:protocol:0.1.0",
   "title": "Quark Drive Web Protocol",
   "description": "Generated from @pokemon-champions/protocol Zod schemas; do not edit by hand.",
-  "x-schema-count": 120,
-  "x-export-fingerprint": "e83fe045719a73659f87bb02dc39666ccc2121f16f92bc1a7f4a107e16155303",
+  "x-schema-count": 129,
+  "x-export-fingerprint": "e793dcbaa6a2072213acb882b840c01c6127c4368200ba17c32eaf41f6f4a676",
   "$defs": {
     "AbilityDtoSchema": {
       "type": "object",
@@ -12432,6 +12432,21 @@
             "type": "string"
           },
           "additionalProperties": {}
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "idle",
+            "progress",
+            "awaiting",
+            "needs_changes",
+            "review",
+            "done"
+          ]
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
@@ -12474,6 +12489,21 @@
             "type": "string"
           },
           "additionalProperties": {}
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "idle",
+            "progress",
+            "awaiting",
+            "needs_changes",
+            "review",
+            "done"
+          ]
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1
         },
         "ledger": {
           "type": "array",
@@ -18274,6 +18304,235 @@
         "Snow",
         ""
       ]
+    },
+    "WorkspaceBrowserImportDtoSchema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "teams": {
+          "type": "array",
+          "items": {}
+        },
+        "box": {
+          "type": "array",
+          "items": {}
+        },
+        "layout": {},
+        "records": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "required": [
+        "workspaceId",
+        "revision",
+        "teams",
+        "box",
+        "layout",
+        "records"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspaceInfoDtoSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "libraryPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recordsPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sessionsPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "path",
+        "workspaceId",
+        "libraryPath",
+        "recordsPath",
+        "sessionsPath"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspaceLibraryDtoSchema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "teams": {
+          "type": "array",
+          "items": {}
+        },
+        "box": {
+          "type": "array",
+          "items": {}
+        },
+        "layout": {}
+      },
+      "required": [
+        "workspaceId",
+        "revision",
+        "teams",
+        "box",
+        "layout"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspacePickerRequestDtoSchema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lang": {
+          "type": "string",
+          "enum": [
+            "zh",
+            "en",
+            "ja"
+          ]
+        }
+      },
+      "required": [
+        "workspaceId",
+        "lang"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspacePickerResultDtoSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspaceRecordDeleteDtoSchema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ids": {
+          "maxItems": 1000,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WorkspaceRecordDeleteDtoSchema/$defs/__schema0"
+          }
+        }
+      },
+      "required": [
+        "workspaceId",
+        "ids"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "__schema0": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "WorkspaceRecordsDtoSchema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "records": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "required": [
+        "workspaceId",
+        "records"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspaceRecordWriteDtoSchema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "workspaceId",
+        "record"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspaceSwitchRequestDtoSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "migrate": {
+          "type": "boolean"
+        },
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "path",
+        "migrate",
+        "workspaceId"
+      ],
+      "additionalProperties": false
     }
   }
 }

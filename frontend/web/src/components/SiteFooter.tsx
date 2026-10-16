@@ -4,6 +4,7 @@ import { useT } from "../i18n.ts";
 import { usePopover } from "../lib/popover.ts";
 import { useToast } from "./Toast.tsx";
 import qqCode from "../../../assets/community/qq-group-857634818.webp";
+import { useRuntime } from "../runtime/context.tsx";
 
 const QQ_GROUP = "857634818";
 const QQ_INVITE = "https://qm.qq.com/q/YZjOlkaViK";
@@ -49,13 +50,14 @@ function QQCommunity() {
 /** Shared, localized site furniture; no runtime-specific links or user data. */
 export function SiteFooter() {
   const t = useT();
+  const { adapter } = useRuntime();
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="site-footer-main">
           <div className="footer-brand">
             <img src={BRAND_LOGO} alt="" aria-hidden="true" />
-            <span className="footer-brand-name">Quark Drive<span>Web</span></span>
+            <span className="footer-brand-name">Quark Drive{" "}<span>{adapter.runtime === "local" ? "Console" : "Web"}</span></span>
             <span className="footer-copyright">© {new Date().getFullYear()} pmwl</span>
           </div>
           <nav className="footer-community" aria-label={t("footer.community")}>

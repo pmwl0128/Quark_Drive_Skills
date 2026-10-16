@@ -1,6 +1,6 @@
 ---
 name: pokemon-champions-ui-session
-description: Work on the active Pokémon Champions UI build session — read its intent and artifacts through the pcui CLI, run the normal UEP team-building flow, and submit each gate artifact back so the local web panel renders progress live. Trigger when the user asks to handle/process the current Pokémon UI session. Chinese examples include "处理当前 Pokémon UI 会话", "继续 UI 会话", "看看 UI 会话的决策". English examples include "work on the current Pokémon UI session", "continue the UI session", "pick up my UI session". Japanese examples include "現在の Pokémon UI セッションを処理して", "UI セッションを続けて". Requires the pokemon-champions-team skill (and its sibling data skills) — this skill only adds the session I/O, never replaces the UEP discipline.
+description: Work on the active Pokémon Champions UI build session — read its intent and artifacts through the pcui CLI, run the normal UEP team-building flow, and submit each gate artifact back so the local web panel renders progress live. Trigger when the user asks to handle a Quark Drive local session (including an exact session id) or the current Pokémon UI session. Chinese examples include "处理当前 Pokémon UI 会话", "继续 UI 会话", "看看 UI 会话的决策". English examples include "work on the current Pokémon UI session", "continue the UI session", "pick up my UI session". Japanese examples include "現在の Pokémon UI セッションを処理して", "UI セッションを続けて". Requires the pokemon-champions-team skill (and its sibling data skills) — this skill only adds the session I/O, never replaces the UEP discipline.
 ---
 
 # Pokémon Champions UI Session
@@ -30,6 +30,12 @@ The pcui command for this machine: `{{PCUI_CMD}}`
 1. **Find the session**: `session list`, pick the one the user means (usually the newest,
    or the id they name). `session show --id <S>` gives `meta.intent` (the user's build
    intent typed in the panel), `heads` (latest artifact per kind), and the ledger.
+   A Quark Drive local-session handoff names an exact session id: use that id, not the newest.
+   New requests may include `meta.format`, `meta.requestKind`, `meta.team` (the canonical
+   attached team snapshot), `meta.teamName`, and `meta.environment`. Read these before intake;
+   use the attached builds for rework/diagnosis/tuning, preserving their completeness and the
+   user's constraints. Old intent-only sessions remain valid. The UI's task label is a hint,
+   not permission to skip the normal UEP gates or silently change the team.
 2. **Read what exists**: `artifact get` every kind in `heads` that matters — `context`,
    `decision` if present (the user's checkpoint answer made in the panel:
    `chooseCandidate` + `candidateIndex` into your slate's teams, `requestChanges` + note,

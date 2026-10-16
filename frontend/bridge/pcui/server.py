@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.staticfiles import StaticFiles
 
@@ -117,7 +117,7 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
                deployment_id: str | None = None,
                dist_dir: Path | None = None,
                projection_dir: Path | None = None,
-               bind_host: str = "127.0.0.1") -> FastAPI:
+               bind_host: str = "127.0.0.1", workspace=None) -> FastAPI:
     if deployment_id is not None and not _DEPLOYMENT_ID_RE.fullmatch(deployment_id):
         raise ValueError(f"invalid deployment id: {deployment_id!r}")
     app = FastAPI(title="pcui bridge", docs_url=None, redoc_url=None, openapi_url=None)
@@ -173,6 +173,93 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
 
     store.subscribe(on_event)
 
+    def close_workspace():
+        if workspace is not None:
+            store.close()
+            workspace.close()
+    app.state.close_workspace = close_workspace
+
+    def workspace_call(action):
+        from .workspace import WorkspaceError
+        if workspace is None:
+            raise HTTPException(503, "workspace not configured")
+        try:
+            return action()
+        except WorkspaceError as exc:
+            raise HTTPException(exc.status, {"error": {"code": exc.code, "message": exc.code}}) from exc
+        except OSError as exc:
+            raise HTTPException(422, {"error": {"code": "workspace_io_error", "message": "Workspace I/O failed"}}) from exc
+
+    @app.get("/api/workspace")
+    async def workspace_info():
+        return workspace_call(lambda: workspace.info())
+
+    @app.post("/api/workspace/pick-folder")
+    async def pick_workspace_folder(body: dict):
+        from .folder_picker import choose_folder
+        from .workspace import WorkspaceError
+        def validate():
+            workspace.check(body.get("workspaceId"))
+            if not isinstance(body.get("lang"), str) or body["lang"] not in {"zh", "en", "ja"}:
+                raise WorkspaceError("bad_input", 400)
+            return workspace.project
+        initial = workspace_call(validate)
+        # The helper owns its GUI thread; it never receives or touches a Store connection.
+        try:
+            selected = await asyncio.to_thread(choose_folder, initial, body["lang"])
+        except WorkspaceError as exc:
+            raise HTTPException(exc.status, {"error": {"code": exc.code, "message": exc.code}}) from exc
+        workspace_call(lambda: workspace.check(body.get("workspaceId")))
+        return {"path": selected}
+
+    @app.post("/api/workspace/switch")
+    async def switch_workspace(body: dict):
+        nonlocal workspace, store
+        def switch():
+            workspace.check(body.get("workspaceId"))
+            if not isinstance(body.get("path"), str) or not isinstance(body.get("migrate"), bool):
+                from .workspace import WorkspaceError
+                raise WorkspaceError("bad_input", 400)
+            return workspace.switch(body["path"], body["migrate"], store)
+        next_workspace, next_store = workspace_call(switch)
+        if next_workspace is not workspace:
+            old_workspace, old_store = workspace, store
+            workspace, store = next_workspace, next_store
+            store.subscribe(on_event)
+            old_store.close(); old_workspace.close()
+        return workspace.info()
+
+    @app.get("/api/workspace/library")
+    async def workspace_library():
+        return workspace_call(lambda: workspace.library())
+
+    @app.post("/api/workspace/import-browser")
+    async def import_browser_library(body: dict):
+        workspace_call(lambda: workspace.import_browser(body))
+        return {"ok": True}
+
+    @app.post("/api/workspace/library")
+    async def save_workspace_library(body: dict):
+        return workspace_call(lambda: workspace.put_library(body))
+
+    @app.get("/api/workspace/records")
+    async def workspace_records():
+        return workspace_call(lambda: {"workspaceId": workspace.identity, "records": workspace.records()})
+
+    @app.post("/api/workspace/records")
+    async def save_workspace_record(body: dict):
+        if not isinstance(body.get("record"), dict):
+            raise HTTPException(400, "record required")
+        workspace_call(lambda: workspace.edit_records(body.get("workspaceId"), record=body["record"]))
+        return {"ok": True}
+
+    @app.post("/api/workspace/records/delete")
+    async def delete_workspace_records(body: dict):
+        if not isinstance(body.get("ids"), list) or any(not isinstance(value, str) for value in body["ids"]):
+            raise HTTPException(400, "ids required")
+        workspace_call(lambda: workspace.edit_records(body.get("workspaceId"), ids=body["ids"]))
+        return {"ok": True}
+
     @app.middleware("http")
     async def gate(request: Request, call_next):
         if not allow_any_host:
@@ -188,15 +275,17 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
             length = int(cl) if cl is not None else None
         except ValueError:
             return Response(status_code=400, content="invalid content-length")
-        if length is not None and length > MAX_BODY:
+        large_workspace_body = request.url.path.startswith("/api/workspace/records") or request.url.path == "/api/workspace/import-browser"
+        body_limit = 32 * 1024 * 1024 if large_workspace_body else MAX_BODY
+        if length is not None and length > body_limit:
             # Drain a BOUNDED oversize before answering so the client's send() completes and can READ
             # this 413, instead of the Windows connection RST it sees when the socket closes with the
             # request body still unread. The pcui client also pre-checks size (cli.MAX_REQUEST_BODY);
             # this backstops other callers. Absurd bodies (> 4x the cap) are left to reset (rare).
-            if length <= 4 * MAX_BODY:
+            if length <= 4 * body_limit:
                 await request.body()
             return Response(status_code=413, media_type="application/json",
-                            content=json.dumps({"error": {"code": "body_too_large", "limit": MAX_BODY}}),
+                            content=json.dumps({"error": {"code": "body_too_large", "limit": body_limit}}),
                             headers={"Connection": "close"})
         if length is None and request.method in ("POST", "PUT", "PATCH"):
             return Response(status_code=411, content="length required")
@@ -206,6 +295,9 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
             if not security.is_authenticated(request.cookies.get(COOKIE_NAME),
                                              request.headers.get("x-pcui-secret")):
                 return Response(status_code=401, content="unauthenticated")
+            expected_workspace = request.headers.get("x-pcui-workspace")
+            if workspace is not None and expected_workspace and expected_workspace != workspace.identity:
+                return JSONResponse(status_code=409, content={"detail": {"error": {"code": "workspace_changed", "message": "Workspace changed"}}})
         return await call_next(request)
 
     @app.get("/runtime-config.json")
@@ -740,16 +832,17 @@ def create_app(store: Store, pool: WorkerPool, security: Security,
         return store.create_session((body or {}).get("meta"))
 
     @app.get("/api/sessions")
-    async def list_sessions():
-        return store.list_sessions()
+    async def list_sessions(limit: int | None = None, prioritize_decisions: bool = False):
+        if limit is not None and not 1 <= limit <= 50:
+            raise HTTPException(400, "limit must be between 1 and 50")
+        return store.list_session_views(limit, prioritize_decisions)
 
     @app.get("/api/sessions/{session_id}")
     async def get_session(session_id: str):
         try:
-            out = store.get_session(session_id)
+            out = store.get_session_view(session_id)
         except NotFound:
             raise HTTPException(404, "session not found")
-        out["ledger"] = store.session_ledger(session_id)
         return out
 
     @app.post("/api/sessions/{session_id}/artifacts")

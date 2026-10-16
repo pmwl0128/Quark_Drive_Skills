@@ -21,6 +21,8 @@ import { HttpError, type SessionApi } from "../../runtime/adapter.ts";
 import { useRuntime } from "../../runtime/context.tsx";
 import { renderArtifactCard } from "./artifacts.tsx";
 import { KindBadge, localTime, prettyPayload, shortHash } from "./kinds.tsx";
+import { SessionState, sessionState } from "../../components/session/SessionState.tsx";
+import { SessionHandoff } from "../../components/session/SessionHandoff.tsx";
 import { TeamCard } from "../../components/team/TeamCard.tsx";
 import { AdaptiveSelect } from "../../components/AdaptiveSelect.tsx";
 import { useTransferT } from "../../lib/library/transferMessages.ts";
@@ -74,13 +76,6 @@ function ArtifactRow({ sessions, entry }: { sessions: SessionApi; entry: LedgerE
   );
 }
 
-/** Latest ledger sequence per kind (heads point at hashes; ordering needs sequences). */
-function latestSeq(ledger: LedgerEntryDto[], kind: string): number {
-  let seq = -1;
-  for (const e of ledger) if (e.kind === kind && e.sequence > seq) seq = e.sequence;
-  return seq;
-}
-
 const asObj = (v: unknown): Record<string, unknown> | null =>
   v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
 
@@ -104,27 +99,6 @@ function useGateReads(sessions: SessionApi, session: SessionWithLedgerDto | null
   }, keys);
   return state.status === "ready" ? state.data
     : { draft: null, answerAudit: null, checkpoint: null };
-}
-
-type Stage = "done" | "awaiting" | "working";
-
-// Gates whose write, if it lands AFTER the answer-audit, means the audit no longer covers the
-// current state (a re-slate / new draft reopens the flow).
-const BUILD_GATES = ["context", "audit", "frame", "slate", "draft"];
-
-/** The answer-audit is CURRENT only if nothing it should have covered was written after it —
- * a stale pass over a since-superseded draft must not read as "done". */
-function auditIsCurrent(ledger: LedgerEntryDto[]): boolean {
-  const auditSeq = latestSeq(ledger, "answer-audit");
-  return auditSeq >= 0 && BUILD_GATES.every((k) => latestSeq(ledger, k) < auditSeq);
-}
-
-function stageOf(session: SessionWithLedgerDto, reads: GateReads): Stage {
-  if (reads.answerAudit?.pass === true && auditIsCurrent(session.ledger)) return "done";
-  const cpSeq = latestSeq(session.ledger, "checkpoint");
-  const decided = latestSeq(session.ledger, "decision") > cpSeq;
-  if (cpSeq >= 0 && !decided && reads.checkpoint?.pause !== false) return "awaiting";
-  return "working";
 }
 
 // -- decision card (panel-authored write-back) ----------------------------------------------
@@ -405,7 +379,7 @@ export function SessionPage() {
   }
   if (!session) return <div className="spinner">{t("state.loading")}</div>;
 
-  const stage = stageOf(session, reads);
+  const stage = sessionState(session);
   const doneStep = new Set(Object.keys(session.heads));
   const extraKinds = Object.keys(session.heads)
     .filter((k) => !(UEP_GATE_KINDS as readonly string[]).includes(k));
@@ -425,8 +399,7 @@ export function SessionPage() {
         </div>
 
         <div className={`uep-banner ${stage}`}>
-          {t(stage === "done" ? "uep.stage.done"
-            : stage === "awaiting" ? "uep.stage.awaiting" : "uep.stage.working")}
+          <SessionState session={session} />
         </div>
 
         <div className="gate-stepper">
@@ -437,6 +410,8 @@ export function SessionPage() {
           ))}
         </div>
       </section>
+
+      {stage !== "done" && <SessionHandoff key={session.id} session={session} />}
 
       {stage === "awaiting" && (
         <DecisionForm sessions={sessions} session={session} checkpoint={reads.checkpoint} onCommitted={bump} />

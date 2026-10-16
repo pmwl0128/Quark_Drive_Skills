@@ -26,6 +26,7 @@ class RuntimeConfig:
     online_use_api_key: bool = True
     local_online_unlimited: bool = False
     llm_provider: str = "mimo"
+    workspace_dir: str | None = None
 
 
 def env_file_values(path: Path) -> dict[str, str]:
@@ -85,4 +86,5 @@ def load_runtime_config(path: Path | None = None) -> RuntimeConfig:
         online_use_api_key=_bool(values, "PCUI_ONLINE_USE_API_KEY", True),
         local_online_unlimited=_bool(values, "PCUI_LOCAL_ONLINE_UNLIMITED", False),
         llm_provider=provider,
+        workspace_dir=values.get("PCUI_WORKSPACE_DIR") or None,
     )

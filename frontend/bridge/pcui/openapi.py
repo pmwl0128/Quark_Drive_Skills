@@ -128,6 +128,15 @@ _NDJSON = {"type": "string", "description": "Newline-delimited JSON event stream
 
 
 LOCAL_ROUTES: dict[RouteKey, dict[str, Any]] = {
+    ("GET", "/api/workspace"): _route("Read workspace location", "workspace", _ref("WorkspaceInfoDtoSchema")),
+    ("POST", "/api/workspace/pick-folder"): _route("Choose a local workspace folder", "workspace", _ref("WorkspacePickerResultDtoSchema"), request=_ref("WorkspacePickerRequestDtoSchema")),
+    ("POST", "/api/workspace/import-browser"): _route("Import old browser data into an empty workspace", "workspace", _HEALTH, request=_ref("WorkspaceBrowserImportDtoSchema")),
+    ("POST", "/api/workspace/switch"): _route("Switch user workspace", "workspace", _ref("WorkspaceInfoDtoSchema"), request=_ref("WorkspaceSwitchRequestDtoSchema")),
+    ("GET", "/api/workspace/library"): _route("Read user library", "workspace", _ref("WorkspaceLibraryDtoSchema")),
+    ("POST", "/api/workspace/library"): _route("Atomically save user library", "workspace", _ref("WorkspaceLibraryDtoSchema"), request=_ref("WorkspaceLibraryDtoSchema")),
+    ("GET", "/api/workspace/records"): _route("Read saved results", "workspace", _ref("WorkspaceRecordsDtoSchema")),
+    ("POST", "/api/workspace/records"): _route("Save one result", "workspace", _HEALTH, request=_ref("WorkspaceRecordWriteDtoSchema")),
+    ("POST", "/api/workspace/records/delete"): _route("Delete saved results", "workspace", _HEALTH, request=_ref("WorkspaceRecordDeleteDtoSchema")),
     ("GET", "/api/health"): _route("Bridge liveness", "system", _HEALTH),
     ("POST", "/api/bootstrap"): _route(
         "Exchange one-time bootstrap token", "system", _HEALTH, request=_BOOTSTRAP,

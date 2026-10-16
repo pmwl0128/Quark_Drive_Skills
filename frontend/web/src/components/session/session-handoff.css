@@ -1,0 +1,7 @@
+.session-handoff { margin: 20px 0; padding: 20px 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.session-handoff h2 { margin: 0 0 5px; font-size: 16px; }
+.session-handoff > div > p { color: var(--sub); font-size: 12px; margin: 0; }
+.session-handoff-instruction { display: flex; align-items: center; gap: 20px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.session-handoff-instruction p { flex: 1; margin: 0; font-size: 13px; line-height: 1.8; }
+.session-handoff-instruction button { display: inline-flex; align-items: center; gap: 7px; flex: none; }
+@media (max-width: 720px) { .session-handoff { padding: 18px; } .session-handoff-instruction { flex-direction: column; align-items: stretch; } .session-handoff-instruction button { justify-content: center; } }

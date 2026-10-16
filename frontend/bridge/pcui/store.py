@@ -110,6 +110,30 @@ class Store:
 
     # -- artifacts -----------------------------------------------------------------
 
+    def list_session_views(self, limit: int | None = None, prioritize_decisions: bool = False) -> list[dict]:
+        from .session_views import SESSION_VIEW_SQL, session_view
+        with self._lock:
+            rows = self._conn.execute(SESSION_VIEW_SQL).fetchall()
+        views = [session_view(row) for row in rows]
+        views.sort(key=lambda row: (prioritize_decisions and row["state"] == "awaiting",
+                                    row["updatedAt"], row["createdAt"], row["id"]), reverse=True)
+        return views if limit is None else views[:limit]
+
+    def get_session_view(self, session_id: str) -> dict:
+        from .session_views import SESSION_VIEW_SQL, session_view
+        with self._lock:
+            row = self._conn.execute(SESSION_VIEW_SQL + " where s.id=?", (session_id,)).fetchone()
+            if row is None:
+                raise NotFound(session_id)
+            entries = self._conn.execute(
+                "select sequence, kind, artifact_hash, created_at from session_artifacts "
+                "where session_id=? order by sequence", (session_id,)).fetchall()
+        out = session_view(row)
+        out["ledger"] = [{"sequence": e["sequence"], "kind": e["kind"],
+                          "artifactHash": e["artifact_hash"], "createdAt": e["created_at"]}
+                         for e in entries]
+        return out
+
     def append_artifact(self, session_id: str, kind: str, payload: bytes,
                         expected_revision: int) -> dict:
         """CAS append: store the immutable artifact, extend the ledger, and move the
@@ -186,3 +210,12 @@ class Store:
 
     def close(self) -> None:
         self._conn.close()
+
+    def backup(self, path: Path) -> None:
+        with self._lock:
+            destination = sqlite3.connect(str(path))
+            try:
+                with destination:
+                    self._conn.backup(destination)
+            finally:
+                destination.close()

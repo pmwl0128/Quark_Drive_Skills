@@ -11,6 +11,7 @@ import { HttpError, setProjectionVersion, type RuntimeAdapter } from "./adapter.
 import { loadRuntimeConfig } from "./config.ts";
 import { LocalAdapter } from "./local.ts";
 import { OnlineAdapter } from "./online.ts";
+import { configureUserStorage } from "../lib/userStorage.ts";
 
 /** design §7.1 atomic version binding: the static projection and the backend it pairs with
  * share a deploymentId. If a projection built at a different time is being served alongside a
@@ -102,6 +103,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           setBoot({ phase: "incompatible", reasons: [drift] });
           return;
         }
+        configureUserStorage(adapter.storage);
         setBoot({
           phase: "ready",
           state: { adapter, capabilities, can: (id) => hasCapability(capabilities, id) },

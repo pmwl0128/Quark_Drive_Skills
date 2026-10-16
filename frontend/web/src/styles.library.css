@@ -554,3 +554,15 @@
   .dock-members { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .dock-member-act { position: static; display: inline-grid; margin-top: 4px; }
 }
+.lib-workspace { display: grid; gap: 0.65rem; margin-top: 1rem; }
+.lib-workspace h3, .lib-workspace p { margin: 0; overflow-wrap: anywhere; }
+.lib-workspace-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.lib-workspace-row h3 { flex: none; font-size: 12.5px; }
+.lib-workspace-path { display: flex; align-items: center; flex: 1; min-width: 0; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); color: var(--ink); padding: 3px 4px 3px 10px; }
+.lib-workspace-path output { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-workspace-path button { flex: none; }
+.lib-workspace details { display: grid; gap: 8px; }
+.lib-workspace summary { cursor: pointer; }
+.lib-workspace details > p { margin-top: 8px; }
+.lib-workspace details > button { margin-top: 8px; }
+.lib-workspace .lib-store-actions { flex-wrap: wrap; }

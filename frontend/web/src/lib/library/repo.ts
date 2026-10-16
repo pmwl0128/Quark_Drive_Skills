@@ -1,4 +1,4 @@
-/** Reads and writes of the browser library. Pages use these, never Dexie directly.
+/** Reads and writes of the user library. Pages use these, never storage directly.
  *
  * Every write that places something — a Pokémon in a box cell, a team in a team slot — reads the
  * library and writes inside one transaction, so two writes can never claim the same cell. Records
@@ -7,7 +7,8 @@
 import type { FormatId, TeamDoc, TeamMemberDoc } from "@pokemon-champions/protocol";
 import { memberBuildKey, toTeamDoc, toTeamMember, type TeamVocabulary } from "../teamDoc.ts";
 import { loadLibraryVocabulary } from "./vocabulary.ts";
-import { libraryDb, type LibraryDb } from "./db.ts";
+import { libraryTransaction, type LibraryTables } from "./storage.ts";
+import { userStorage } from "../userStorage.ts";
 import {
   BOX_SLOTS, BoxRecordSchema, defaultLayout, LIBRARY_SCHEMA_VERSION, LIBRARY_START, LibraryLayoutSchema,
   preferredBox, TEAM_SLOT_STEP, TeamRecordSchema,
@@ -90,7 +91,7 @@ function placed<T extends { createdAt: number }>(rows: unknown[], read: (row: un
   return { records, broken };
 }
 
-async function readState(db: LibraryDb, vocabulary?: TeamVocabulary): Promise<LibraryState> {
+async function readState(db: LibraryTables, vocabulary?: TeamVocabulary): Promise<LibraryState> {
   const [teamRows, boxRows, layoutRow] = await Promise.all([
     db.teams.toArray(), db.box.toArray(), db.meta.get("layout"),
   ]);
@@ -120,15 +121,15 @@ async function readState(db: LibraryDb, vocabulary?: TeamVocabulary): Promise<Li
 }
 
 export async function loadLibrary(): Promise<LibraryState> {
-  return readState(libraryDb(), await loadLibraryVocabulary());
+  const vocabulary = await loadLibraryVocabulary();
+  return libraryTransaction(false, db => readState(db, vocabulary));
 }
 
 /** One read-and-write transaction over the whole library (also used by exchange.ts). */
-export async function rw<T>(work: (db: LibraryDb, state: LibraryState) => Promise<T>): Promise<T> {
+export async function rw<T>(work: (db: LibraryTables, state: LibraryState) => Promise<T>): Promise<T> {
   const vocabulary = await loadLibraryVocabulary();
-  const db = libraryDb();
-  const result = await db.transaction("rw", db.teams, db.box, db.meta, async () => work(db, await readState(db, vocabulary)));
-  void askPersistence();
+  const result = await libraryTransaction(true, async db => work(db, await readState(db, vocabulary)));
+  if (!userStorage()) void askPersistence();
   return result;
 }
 
@@ -234,7 +235,7 @@ export function buildTeamRecord(format: FormatId, members: string[], meta: SaveM
 
 /** Box Pokémon for a team's members: the same builds already in the box are reused, the rest are
  * added to free cells, the team's format's own box first. Null when the box has no room for them. */
-async function placeMembers(db: LibraryDb, state: LibraryState, doc: TeamDoc, meta: SaveMeta)
+async function placeMembers(db: LibraryTables, state: LibraryState, doc: TeamDoc, meta: SaveMeta)
   : Promise<{ ids: string[]; added: BoxRecord[] } | null> {
   const plan = planTeamSave(state, doc);
   const cells = freeCells(state, { box: preferredBox(doc.format), slot: 0 });
@@ -527,7 +528,7 @@ export function restoreBoxRecord(removed: RemovedBoxRecord): Promise<boolean> {
 
 // ---- layout ------------------------------------------------------------------------------
 
-export async function writeLayout(db: LibraryDb, layout: LibraryLayout): Promise<LibraryLayout> {
+export async function writeLayout(db: LibraryTables, layout: LibraryLayout): Promise<LibraryLayout> {
   const checked = LibraryLayoutSchema.parse(layout);
   await db.meta.put({ id: "layout", ...checked });
   return checked;

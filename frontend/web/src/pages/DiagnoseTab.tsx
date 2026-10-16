@@ -189,6 +189,7 @@ export function DiagnoseTab({ active, fill, onConsumeFill }: {
   onConsumeFill: () => void;
 }) {
   const { adapter, capabilities } = useRuntime();
+  const canExplain = !!adapter.qa;
   const t = useAssistT();
   const { lang } = useLang();
   const draft = useMemo(readDraft, []);
@@ -235,7 +236,9 @@ export function DiagnoseTab({ active, fill, onConsumeFill }: {
   }, []);
 
   const run = async (input?: DiagnoseInput) => {
-    const req: DiagnoseInput = input ?? { format, text: text.trim(), explain, thinking: explain && thinking };
+    const requested: DiagnoseInput = input ?? { format, text: text.trim(), explain, thinking: explain && thinking };
+    const req = { ...requested, explain: canExplain && requested.explain,
+      thinking: canExplain && requested.explain && requested.thinking };
     if (!req.text || running || activeDiagnosis || !adapter.diagnose) return;
     setRunning(true);
     setHandoffReady(false);
@@ -397,7 +400,7 @@ export function DiagnoseTab({ active, fill, onConsumeFill }: {
                       placeholder={t("diag.placeholder")} />
             {handoffReady && <p className="notice diag-prefilled">{t("diag.prefilled")}</p>}
           </div>
-          <div className="diag-mode-options">
+          {canExplain && <div className="diag-mode-options">
             <label className="diag-explain-opt">
               <input type="checkbox" checked={explain}
                      onChange={(e) => {
@@ -406,27 +409,27 @@ export function DiagnoseTab({ active, fill, onConsumeFill }: {
                      }} />
               {t("diag.explain")}
             </label>
-          </div>
+          </div>}
           {/* The submit cluster mirrors the wizard's: thinking mode over the quota and the primary
             * button. */}
           <div className="assist-submit">
-            <ThinkingToggle checked={thinking} onChange={(checked) => {
+            {canExplain && <ThinkingToggle checked={thinking} onChange={(checked) => {
               setThinking(checked);
               if (checked) setExplain(true);
             }}
               disabled={running || thinkingUnavailable} label={t("thinking.label")}
               tip={`${t("diag.thinkingTip")}${quota !== null && quota.limit > 0
-                && quota.limit - quota.used < 2 ? ` ${t("thinking.insufficient")}` : ""}`} />
+                && quota.limit - quota.used < 2 ? ` ${t("thinking.insufficient")}` : ""}`} />}
             <div className="builder-actions">
               {current && (
                 <button type="button" className="ar-tool" onClick={() => setComposing(false)}>
                   <IconChevronUp aria-hidden="true" />{t("builder.brief.collapse")}
                 </button>
               )}
-              <span className={`aw-quota num${quota ? "" : " pending"}`}>
+              {adapter.quota && <span className={`aw-quota num${quota ? "" : " pending"}`}>
                 {t("diag.quota")} {!quota ? "—" : quota.limit === 0
                   ? t("quota.unlimited") : `${quota.used}/${quota.limit}`}
-              </span>
+              </span>}
               <button type="button" className="primary-btn"
                       disabled={running || !text.trim() || !!(quota && quota.limit > 0 && quota.used >= quota.limit)}
                       onClick={() => void run()}>

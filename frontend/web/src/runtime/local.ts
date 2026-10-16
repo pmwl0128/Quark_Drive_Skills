@@ -11,13 +11,14 @@ import {
   LearnersDtoSchema, MetaFacetsDtoSchema, MetaKoDtoSchema,
   MetaKoTrendDtoSchema, SpeedBatchResultDtoSchema, TrendDtoSchema, TuneResultDtoSchema,
   TopMetaDetailDtoSchema, TopMetaRankingDtoSchema, UsageTrendDtoSchema,
+  WorkspaceInfoDtoSchema, WorkspaceLibraryDtoSchema, WorkspaceRecordsDtoSchema, WorkspacePickerResultDtoSchema,
   type ActualMatchupRequestDto, type Capabilities, type DamageRequestDto, type FormatId,
   type SpeedInputDto, type TopMetaScopeId,
 } from "@pokemon-champions/protocol";
 import { z } from "zod";
 import {
   HttpError, fetchJson,
-  type DexIndexEntry, type RuntimeAdapter, type RuntimeConfig, type SessionApi,
+  type DexIndexEntry, type RuntimeAdapter, type RuntimeConfig, type SessionApi, type WorkspaceApi,
 } from "./adapter.ts";
 import { loadProjectionDexIndex } from "./online.ts";
 
@@ -25,6 +26,33 @@ export class LocalAdapter implements RuntimeAdapter {
   readonly runtime = "local" as const;
 
   constructor(private cfg: RuntimeConfig) {}
+
+  private workspaceId = "";
+  readonly storage: WorkspaceApi = {
+    info: async () => WorkspaceInfoDtoSchema.parse(await this.get("/workspace")),
+    pickFolder: async lang => WorkspacePickerResultDtoSchema.parse(await this.post("/workspace/pick-folder", { workspaceId: this.workspaceId, lang })).path,
+    library: async () => {
+      const doc = WorkspaceLibraryDtoSchema.parse(await this.get("/workspace/library"));
+      this.checkWorkspace(doc.workspaceId);
+      return doc;
+    },
+    saveLibrary: async doc => WorkspaceLibraryDtoSchema.parse(await this.post("/workspace/library", doc)),
+    importBrowser: async doc => { await this.post("/workspace/import-browser", doc); },
+    records: async () => {
+      const doc = WorkspaceRecordsDtoSchema.parse(await this.get("/workspace/records"));
+      this.checkWorkspace(doc.workspaceId);
+      return doc.records;
+    },
+    putRecord: async record => { await this.post("/workspace/records", { workspaceId: this.workspaceId, record }); },
+    deleteRecords: async ids => { await this.post("/workspace/records/delete", { workspaceId: this.workspaceId, ids }); },
+    switch: async (path, migrate) => WorkspaceInfoDtoSchema.parse(await this.post("/workspace/switch", {
+      path, migrate, workspaceId: this.workspaceId,
+    })),
+  };
+
+  private checkWorkspace(id: string) {
+    if (id !== this.workspaceId) throw new HttpError(409, "Workspace changed; reload", { error: { code: "workspace_changed", message: "Workspace changed" } });
+  }
 
   async init(): Promise<void> {
     const match = /[#&]bootstrap=([^&]+)/.exec(location.hash);
@@ -41,16 +69,19 @@ export class LocalAdapter implements RuntimeAdapter {
       history.replaceState(null, "", location.pathname + location.search);
       if (!resp.ok) console.warn(`pcui bootstrap exchange failed: ${resp.status}`);
     }
+    this.workspaceId = (await this.storage.info()).workspaceId;
   }
 
   private get<T>(path: string): Promise<T> {
-    return fetchJson<T>(`${this.cfg.apiBase}${path}`);
+    return fetchJson<T>(`${this.cfg.apiBase}${path}`, {
+      headers: this.workspaceId && path !== "/workspace" ? { "X-PCUI-Workspace": this.workspaceId } : {},
+    });
   }
 
   private post<T>(path: string, body: unknown): Promise<T> {
     return fetchJson<T>(`${this.cfg.apiBase}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(this.workspaceId ? { "X-PCUI-Workspace": this.workspaceId } : {}) },
       body: JSON.stringify(body),
     });
   }
@@ -157,7 +188,12 @@ export class LocalAdapter implements RuntimeAdapter {
   /** UEP session surface (team.uep). Artifact payloads travel as verbatim text — the store's
    * round-trip guarantee ends the moment anyone re-serializes, so no JSON.parse here. */
   readonly sessions: SessionApi = {
-    list: async () => z.array(SessionDtoSchema).parse(await this.get("/sessions")),
+    list: async (options) => {
+      const query = new URLSearchParams();
+      if (options?.limit) query.set("limit", String(options.limit));
+      if (options?.prioritizeDecisions) query.set("prioritize_decisions", "true");
+      return z.array(SessionDtoSchema).parse(await this.get(`/sessions?${query}`));
+    },
     create: async (meta) =>
       SessionDtoSchema.parse(await this.post("/sessions", { meta: meta ?? {} })),
     get: async (id) =>

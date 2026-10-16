@@ -8,6 +8,7 @@ import { PageHeader } from "../../components/PageHeader.tsx";
 import { useAsync } from "../../hooks.ts";
 import { useUepT } from "./messages.ts";
 import { useRuntime } from "../../runtime/context.tsx";
+import { SessionState } from "../../components/session/SessionState.tsx";
 import { KindBadge, localTime } from "./kinds.tsx";
 
 export function SessionsPage() {
@@ -86,12 +87,7 @@ export function SessionsPage() {
                   {list.data.map((s) => (
                     <Link key={s.id} to={`/sessions/${s.id}`} className="session-card">
                       <div className="session-status">
-                        {/* Coarse two-state badge: list rows have heads only (no ledger order), so
-                          * "awaiting decision" can't be told apart from "decision made" here — the
-                          * detail page computes the precise stage. */}
-                        <span className={`uep-chip ${s.heads["answer-audit"] ? "ok" : "warn"}`}>
-                          {t(s.heads["answer-audit"] ? "uep.stage.doneBadge" : "uep.stage.workingBadge")}
-                        </span>
+                        <SessionState session={s} />
                       </div>
                       <div className="session-intent">
                         {typeof s.meta.intent === "string" && s.meta.intent !== "" ? s.meta.intent : s.id}

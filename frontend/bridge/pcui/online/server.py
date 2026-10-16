@@ -33,6 +33,7 @@ from .provider import LlmProvider, LlmUnavailable
 from .tester_keys import (TOKEN_RE, AccessDenied, DeviceMismatch, TesterBudgetExhausted,
                           TesterKeyStore, TesterReservation, device_tag)
 from ..openapi import install_openapi
+from ..team_diagnose import DIAGNOSE_TEXT_MAX, DIAGNOSE_TIMEOUT, DIAGNOSE_TOP_K, run_team_diagnose
 from ..team_matchup import MatchupInputError, run_actual_matchup
 from ..team_tune import TuneInputError, run_team_tune
 
@@ -42,8 +43,6 @@ QA_QUEUE_WAIT = 15.0            # seconds a request may wait for a QA slot befor
 BUILDER_QUEUE_CAP = 3           # queued builds beyond the running one before 429 busy
 BUILDER_TACTICS = ("stall", "trickroom", "weather", "tailwind", "screens",
                    "pivot", "setup", "hazards")
-DIAGNOSE_TEXT_MAX = 8_000       # a 6-member Showdown export is ~2KB; team-json ~4KB
-DIAGNOSE_TIMEOUT = 150.0        # one team.py session (parse, then validate+diagnose)
 # The public origin sits behind a CDN that drops an origin-pull connection which has produced no
 # bytes for about ten seconds; nginx logs it as 499 and the visitor sees a bare network failure.
 # Every endpoint that can outlast that therefore answers as an NDJSON stream which starts before
@@ -51,7 +50,6 @@ DIAGNOSE_TIMEOUT = 150.0        # one team.py session (parse, then validate+diag
 STREAM_HEARTBEAT = 5.0
 # One heartbeat line: a valid NDJSON event that carries no content.
 PROGRESS_EVENT = '{"type":"progress"}\n'
-DIAGNOSE_TOP_K = 30             # independent live battery scope; team skill permits 1..60
 MATCHUP_QUEUE_WAIT = 20.0        # deterministic lane: bounded wait, never consumes model quota
 MATCHUP_WORK_UNIT_PAIRS = 30     # ceil(member_count * top_k / 30); max 6x60 costs 12 units
 TUNE_QUEUE_WAIT = 20.0           # shares the heavy deterministic lane with actual matchup
@@ -579,73 +577,7 @@ def create_online_app(pool, provider: LlmProvider | None, limits: OnlineLimits, 
     matchup_slots = asyncio.Semaphore(1)
 
     def _run_diagnose(text: str, fmt: str) -> dict:
-        """Best-effort parsing tiers (§7.5): structured (Showdown / team-json) -> compact
-        community share layout (normalizer) -> bare species extraction over the raw text.
-        Parsed members and extracted species MERGE — extraction fills members the parser
-        missed as species-only entries — so a bare list of six names still yields a partial
-        report (diagnose itself degrades honestly: neutral speed assumptions, partial
-        roles/checks). Raises ValueError('unparseable') only when NOTHING resolves."""
-        import tempfile
-
-        from .. import mappers
-        from .teamtext import extract_species, normalize_team_text, resolve_species
-        norm = normalize_team_text(text)
-        with tempfile.TemporaryDirectory(prefix="pcweb-diag-") as tmp:
-            tmp_dir = Path(tmp)
-            team_file = tmp_dir / "team.txt"
-            team_file.write_text(norm, encoding="utf-8")
-            spec = tmp_dir / "spec.json"
-            spec.write_text(json.dumps([{"op": "parse", "file": str(team_file)}]),
-                            encoding="utf-8")
-            out = pool.request_json("team", ["session", str(spec)], None, DIAGNOSE_TIMEOUT)
-            entry = out[0] if isinstance(out, list) and out else {}
-            parsed = entry.get("result") if isinstance(entry, dict) else None
-            members = [m for m in ((parsed or {}).get("pokemon") or [])
-                       if isinstance(m, dict) and m.get("species")] \
-                if entry.get("rc") == 0 else []
-            if members:
-                # parse structures but does NOT translate names (normalizing into the
-                # schema is the caller's job, same contract as the local agent flow): snap
-                # species/items/moves to dex canonical first, then DROP members whose
-                # species still doesn't resolve — those are mis-split text lines, and a
-                # wrong member misleads more than a missing one.
-                builder.canonicalize_members(pool, members, time.monotonic() + 60)
-                ok = set(resolve_species(pool, [m["species"] for m in members]))
-                members = [m for m in members if m["species"] in ok]
-            if len(members) < 6:
-                # Tier 3: recognize species anywhere in the RAW text and fill the gaps as
-                # species-only members. The report's TeamCard discloses what was recognized.
-                have = {m.get("species") for m in members}
-                for name in extract_species(pool, text):
-                    if len(members) >= 6:
-                        break
-                    if name not in have:
-                        members.append({"species": name, "item": None, "ability": None,
-                                        "moves": [], "nature": None, "spread": None,
-                                        "tera": None,
-                                        "completeness": "observed_species_only"})
-                        have.add(name)
-            if not members:
-                raise ValueError("unparseable")
-            team = {"schema_version": 1, "format": fmt, "season": None, "rule": None,
-                    "pokemon": members[:6], "provenance": None}
-            spec2 = tmp_dir / "spec2.json"
-            team_json = tmp_dir / "team.json"
-            team_json.write_text(json.dumps(team, ensure_ascii=False), encoding="utf-8")
-            spec2.write_text(json.dumps([
-                {"op": "validate", "file": str(team_json)},
-                # with_check: the per-opponent C2/C1/C0 grid vs the top-K meta — extra CPU
-                # on the shipped opponent cache, but the report's most actionable fact.
-                {"op": "diagnose", "file": str(team_json), "aspect": "all",
-                 "top_k": DIAGNOSE_TOP_K,
-                 "with_check": True},
-            ]), encoding="utf-8")
-            out2 = pool.request_json("team", ["session", str(spec2)], None, DIAGNOSE_TIMEOUT)
-        if not isinstance(out2, list) or len(out2) != 2 \
-                or not isinstance(out2[0].get("result"), dict) \
-                or not isinstance(out2[1].get("result"), dict):
-            raise RuntimeError("diagnose session failed")
-        return mappers.map_diagnose_report(team, out2[0]["result"], out2[1]["result"])
+        return run_team_diagnose(pool, text, fmt)
 
     async def _execute_team_diagnose(request: Request, body: dict, on_report=None):
         fmt = body.get("format")
